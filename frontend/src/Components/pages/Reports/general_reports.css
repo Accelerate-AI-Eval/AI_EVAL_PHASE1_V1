@@ -695,6 +695,19 @@
   /* background-color: #111827; */
 }
 
+.general_rpr_irs {
+  text-align: center;
+  margin: -0.5rem 0 0;
+  padding: 0 1rem 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.general_rpr_irs strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
 .view_rpr_btn {
   background: none;
   border: none;

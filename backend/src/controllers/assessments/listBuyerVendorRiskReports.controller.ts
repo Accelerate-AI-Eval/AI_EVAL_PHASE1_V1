@@ -54,6 +54,7 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
         productName: cotsBuyerAssessments.specific_product,
         updatedAt: assessments.updated_at,
         expiryAt: assessments.expiry_at,
+        vendorRiskReport: cotsBuyerAssessments.vendor_risk_assessment_report,
       })
       .from(cotsBuyerAssessments)
       .innerJoin(assessments, eq(cotsBuyerAssessments.assessment_id, assessments.id))
@@ -72,6 +73,10 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
       const vendor = (r.vendorName ?? "").trim() || "Vendor";
       const product = (r.productName ?? "").trim() || "Product";
       const title = `${vendor} – ${product}`;
+      const rep = r.vendorRiskReport;
+      const repObj = rep != null && typeof rep === "object" ? (rep as Record<string, unknown>) : null;
+      const irsRaw = repObj != null ? Number(repObj.implementationRiskScore) : NaN;
+      const implementationRiskScore = Number.isFinite(irsRaw) ? Number(irsRaw.toFixed(2)) : null;
       return {
         id: `bvr-${r.assessmentId}`,
         source: "buyer_vendor_risk" as const,
@@ -82,6 +87,7 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
         expiryAt:
           r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
         attestationExpiryAt: null as string | null,
+        implementationRiskScore,
       };
     });
 

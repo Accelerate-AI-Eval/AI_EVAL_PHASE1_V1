@@ -218,7 +218,7 @@ const TopNavBar = () => {
       {/* POPUP */}
       {isPopupVisible && (
         <div ref={popupRef}>
-          <UserProfile />
+          <UserProfile onClose={() => setIsPopupVisible(false)} />
         </div>
       )}
     </>

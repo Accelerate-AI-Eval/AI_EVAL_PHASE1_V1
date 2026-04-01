@@ -74,6 +74,14 @@ function CompleteReportsCards({
                 </ClickTooltip>
               </div>
             </div>
+            {report.source === "buyer_vendor_risk" &&
+            report.implementationRiskScore != null &&
+            Number.isFinite(Number(report.implementationRiskScore)) ? (
+              <p className="general_rpr_irs">
+                Implementation risk score:{" "}
+                <strong>{Math.round(Number(report.implementationRiskScore))}</strong>/100 (lower is safer)
+              </p>
+            ) : null}
             <div className="general_rpr_card_footer">
               <div className="general_rpr_card_dates">
                 <div className="general_rpr_card_date_row">

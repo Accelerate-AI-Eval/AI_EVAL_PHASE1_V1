@@ -64,6 +64,16 @@ function groupRiskDomainsByScope(rows: RiskDomain[]): Record<RiskScope, RiskDoma
 
 type ReportPayload = {
   overallRiskScore: number;
+  implementationRiskScore?: number;
+  implementationRiskClassification?: string;
+  implementationRiskDecision?: string;
+  implementationRiskRecommendedAction?: string;
+  implementationRiskBreakdown?: {
+    vendorRisk?: number;
+    organizationalReadinessGap?: number;
+    integrationRisk?: number;
+    vendorTrustScore?: number;
+  };
   recommendationLabel: string;
   executiveSummary: string;
   keyStrengths: string[];
@@ -174,9 +184,22 @@ export default function BuyerVendorRiskReport() {
 
   const handleExportPdf = () => window.print();
 
-  const score = report?.overallRiskScore ?? 0;
-  const scoreClass =
-    score >= 80 ? "bvr_score_high" : score >= 60 ? "bvr_score_mid" : "bvr_score_low";
+  const implementationRiskScore = Number(report?.implementationRiskScore ?? NaN);
+  const hasImplementationScore = Number.isFinite(implementationRiskScore);
+  const score = hasImplementationScore
+    ? implementationRiskScore
+    : report?.overallRiskScore ?? 0;
+  const scoreClass = hasImplementationScore
+    ? score < 50
+      ? "bvr_score_high"
+      : score < 75
+        ? "bvr_score_mid"
+        : "bvr_score_low"
+    : score >= 80
+      ? "bvr_score_high"
+      : score >= 60
+        ? "bvr_score_mid"
+        : "bvr_score_low";
 
   if (loading && !report && !error) {
     return (
@@ -261,14 +284,19 @@ export default function BuyerVendorRiskReport() {
         ) : null}
 
         <section className={`bvr_card bvr_recommendation ${scoreClass}`}>
-          <div className="bvr_score_circle">{score}</div>
+          <div className="bvr_score_circle">
+            {hasImplementationScore ? Math.round(implementationRiskScore) : score}
+          </div>
           <div>
             <h2 className="bvr_recommendation_title">
-              {report.recommendationLabel}
+              {hasImplementationScore
+                ? (report.implementationRiskDecision ?? "Implementation Risk")
+                : report.recommendationLabel}
             </h2>
             <p className="bvr_recommendation_sub">
-              Overall risk score: {score}/100 (higher indicates stronger alignment /
-              lower residual risk)
+              {hasImplementationScore
+                ? `Implementation risk score: ${Math.round(score)}/100 (lower is safer)`
+                : `Overall risk score: ${score}/100 (higher indicates stronger alignment / lower residual risk)`}
             </p>
           </div>
         </section>

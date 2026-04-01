@@ -619,7 +619,7 @@ const BuyerOverview = () => {
                   <Building2 size={26} className="vendor_portal_action_icon_secondary" aria-hidden />
                   <span className="vendor_portal_action_label">AI Directory</span>
                 </Link>
-                <Link to="/my-vendor" className="vendor_portal_action_card vendor_portal_action_card_primary">
+                <Link to="/riskMappings" className="vendor_portal_action_card vendor_portal_action_card_primary">
                   <Users size={26} className="vendor_portal_action_icon_secondary" aria-hidden />
                   <span className="vendor_portal_action_label">Risk Mapping</span>
                 </Link>

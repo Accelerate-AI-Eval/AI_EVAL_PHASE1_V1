@@ -106,10 +106,78 @@ type FullReport = {
     confidentiality?: string
     dataSources?: string[]
     /** Risk catalog IDs and mitigation action names fetched for this assessment (set on submit). */
-    catalogRisksAndMitigations?: Array<{ risk_id: string; mitigation_action_names: string[] }>
-    /** Flat appendix rows with exact risk ID and mitigation action name used in generation. */
-    catalogRiskMitigationActions?: Array<{ risk_id: string; mitigation_action_name: string }>
+    catalogRisksAndMitigations?: Array<{
+      risk_id: string
+      risk_domain?: string
+      risk_title?: string
+      mitigation_action_names: string[]
+    }>
+    /** Flat appendix rows for risk table (risk id, title, mitigation id + name). */
+    catalogRiskMitigationActions?: Array<{
+      risk_id: string
+      risk_domain?: string
+      risk_title?: string
+      mitigation_action_id?: string
+      mitigation_action_name: string
+    }>
   }
+}
+
+type AppendixRiskTableRow = {
+  riskId: string
+  riskDomain: string
+  mitigationRef: string
+}
+
+function buildAppendixRiskTableRows(
+  appendix: FullReport["appendix"],
+  domainByRiskId: Record<string, string> = {},
+): AppendixRiskTableRow[] {
+  if (!appendix) return []
+  const flat = appendix.catalogRiskMitigationActions
+  if (flat && flat.length > 0) {
+    return flat.map((r) => {
+      const id = stripMarkdownBold(String(r.mitigation_action_id ?? "").trim())
+      const name = stripMarkdownBold(String(r.mitigation_action_name ?? "").trim())
+      const mitigationRef = id || name || "—"
+      return {
+        riskId: stripMarkdownBold(String(r.risk_id ?? "")) || "—",
+        riskDomain:
+          stripMarkdownBold(
+            String(domainByRiskId[String(r.risk_id ?? "").trim()] ?? "").trim(),
+          ) ||
+          stripMarkdownBold(String(r.risk_domain ?? "").trim()) ||
+          stripMarkdownBold(String(r.risk_title ?? "").trim()) ||
+          "—",
+        mitigationRef,
+      }
+    })
+  }
+  const grouped = appendix.catalogRisksAndMitigations
+  if (!grouped || grouped.length === 0) return []
+  const rows: AppendixRiskTableRow[] = []
+  for (const r of grouped) {
+    const riskId = stripMarkdownBold(String(r.risk_id ?? "")) || "—"
+    const riskDomain =
+      stripMarkdownBold(String(domainByRiskId[String(r.risk_id ?? "").trim()] ?? "").trim()) ||
+      stripMarkdownBold(String(r.risk_domain ?? "").trim()) ||
+      stripMarkdownBold(String(r.risk_title ?? "").trim()) ||
+      "—"
+    const names = r.mitigation_action_names ?? []
+    if (names.length === 0) {
+      rows.push({ riskId, riskDomain, mitigationRef: "—" })
+    } else {
+      for (const n of names) {
+        const name = stripMarkdownBold(String(n).trim())
+        rows.push({
+          riskId,
+          riskDomain,
+          mitigationRef: name || "—",
+        })
+      }
+    }
+  }
+  return rows
 }
 
 function formatReportValue(val: unknown): string {
@@ -286,6 +354,11 @@ export default function ReportDetail() {
   const dbTop5 = data.dbTop5Risks as { top5Risks?: DbRisk[]; mitigationsByRiskId?: Record<string, Mitigation[]> } | undefined
   const top5Risks: DbRisk[] = dbTop5?.top5Risks ?? []
   const mitigationsByRiskId: Record<string, Mitigation[]> = dbTop5?.mitigationsByRiskId ?? {}
+  const domainByRiskId: Record<string, string> = Object.fromEntries(
+    top5Risks
+      .map((r) => [String(r.risk_id ?? "").trim(), String(r.domains ?? "").trim()] as const)
+      .filter(([riskId, domain]) => riskId !== "" && domain !== ""),
+  )
 
   const generated = data.generatedAnalysis as {
     overallRiskScore?: number
@@ -298,6 +371,10 @@ export default function ReportDetail() {
     fullReport?: FullReport
   } | undefined
   const fullReport = generated?.fullReport
+  const appendixRiskTableRows = buildAppendixRiskTableRows(
+    fullReport?.appendix,
+    domainByRiskId,
+  )
 
   const deployment = data.deploymentOverview as DeploymentOverview | undefined
   const overallScore = generated?.overallRiskScore ?? 0
@@ -692,57 +769,79 @@ export default function ReportDetail() {
         )}
       </section>
 
-      {/* Appendix */}
+      {/* Appendix — glossary-style: bold term, definition on the next line */}
       <section className="report_section_card report_appendix">
         <h2 className="report_section_heading">Appendix</h2>
-        <p className="report_appendix_line"><strong>Methodology:</strong> {formatReportValue(fullReport?.appendix?.methodology) !== "—" ? formatReportValue(fullReport?.appendix?.methodology) : "AI EVAL 3-Layer Risk Assessment Framework v2.1 — Customer-Specific Analysis"}</p>
-        <p className="report_appendix_line"><strong>Prepared By:</strong> {formatReportValue(fullReport?.appendix?.preparedBy) !== "—" ? formatReportValue(fullReport?.appendix?.preparedBy) : "AI EVAL Platform — Automated Analysis Report Engine"}</p>
-        <p className="report_appendix_line"><strong>Reviewed By:</strong> {formatReportValue(fullReport?.appendix?.reviewedBy)}</p>
-        <p className="report_appendix_line"><strong>Confidentiality:</strong> {formatReportValue(fullReport?.appendix?.confidentiality) !== "—" ? formatReportValue(fullReport?.appendix?.confidentiality) : "Confidential — For internal sales team use only"}</p>
-        <p className="report_appendix_line"><strong>Data Sources:</strong></p>
-        <ul className="report_appendix_sources">
-          {(fullReport?.appendix?.dataSources && fullReport.appendix.dataSources.length > 0)
-            ? fullReport.appendix.dataSources.map((s, i) => <li key={i}>{formatReportValue(s)}</li>)
-            : (<><li>Vendor COTS assessment submission data</li><li>Risk mappings database (assessment context match)</li></>)}
+        <ul className="report_appendix_glossary">
+          <li>
+            <strong className="report_appendix_term">Methodology</strong>
+            <p className="report_appendix_def">
+              {formatReportValue(fullReport?.appendix?.methodology) !== "—"
+                ? formatReportValue(fullReport?.appendix?.methodology)
+                : "AI EVAL 3-Layer Risk Assessment Framework v2.1 — Customer-Specific Analysis"}
+            </p>
+          </li>
+          <li>
+            <strong className="report_appendix_term">Prepared By</strong>
+            <p className="report_appendix_def">
+              {formatReportValue(fullReport?.appendix?.preparedBy) !== "—"
+                ? formatReportValue(fullReport?.appendix?.preparedBy)
+                : "AI EVAL Platform — Automated Analysis Report Engine"}
+            </p>
+          </li>
+          <li>
+            <strong className="report_appendix_term">Reviewed By</strong>
+            <p className="report_appendix_def">
+              {formatReportValue(fullReport?.appendix?.reviewedBy)}
+            </p>
+          </li>
+          <li>
+            <strong className="report_appendix_term">Confidentiality</strong>
+            <p className="report_appendix_def">
+              {formatReportValue(fullReport?.appendix?.confidentiality) !== "—"
+                ? formatReportValue(fullReport?.appendix?.confidentiality)
+                : "Confidential — For internal sales team use only"}
+            </p>
+          </li>
+          <li>
+            <strong className="report_appendix_term">Data Sources</strong>
+            <ul className="report_appendix_sublist">
+              {(fullReport?.appendix?.dataSources && fullReport.appendix.dataSources.length > 0)
+                ? fullReport.appendix.dataSources.map((s, i) => (
+                    <li key={i}>{formatReportValue(s)}</li>
+                  ))
+                : (
+                    <>
+                      <li>Vendor COTS assessment submission data</li>
+                      <li>Risk mappings database (assessment context match)</li>
+                    </>
+                  )}
+            </ul>
+          </li>
         </ul>
-        {fullReport?.appendix?.catalogRiskMitigationActions &&
-          fullReport.appendix.catalogRiskMitigationActions.length > 0 ? (
+        {appendixRiskTableRows.length > 0 ? (
           <>
-            <p className="report_appendix_line"><strong>Risk IDs and mitigation action names used:</strong></p>
-            <ul className="report_appendix_sources">
-              {fullReport.appendix.catalogRiskMitigationActions.map((row, i) => (
-                <li key={i}>
-                  <strong>{stripMarkdownBold(row.risk_id)}</strong>
-                  {": "}
-                  {stripMarkdownBold(row.mitigation_action_name)}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : fullReport?.appendix?.catalogRisksAndMitigations &&
-          fullReport.appendix.catalogRisksAndMitigations.length > 0 ? (
-          <>
-            <p className="report_appendix_line"><strong>Risk IDs and mitigation actions used:</strong></p>
-            <ul className="report_appendix_sources">
-              {fullReport.appendix.catalogRisksAndMitigations.map((row, i) => (
-                <li key={i}>
-                  <strong>{stripMarkdownBold(row.risk_id)}</strong>
-                  {row.mitigation_action_names && row.mitigation_action_names.length > 0
-                    ? (
-                      <>
-                        {": "}
-                        {row.mitigation_action_names.map((n, j) => (
-                          <span key={j}>
-                            {j > 0 ? "; " : null}
-                            {stripMarkdownBold(n)}
-                          </span>
-                        ))}
-                      </>
-                    )
-                    : " — no linked catalog mitigations"}
-                </li>
-              ))}
-            </ul>
+            <h3 className="report_appendix_table_heading">Risk catalog</h3>
+            <div className="report_table_wrap report_appendix_table_wrap">
+              <table className="report_table report_appendix_risk_table">
+                <thead>
+                  <tr>
+                    <th scope="col">Risk Id</th>
+                    <th scope="col">Domain</th>
+                    <th scope="col">Mitigation Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appendixRiskTableRows.map((row, i) => (
+                    <tr key={`appendix-risk-${i}`}>
+                      <td>{row.riskId}</td>
+                      <td>{row.riskDomain}</td>
+                      <td>{row.mitigationRef}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         ) : null}
       </section>

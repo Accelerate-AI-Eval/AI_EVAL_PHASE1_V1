@@ -1,0 +1,249 @@
+.risk_mapping_header_row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.risk_mapping_header_left {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.risk_mapping_header_select {
+  flex: 0 1 320px;
+  min-width: 200px;
+  max-width: 100%;
+}
+
+.risk_mapping_stats_grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.risk_mapping_stat_card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.risk_mapping_stat_label {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.risk_mapping_stat_label_critical {
+  color: #b91c1c;
+}
+
+.risk_mapping_stat_label_mitigated {
+  color: #059669;
+}
+
+.risk_mapping_stat_label_open {
+  color: #111827;
+}
+
+.risk_mapping_stat_value {
+  margin: 0.35rem 0 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #111827;
+}
+
+.risk_mapping_stat_value_critical {
+  color: #b91c1c;
+}
+
+.risk_mapping_stat_value_mitigated {
+  color: #059669;
+}
+
+.risk_mapping_stat_value_open {
+  color: #d97706;
+}
+
+.risk_mapping_panel {
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.risk_mapping_panel_compact {
+  margin-top: 0.8rem;
+}
+
+.risk_mapping_panel_title {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.risk_mapping_panel_subtitle {
+  margin: 0.35rem 0 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.risk_mapping_empty_text {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.risk_mapping_risk_list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.risk_mapping_risk_card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: #fafafa;
+}
+
+.risk_mapping_risk_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.risk_mapping_chip_row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.risk_mapping_chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.risk_mapping_chip_id {
+  background: #f3f4f6;
+}
+
+.risk_mapping_chip_low {
+  color: #475569;
+  background: #e2e8f0;
+  text-transform: lowercase;
+}
+
+.risk_mapping_chip_medium {
+  color: #92400e;
+  background: #fef3c7;
+  text-transform: lowercase;
+}
+
+.risk_mapping_chip_critical {
+  color: #1d4ed8;
+  background: #dbeafe;
+  text-transform: lowercase;
+}
+
+.risk_mapping_chip_open {
+  color: #be123c;
+  background: #ffe4e6;
+  text-transform: lowercase;
+}
+
+.risk_mapping_chip_mitigated {
+  color: #047857;
+  background: #d1fae5;
+  text-transform: lowercase;
+}
+
+.risk_mapping_meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.risk_mapping_risk_title {
+  margin: 0.45rem 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.risk_mapping_risk_desc {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.risk_mapping_risk_footer {
+  margin-top: 0.55rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.risk_mapping_owner {
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+.risk_mapping_progress_wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.risk_mapping_progress_track {
+  height: 6px;
+  flex: 1;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.risk_mapping_progress_fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
+.risk_mapping_progress_label {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.risk_mapping_table_wrap {
+  overflow-x: auto;
+}
+
+.risk_mapping_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.risk_mapping_table th {
+  padding: 0.5rem 0.75rem;
+  color: #374151;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.risk_mapping_table td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  border-bottom: 1px solid #f3f4f6;
+}

@@ -53,7 +53,7 @@ export const NAVIGATION = {
     {
       label: "Sales Agent",
       icon:  BotIcon,
-      path: "/sales-enablement",
+      path: "/salesEnablement",
       accessRoles: ["admin", "manager", "lead", "engineer"],
       systemRoles: ["system admin", "vendor"],
     },
@@ -79,13 +79,6 @@ export const NAVIGATION = {
       accessRoles: ["admin", "user", "manager", "lead", "engineer", "viewer"],
       systemRoles: ["system admin", "system manager", "system viewer", "buyer", "vendor"],
     },
-    {
-      label: "Risk Mapping",
-      icon: Users,
-      path: "/my-vendor",
-      accessRoles: ["admin", "manager", "lead", "engineer"],
-      systemRoles: ["system admin", "system manager", "system viewer", "buyer"],
-    },
     // {
     //   label: "Security Center",
     //   icon: Shield,
@@ -108,6 +101,13 @@ export const NAVIGATION = {
       systemRoles: ["system admin", "system manager", "system viewer", "buyer", "vendor"],
     },
     {
+      label: "Risk Mapping",
+      icon: Users,
+      path: "/riskMappings",
+      accessRoles: ["admin", "manager", "lead", "engineer"],
+      systemRoles: ["system admin", "system manager", "system viewer", "buyer", "vendor"],
+    },
+    {
       label: "Product Profile",
       icon: Globe,
       path: "/product_profile",
@@ -117,7 +117,7 @@ export const NAVIGATION = {
     {
       label: "User Management",
       icon: UserCog,
-      path: "/user-management",
+      path: "/userManagement",
       accessRoles: ["admin", "manager"],
       systemRoles: ["system admin", "system manager", "system viewer", "buyer", "vendor"],
     },

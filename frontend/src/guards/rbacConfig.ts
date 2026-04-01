@@ -18,18 +18,19 @@ export const ALLOWED_ROUTES: Record<SystemRole, readonly string[]> = {
     "/assessments",
     "/attestation_details",
     "/vendor-directory",
-    "/my-vendor",
+    "/riskMappings",
     "/security_center",
     "/governance",
-    "/sales-enablement",
+    "/salesEnablement",
     "/evidence-library",
     "/product_profile",
     "/reports",
-    "/user-management",
+    "/userManagement",
     "/vendorSelfAttestation",
   ],
   "system manager": [
     "/",
+    "/account",
     "/dashboard",
     "/organizations",
     "/attestation_details",
@@ -37,14 +38,15 @@ export const ALLOWED_ROUTES: Record<SystemRole, readonly string[]> = {
     "/assessments",
     "/vendorcots",
     "/buyerAssessment",
-    "/my-vendor",
+    "/riskMappings",
     "/product_profile",
     "/reports",
-    "/user-management",
+    "/userManagement",
     "/vendorSelfAttestation",
   ],
   "system viewer": [
     "/",
+    "/account",
     "/dashboard",
     "/organizations",
     "/attestation_details",
@@ -52,14 +54,15 @@ export const ALLOWED_ROUTES: Record<SystemRole, readonly string[]> = {
     "/assessments",
     "/vendorcots",
     "/buyerAssessment",
-    "/my-vendor",
+    "/riskMappings",
     "/product_profile",
     "/reports",
-    "/user-management",
+    "/userManagement",
     "/vendorSelfAttestation",
   ],
   "ai directory curator": [
     "/",
+    "/account",
     "/dashboard",
     "/attestation_details",
     "/vendor-directory",
@@ -67,28 +70,31 @@ export const ALLOWED_ROUTES: Record<SystemRole, readonly string[]> = {
   ],
   vendor: [
     "/",
+    "/account",
     "/dashboard",
     "/assessments",
     "/vendorcots",
-    "/sales-enablement",
+    "/riskMappings",
+    "/salesEnablement",
     "/evidence-library",
     "/reports",
     "/product_profile",
-    "/user-management",
+    "/userManagement",
     "/attestation_details",
     "/vendorSelfAttestation",
   ],
   buyer: [
     "/",
+    "/account",
     "/dashboard",
     "/assessments",
     "/buyerAssessment",
     "/vendor-directory",
-    "/my-vendor",
+    "/riskMappings",
     "/security_center",
     "/governance",
     "/reports",
-    "/user-management",
+    "/userManagement",
   ],
 };
 
@@ -107,7 +113,7 @@ export const PATH_USER_ROLE_RESTRICTIONS: Record<
   string,
   { forSystemRoles: SystemRole[]; allowedUserRoles: string[] }
 > = {
-  "/user-management": {
+  "/userManagement": {
     forSystemRoles: ["vendor", "buyer"],
     allowedUserRoles: ["admin", "manager"],
   },
@@ -190,7 +196,13 @@ export function isPathAllowedForRole(path: string, normalizedRole: SystemRole | 
 }
 
 /** Buyer Viewer: view-only access limited to Dashboard, AI Vendor Directory, and Reports. */
-const BUYER_VIEWER_ALLOWED_PATHS = ["/", "/dashboard", "/vendor-directory", "/reports"];
+const BUYER_VIEWER_ALLOWED_PATHS = [
+  "/",
+  "/account",
+  "/dashboard",
+  "/vendor-directory",
+  "/reports",
+];
 
 function isPathAllowedForBuyerViewer(path: string): boolean {
   if (BUYER_VIEWER_ALLOWED_PATHS.includes(path)) return true;
@@ -204,7 +216,7 @@ function isPathAllowedForBuyerViewer(path: string): boolean {
  *   (/vendorSelfAttestation) is blocked so they cannot add or edit attestations. On the
  *   attestation details page they get view-only UI (handled in VendorAttestationDetails).
  * - Buyer Viewer: view-only for Dashboard, AI Vendor Directory, and Reports only (no Assessments, Risk Mapping, User Management).
- * - For paths in PATH_USER_ROLE_RESTRICTIONS (e.g. /user-management), user must be in allowed list.
+ * - For paths in PATH_USER_ROLE_RESTRICTIONS (e.g. /userManagement), user must be in the allowed list.
  */
 export function isPathAllowedForUserRole(
   path: string,

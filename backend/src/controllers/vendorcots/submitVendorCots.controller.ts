@@ -15,9 +15,19 @@ import {
 /** Persisted under fullReport.appendix: catalog rows used to generate the assessment. */
 function appendixCatalogRisksAndMitigations(
   top5: Top5RisksWithMitigations | null,
-): Array<{ risk_id: string; mitigation_action_names: string[] }> | undefined {
+): Array<{
+  risk_id: string;
+  risk_domain?: string;
+  risk_title?: string;
+  mitigation_action_names: string[];
+}> | undefined {
   if (!top5?.top5Risks?.length) return undefined;
-  const items: Array<{ risk_id: string; mitigation_action_names: string[] }> = [];
+  const items: Array<{
+    risk_id: string;
+    risk_domain?: string;
+    risk_title?: string;
+    mitigation_action_names: string[];
+  }> = [];
   for (const r of top5.top5Risks) {
     const rid = String(r.risk_id ?? "").trim();
     if (!rid) continue;
@@ -29,24 +39,52 @@ function appendixCatalogRisksAndMitigations(
           .filter(Boolean),
       ),
     ];
-    items.push({ risk_id: rid, mitigation_action_names: names });
+    const riskDomain = String(r.domains ?? "").trim();
+    const riskTitle = String(r.risk_title ?? "").trim();
+    items.push({
+      risk_id: rid,
+      ...(riskDomain ? { risk_domain: riskDomain } : {}),
+      ...(riskTitle ? { risk_title: riskTitle } : {}),
+      mitigation_action_names: names,
+    });
   }
   return items.length ? items : undefined;
 }
-/** Persisted under fullReport.appendix: flat rows of risk_id + mitigation_action_name used to generate the assessment. */
+/** Persisted under fullReport.appendix: flat rows for report appendix table (risk id, domain, mitigation id + name). */
 function appendixRiskMitigationActions(
   top5: Top5RisksWithMitigations | null,
-): Array<{ risk_id: string; mitigation_action_name: string }> | undefined {
+): Array<{
+  risk_id: string;
+  risk_domain?: string;
+  risk_title?: string;
+  mitigation_action_id: string;
+  mitigation_action_name: string;
+}> | undefined {
   if (!top5?.top5Risks?.length) return undefined;
-  const items: Array<{ risk_id: string; mitigation_action_name: string }> = [];
+  const items: Array<{
+    risk_id: string;
+    risk_domain?: string;
+    risk_title?: string;
+    mitigation_action_id: string;
+    mitigation_action_name: string;
+  }> = [];
   for (const r of top5.top5Risks) {
     const rid = String(r.risk_id ?? "").trim();
     if (!rid) continue;
+    const riskDomain = String(r.domains ?? "").trim();
+    const riskTitle = String(r.risk_title ?? "").trim();
     const mids = top5.mitigationsByRiskId[rid] ?? [];
     for (const m of mids) {
       const name = String(m.mitigation_action_name ?? "").trim();
       if (!name) continue;
-      items.push({ risk_id: rid, mitigation_action_name: name });
+      const mid = String(m.mitigation_action_id ?? "").trim();
+      items.push({
+        risk_id: rid,
+        ...(riskDomain ? { risk_domain: riskDomain } : {}),
+        ...(riskTitle ? { risk_title: riskTitle } : {}),
+        mitigation_action_id: mid,
+        mitigation_action_name: name,
+      });
     }
   }
   return items.length ? items : undefined;

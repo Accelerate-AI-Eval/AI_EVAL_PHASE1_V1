@@ -1541,6 +1541,84 @@
 .report_rec_item p { margin: 0 0 0.25rem 0; font-size: 0.875rem; color: #4b5563; line-height: 1.5; }
 .report_rec_timeline { font-size: 0.8125rem; color: #6b7280; }
 
-/* Appendix */
-.report_appendix .report_appendix_line { margin: 0 0 0.35rem 0; font-size: 0.9375rem; }
-.report_appendix_sources { margin: 0.5rem 0 0 1.25rem; padding: 0; font-size: 0.875rem; color: #6b7280; }
+/* Appendix — glossary layout (bold term, body on next line) */
+.report_appendix_glossary {
+  list-style: disc;
+  margin: 0.5rem 0 0 0;
+  padding: 0 0 0 1.25rem;
+  box-sizing: border-box;
+}
+
+.report_appendix_glossary > li {
+  margin: 0 0 1.35rem 0;
+  padding: 0;
+}
+
+.report_appendix_glossary > li:last-child {
+  margin-bottom: 0;
+}
+
+.report_appendix_term {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.4rem 0;
+  line-height: 1.35;
+}
+
+.report_appendix_def {
+  margin: 0;
+  padding: 0;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.report_appendix_sublist {
+  list-style: disc;
+  margin: 0.25rem 0 0 0;
+  padding: 0 0 0 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.report_appendix_sublist li {
+  margin: 0 0 0.4rem 0;
+}
+
+.report_appendix_sublist li:last-child {
+  margin-bottom: 0;
+}
+
+.report_appendix_table_heading {
+  margin: 1.5rem 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.report_appendix_table_wrap {
+  margin-top: 0;
+}
+
+.report_appendix_risk_table th:first-child,
+.report_appendix_risk_table td:first-child {
+  white-space: nowrap;
+}
+
+/* Legacy appendix classes (if used elsewhere) */
+.report_appendix .report_appendix_line {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.9375rem;
+}
+
+.report_appendix_sources {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}

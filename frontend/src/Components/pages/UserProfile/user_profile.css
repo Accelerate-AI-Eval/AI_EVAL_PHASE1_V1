@@ -332,6 +332,15 @@ select.settings_input:not([disabled]) {
   animation: auth-spin 0.8s linear infinite;
 }
 
+.my_account_onboarding_sections {
+  margin-top: 1.25rem;
+}
+
+.my_account_onboarding_notice {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
 /* Profile modal: label + input sections */
 .profile_form_sections {
   display: flex;
@@ -400,3 +409,4 @@ select.settings_input:not([disabled]) {
 .user_popup ul li:last-child svg {
   color: #d9534f;
 } */
+

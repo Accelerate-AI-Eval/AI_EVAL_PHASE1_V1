@@ -13,6 +13,7 @@ import Goverance from "./Components/pages/Goverance/Goverance";
 import { SalesEnablement } from "./Components/pages/SalesEnablement/SalesEnablement";
 import EvidenceLibrary from "./Components/pages/EvidenceLibrary/EvidenceLibrary";
 import UserManagement from "./Components/pages/UserManagement/UserManagement";
+import MyAccount from "./Components/pages/MyAccount/MyAccount";
 import { DirectoryListing } from "./Components/pages/DirectoryListing/DirectoryListing";
 import Reports from "./Components/pages/Reports/Reports";
 import ReportDetail from "./Components/pages/Reports/ReportDetail";
@@ -70,10 +71,10 @@ function App() {
                   element={<BuyerVendorRiskReport />}
                 />
                 <Route path="/vendor-directory" element={<VendorDirectory />} />
-                <Route path="/my-vendor" element={<MyVendors />} />
+                <Route path="/riskMappings" element={<MyVendors />} />
                 <Route path="/security_center" element={<Compilance />} />
                 <Route path="/governance" element={<Goverance />} />
-                <Route path="/sales-enablement" element={<SalesEnablement />} />
+                <Route path="/salesEnablement" element={<SalesEnablement />} />
                 <Route path="/evidence-library" element={<EvidenceLibrary />} />
                 <Route
                   path="/product_profile"
@@ -86,7 +87,8 @@ function App() {
                   path="/attestation_details"
                   element={<VendorAttestationDetails />}
                 />
-                <Route path="/user-management" element={<UserManagement />} />
+                <Route path="/userManagement" element={<UserManagement />} />
+                <Route path="/account" element={<MyAccount />} />
                 <Route path="*" element={<Navigate to="/pageNotFound" replace />} />
               </Route>
             </Route>

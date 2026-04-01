@@ -4,6 +4,7 @@ import {
   getTop5RisksWithMitigations,
   formatTop5RisksForPrompt,
 } from "../../services/getTop5RisksFromAssessmentContext.js";
+import { calculateBuyerImplementationRiskScore } from "../../services/buyerImplementationRiskScore.js";
 
 const REGION = process.env.AWS_DEFAULT_REGION || "us-east-1";
 const MODEL_ID = process.env.BEDROCK_MODEL_ID || "anthropic.claude-3-sonnet-20240229-v1:0";
@@ -55,6 +56,11 @@ export type CapabilityGapsByVendor = {
 export type BuyerVendorRiskReport = {
   generatedAt: string;
   overallRiskScore: number;
+  implementationRiskScore?: number;
+  implementationRiskClassification?: string;
+  implementationRiskDecision?: string;
+  implementationRiskRecommendedAction?: string;
+  implementationRiskBreakdown?: Record<string, unknown>;
   recommendationLabel: string;
   executiveSummary: string;
   keyStrengths: string[];
@@ -643,10 +649,35 @@ function normalizeReport(
   const comparisonMatrix = parseComparisonMatrix(raw.comparisonMatrix) ?? defaults.comparisonMatrix;
   const capabilityGapsByVendor = parseCapabilityGaps(raw.capabilityGapsByVendor) ?? defaults.capabilityGapsByVendor;
   const recommendationSummary = parseRecommendationSummary(raw.recommendationSummary) ?? defaults.recommendationSummary;
+  const implementationRiskScoreRaw = Number(raw.implementationRiskScore);
+  const implementationRiskScore = Number.isFinite(implementationRiskScoreRaw)
+    ? Math.min(100, Math.max(0, Number(implementationRiskScoreRaw.toFixed(2))))
+    : undefined;
+  const implementationRiskClassification =
+    raw.implementationRiskClassification != null
+      ? String(raw.implementationRiskClassification).slice(0, 120)
+      : undefined;
+  const implementationRiskDecision =
+    raw.implementationRiskDecision != null
+      ? String(raw.implementationRiskDecision).slice(0, 120)
+      : undefined;
+  const implementationRiskRecommendedAction =
+    raw.implementationRiskRecommendedAction != null
+      ? String(raw.implementationRiskRecommendedAction).slice(0, 500)
+      : undefined;
+  const implementationRiskBreakdown =
+    raw.implementationRiskBreakdown != null && typeof raw.implementationRiskBreakdown === "object"
+      ? (raw.implementationRiskBreakdown as Record<string, unknown>)
+      : undefined;
 
   return {
     generatedAt: new Date().toISOString(),
     overallRiskScore,
+    implementationRiskScore,
+    implementationRiskClassification,
+    implementationRiskDecision,
+    implementationRiskRecommendedAction,
+    implementationRiskBreakdown,
     recommendationLabel: String(raw.recommendationLabel ?? fb.recommendationLabel).slice(0, 200),
     executiveSummary,
     keyStrengths,
@@ -690,6 +721,12 @@ export async function generateBuyerVendorRiskReport(
   productName: string,
 ): Promise<BuyerVendorRiskReport> {
   const hasAttestation = attestationRow != null;
+  const implementationRisk = calculateBuyerImplementationRiskScore(
+    buyerPayload,
+    attestationRow,
+    vendorName,
+    productName,
+  );
   const attestationSlice: Record<string, unknown> = attestationRow
     ? {
         product_name: attestationRow.product_name,
@@ -729,11 +766,29 @@ export async function generateBuyerVendorRiskReport(
   try {
     const rawText = await invokeModel(userPrompt);
     const parsed = extractJsonObject(rawText);
-    if (parsed) return normalizeReport(parsed, vendorName, productName, hasAttestation);
+    if (parsed) {
+      const normalized = normalizeReport(parsed, vendorName, productName, hasAttestation);
+      return {
+        ...normalized,
+        implementationRiskScore: implementationRisk.implementationRiskScore,
+        implementationRiskClassification: implementationRisk.classification,
+        implementationRiskDecision: implementationRisk.decision,
+        implementationRiskRecommendedAction: implementationRisk.recommendedAction,
+        implementationRiskBreakdown: implementationRisk.breakdown,
+      };
+    }
   } catch (e) {
     console.error("generateBuyerVendorRiskReport LLM error:", e);
   }
-  return buildFallbackReport(vendorName, productName, hasAttestation);
+  const fallback = buildFallbackReport(vendorName, productName, hasAttestation);
+  return {
+    ...fallback,
+    implementationRiskScore: implementationRisk.implementationRiskScore,
+    implementationRiskClassification: implementationRisk.classification,
+    implementationRiskDecision: implementationRisk.decision,
+    implementationRiskRecommendedAction: implementationRisk.recommendedAction,
+    implementationRiskBreakdown: implementationRisk.breakdown,
+  };
 }
 
 export type BuyerReportEnrichContext = {

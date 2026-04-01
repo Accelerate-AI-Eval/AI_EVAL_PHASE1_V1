@@ -29,6 +29,8 @@ export interface CustomerRiskReportItem {
   attestationExpiryAt?: string | null;
   /** Buyer vendor risk reports use buyer-vendor-risk-report route. */
   source?: "customer" | "buyer_vendor_risk";
+  /** Buyer complete report: IRS from assess-3 formula (lower is safer). */
+  implementationRiskScore?: number | null;
 }
 
 type TabId = "assessment" | "general" | "archived";
@@ -176,6 +178,7 @@ function Reports() {
                 expiryAt?: string | null;
                 attestationExpiryAt?: string | null;
                 source: string;
+                implementationRiskScore?: number | null;
               }) => ({
                 id: r.id,
                 assessmentId: r.assessmentId,
@@ -184,6 +187,10 @@ function Reports() {
                 expiryAt: r.expiryAt ?? null,
                 attestationExpiryAt: r.attestationExpiryAt ?? null,
                 source: "buyer_vendor_risk" as const,
+                implementationRiskScore:
+                  r.implementationRiskScore != null && Number.isFinite(Number(r.implementationRiskScore))
+                    ? Number(r.implementationRiskScore)
+                    : null,
               }),
             )
           : [];

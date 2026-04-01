@@ -17,86 +17,14 @@ import { ReportsPagination } from "../Reports/ReportsPagination";
 // import { buildFormStateFromApi } from "../../utils/vendorAttestationState";
 import { buildFormStateFromApi } from "../../../utils/vendorAttestationState";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
+import {
+  buildOnboardingFields,
+  formatOnboardingDate,
+  formatPreviewValue,
+} from "../../../utils/orgOnboardingDisplay";
 import { Landmark, Plus, User, FileCheck, ClipboardList, Eye, CircleX, Search, FileText } from "lucide-react";
 import Button from "../../UI/Button";
 import Breadcrumbs from "../../UI/Breadcrumbs";
-
-/** Format sector object to readable string for preview */
-function formatSectorForPreview(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const sectorMap = {
-    "Public Sector": value.public_sector,
-    "Private Sector": value.private_sector,
-    "Non-Profit Sector": value.non_profit_sector,
-  };
-  const parts = [];
-  Object.entries(sectorMap).forEach(([label, values]) => {
-    if (Array.isArray(values) && values.length > 0) {
-      parts.push(`${label}: ${values.join(", ")}`);
-    }
-  });
-  return parts.length > 0 ? parts.join("; ") : null;
-}
-
-function formatPreviewValue(value, label) {
-  if (value === null || value === undefined || value === "") {
-    return <span className="vendor_preview_na">—</span>;
-  }
-  if (Array.isArray(value)) {
-    return value.length ? value.join(", ") : <span className="vendor_preview_na">—</span>;
-  }
-  if (typeof value === "object") {
-    const sectorText = formatSectorForPreview(value);
-    if (sectorText !== null) {
-      return sectorText;
-    }
-    return (
-      <ul className="vendor_preview_nested_list">
-        {Object.entries(value).map(([k, vals]) => (
-          <li key={k}>
-            <span className="vendor_preview_nested_label">{k}:</span>{" "}
-            {Array.isArray(vals) ? vals.join(", ") : String(vals)}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  let str = String(value);
-  if (str === "[object Object]") {
-    return <span className="vendor_preview_na">—</span>;
-  }
-  if (label?.toLowerCase().includes("sector") && str.trim().startsWith("{")) {
-    try {
-      const parsed = JSON.parse(str);
-      const sectorText = formatSectorForPreview(parsed);
-      if (sectorText !== null) return sectorText;
-    } catch {
-      /* use str as-is */
-    }
-  }
-  if (label?.toLowerCase().includes("email")) {
-    return (
-      <a href={`mailto:${str}`} className="vendor_preview_link">
-        {str}
-      </a>
-    );
-  }
-  if (label?.toLowerCase().includes("website")) {
-    const href = str.startsWith("http") ? str : `https://${str}`;
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="vendor_preview_link">
-        {str}
-      </a>
-    );
-  }
-  return str;
-}
-
-function formatOnboardingDate(isoString) {
-  if (!isoString) return null;
-  const s = formatDateDDMMMYYYY(isoString);
-  return s === "—" ? null : s;
-}
 
 /** Helpers for org assessment cards (same logic as Assessments page). */
 function isOrgAssessmentExpired(row) {
@@ -289,33 +217,6 @@ const Organizations = () => {
     } finally {
       setAttestationsLoading(false);
     }
-  };
-
-  const formatLabel = (key) =>
-    key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (s) => s.toUpperCase())
-      .replace(/_/g, " ")
-      .trim();
-
-  const SKIP_ONBOARDING_KEYS = [
-    "id",
-    "createdAt",
-    "updatedAt",
-    "userId",
-    "organizationId",
-    "completedBy",
-    "completedAt",
-  ];
-
-  const buildOnboardingFields = (data) => {
-    if (!data || typeof data !== "object") return [];
-    return Object.keys(data)
-      .filter((k) => !SKIP_ONBOARDING_KEYS.includes(k))
-      .map((key) => ({
-        label: formatLabel(key),
-        value: (obj) => obj[key],
-      }));
   };
 
   const orgIdForFetch = previewOrg ? String(previewOrg.id ?? previewOrg.organizationId ?? "").trim() : "";

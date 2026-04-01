@@ -1,7 +1,7 @@
 import { ShieldAlert } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
-import HeaderEachPage from "../../UI/HeaderEachPage";
 import Select from "../../UI/Select";
+import "./MyVendors.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
 
@@ -53,13 +53,95 @@ type DbMatchedRisk = {
   risk_id?: string | null;
   risk_title?: string | null;
   description?: string | null;
+  domains?: string | null;
 };
 
 type DbMitigation = {
   mitigation_action_name?: string;
   mitigation_definition?: string | null;
   mitigation_category?: string;
+  mitigation_action_id?: string;
+  mitigation_summary_points?: string[];
 };
+
+type FrameworkMappingRow = {
+  framework?: unknown;
+  coverage?: unknown;
+  controls?: unknown;
+  notes?: unknown;
+};
+
+function readIsVendorPortal(): boolean {
+  return (sessionStorage.getItem("systemRole") ?? "").trim().toLowerCase() === "vendor";
+}
+
+/** Vendor complete report: merge catalog appendix into dbTop5 rows for titles/descriptions. */
+function vendorReportToRiskMappings(storedReport: Record<string, unknown>): {
+  top5Risks: DbMatchedRisk[];
+  mitigationsByRiskId: Record<string, DbMitigation[]>;
+} {
+  const dbTop = storedReport.dbTop5Risks as
+    | { top5Risks?: DbMatchedRisk[]; mitigationsByRiskId?: Record<string, DbMitigation[]> }
+    | undefined;
+  const rawTop = Array.isArray(dbTop?.top5Risks) ? dbTop!.top5Risks! : [];
+  const mitigationsByRiskId =
+    dbTop?.mitigationsByRiskId && typeof dbTop.mitigationsByRiskId === "object"
+      ? { ...dbTop.mitigationsByRiskId }
+      : {};
+
+  const generated = storedReport.generatedAnalysis as { fullReport?: Record<string, unknown> } | undefined;
+  const appendix = generated?.fullReport?.appendix as Record<string, unknown> | undefined;
+  const catalog = Array.isArray(appendix?.catalogRisksAndMitigations)
+    ? (appendix.catalogRisksAndMitigations as Array<{
+        risk_id?: string;
+        risk_title?: string;
+        risk_domain?: string;
+        mitigation_action_names?: string[];
+      }>)
+    : [];
+  const byRiskId = new Map(
+    catalog.map((c) => [String(c.risk_id ?? "").trim(), c] as const).filter(([id]) => id !== ""),
+  );
+
+  const top5Risks = rawTop.map((r) => {
+    const rid = String(r.risk_id ?? "").trim();
+    const cat = rid ? byRiskId.get(rid) : undefined;
+    const summaryPts = Array.isArray((r as { summary_points?: unknown }).summary_points)
+      ? ((r as { summary_points: string[] }).summary_points ?? []).filter((s) => String(s).trim())
+      : [];
+    const title =
+      String(r.risk_title ?? cat?.risk_title ?? "").trim() ||
+      (summaryPts[0] ? String(summaryPts[0]) : "") ||
+      rid ||
+      "";
+    const descFromSummary = summaryPts.length > 1 ? summaryPts.slice(1).join(" ") : summaryPts[0] ?? "";
+    const description =
+      String(r.description ?? "").trim() ||
+      descFromSummary ||
+      (cat?.risk_domain ? `Domain: ${cat.risk_domain}` : "");
+    return {
+      ...r,
+      risk_id: rid || r.risk_id,
+      risk_title: title || r.risk_title,
+      description: description || r.description,
+      domains: (r as { domains?: string }).domains ?? cat?.risk_domain,
+    } as DbMatchedRisk;
+  });
+
+  return { top5Risks, mitigationsByRiskId };
+}
+
+function vendorReportFrameworkRows(storedReport: Record<string, unknown>): FrameworkMappingRow[] {
+  const generated = storedReport.generatedAnalysis as { fullReport?: Record<string, unknown> } | undefined;
+  const rows = generated?.fullReport?.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
+  return Array.isArray(rows?.rows) ? rows.rows : [];
+}
+
+function formatFrameworkCell(v: unknown): string {
+  if (v == null) return "—";
+  const s = String(v).trim();
+  return s || "—";
+}
 
 function isAssessmentExpired(row: AssessmentRow): boolean {
   const expiryAt = row.expiryAt;
@@ -158,9 +240,13 @@ function buildRiskItems(
         mitigations.length > 0
           ? mitigations
               .map((m) => {
+                const pts = Array.isArray(m.mitigation_summary_points)
+                  ? m.mitigation_summary_points!.map((p) => String(p).trim()).filter(Boolean).join("; ")
+                  : "";
                 const name = String(m.mitigation_action_name ?? "").trim();
                 const def = String(m.mitigation_definition ?? "").trim();
-                return `${name}${def ? ` - ${def}` : ""}`.trim();
+                const base = `${name}${def ? ` - ${def}` : ""}`.trim();
+                return pts || base;
               })
               .filter(Boolean)
               .join("; ")
@@ -199,15 +285,48 @@ function buildRiskItems(
 }
 
 const MyVendors = () => {
+  const [isVendorPortal, setIsVendorPortal] = useState(() => readIsVendorPortal());
   const [assessments, setAssessments] = useState<AssessmentRow[]>([]);
+  const [vendorAssessmentIdsWithReport, setVendorAssessmentIdsWithReport] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
   const [activeTab, setActiveTab] = useState<RiskTab>("risk_register");
   const [assessmentDetail, setAssessmentDetail] = useState<AssessmentDetail | null>(null);
   const [completeReportRiskAnalysis, setCompleteReportRiskAnalysis] = useState<CompleteReportRiskDomain[]>([]);
   const [dbTop5Risks, setDbTop5Risks] = useState<DbMatchedRisk[]>([]);
   const [dbMitigationsByRiskId, setDbMitigationsByRiskId] = useState<Record<string, DbMitigation[]>>({});
+  const [vendorFrameworkRows, setVendorFrameworkRows] = useState<FrameworkMappingRow[]>([]);
+
+  useEffect(() => {
+    setIsVendorPortal(readIsVendorPortal());
+  }, []);
+
+  useEffect(() => {
+    document.title = "AI Eval | Risk Mapping";
+    return () => {
+      document.title = "AI Eval";
+    };
+  }, []);
 
   const completedActiveAssessmentOptions = useMemo(() => {
+    if (isVendorPortal) {
+      const rows = assessments.filter((a) => {
+        const status = String(a.status ?? "").toLowerCase().trim();
+        const type = String(a.type ?? "").toLowerCase().trim();
+        const id = String(a.assessmentId);
+        return (
+          type === "cots_vendor" &&
+          status !== "draft" &&
+          !isAssessmentExpired(a) &&
+          vendorAssessmentIdsWithReport.has(id)
+        );
+      });
+      return rows.map((a) => ({
+        value: String(a.assessmentId),
+        label: getAssessmentLabel(a),
+      }));
+    }
     const rows = assessments.filter((a) => {
       const status = String(a.status ?? "").toLowerCase().trim();
       const type = String(a.type ?? "").toLowerCase().trim();
@@ -217,7 +336,7 @@ const MyVendors = () => {
       value: String(a.assessmentId),
       label: getAssessmentLabel(a),
     }));
-  }, [assessments]);
+  }, [assessments, isVendorPortal, vendorAssessmentIdsWithReport]);
 
   useEffect(() => {
     const token = sessionStorage.getItem("bearerToken");
@@ -234,18 +353,122 @@ const MyVendors = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedAssessmentId && completedActiveAssessmentOptions.length > 0) {
+    const token = sessionStorage.getItem("bearerToken");
+    if (!token || !isVendorPortal) {
+      setVendorAssessmentIdsWithReport(new Set());
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`${BASE_URL}/customerRiskReports`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        const reports = Array.isArray(data?.data?.reports) ? data.data.reports : [];
+        const ids = new Set<string>();
+        for (const r of reports) {
+          const aid = r?.assessmentId != null ? String(r.assessmentId).trim() : "";
+          if (aid) ids.add(aid);
+        }
+        setVendorAssessmentIdsWithReport(ids);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setVendorAssessmentIdsWithReport(new Set());
+      });
+    return () => controller.abort();
+  }, [isVendorPortal]);
+
+  useEffect(() => {
+    if (isVendorPortal && activeTab === "gap_analysis") {
+      setActiveTab("risk_register");
+    }
+  }, [isVendorPortal, activeTab]);
+
+  useEffect(() => {
+    if (completedActiveAssessmentOptions.length === 0) {
+      setSelectedAssessmentId("");
+      return;
+    }
+    const valid = completedActiveAssessmentOptions.some((o) => o.value === selectedAssessmentId);
+    if (!selectedAssessmentId || !valid) {
       setSelectedAssessmentId(completedActiveAssessmentOptions[0].value);
     }
   }, [selectedAssessmentId, completedActiveAssessmentOptions]);
 
   useEffect(() => {
+    if (!isVendorPortal) return;
     const token = sessionStorage.getItem("bearerToken");
     if (!token || !selectedAssessmentId) {
       setAssessmentDetail(null);
       setCompleteReportRiskAnalysis([]);
       setDbTop5Risks([]);
       setDbMitigationsByRiskId({});
+      setVendorFrameworkRows([]);
+      return;
+    }
+    const currentAssessmentId = selectedAssessmentId;
+    const controller = new AbortController();
+    fetch(
+      `${BASE_URL}/customerRiskReports?assessmentId=${encodeURIComponent(currentAssessmentId)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      },
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        const reports = Array.isArray(data?.data?.reports) ? data.data.reports : [];
+        const first = reports[0];
+        const blob = first?.report != null && typeof first.report === "object" ? (first.report as Record<string, unknown>) : null;
+        if (!blob) {
+          setAssessmentDetail({
+            assessmentId: currentAssessmentId,
+            assessmentLabel: completedActiveAssessmentOptions.find((o) => o.value === currentAssessmentId)?.label,
+          });
+          setCompleteReportRiskAnalysis([]);
+          setDbTop5Risks([]);
+          setDbMitigationsByRiskId({});
+          setVendorFrameworkRows([]);
+          return;
+        }
+        const { top5Risks, mitigationsByRiskId } = vendorReportToRiskMappings(blob);
+        setCompleteReportRiskAnalysis([]);
+        setDbTop5Risks(top5Risks);
+        setDbMitigationsByRiskId(mitigationsByRiskId);
+        setVendorFrameworkRows(vendorReportFrameworkRows(blob));
+        const createdAt = first?.createdAt != null ? String(first.createdAt) : undefined;
+        setAssessmentDetail({
+          assessmentId: currentAssessmentId,
+          assessmentLabel: completedActiveAssessmentOptions.find((o) => o.value === currentAssessmentId)?.label,
+          vendorName: String(blob.customerOrganizationName ?? "").trim() || undefined,
+          productName: undefined,
+          identifiedRisks: blob.identifiedRisks,
+          riskMitigation: blob.riskMitigation,
+          riskDomainScores: blob.riskDomainScores,
+          updatedAt: createdAt,
+        });
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setAssessmentDetail(null);
+        setCompleteReportRiskAnalysis([]);
+        setDbTop5Risks([]);
+        setDbMitigationsByRiskId({});
+        setVendorFrameworkRows([]);
+      });
+    return () => controller.abort();
+  }, [selectedAssessmentId, isVendorPortal, completedActiveAssessmentOptions]);
+
+  useEffect(() => {
+    if (isVendorPortal) return;
+    const token = sessionStorage.getItem("bearerToken");
+    if (!token || !selectedAssessmentId) {
+      setAssessmentDetail(null);
+      setCompleteReportRiskAnalysis([]);
       return;
     }
     const currentAssessmentId = selectedAssessmentId;
@@ -287,9 +510,10 @@ const MyVendors = () => {
         setCompleteReportRiskAnalysis([]);
       });
     return () => controller.abort();
-  }, [selectedAssessmentId, completedActiveAssessmentOptions]);
+  }, [selectedAssessmentId, completedActiveAssessmentOptions, isVendorPortal]);
 
   useEffect(() => {
+    if (isVendorPortal) return;
     const token = sessionStorage.getItem("bearerToken");
     if (!token || !selectedAssessmentId) {
       setDbTop5Risks([]);
@@ -324,7 +548,7 @@ const MyVendors = () => {
         setDbMitigationsByRiskId({});
       });
     return () => controller.abort();
-  }, [selectedAssessmentId]);
+  }, [selectedAssessmentId, isVendorPortal]);
 
   const riskItems = useMemo(
     () => buildRiskItems(assessmentDetail, completeReportRiskAnalysis, dbTop5Risks, dbMitigationsByRiskId),
@@ -339,182 +563,136 @@ const MyVendors = () => {
   }, [riskItems]);
 
   return (
-    <>
-      <HeaderEachPage icon=<ShieldAlert/> main_text="Risk & Controls" sub_text="Risk register, framework mappings, and gap analysis per assessment"/>
-      <div className="sec_user_page org_settings_page" style={{ paddingTop: 0 }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <div style={{ minWidth: 320 }}>
+    <div className="sec_user_page org_settings_page">
+      <div className="org_settings_header page_header_align">
+        <div className="risk_mapping_header_row">
+          <div className="org_settings_headers page_header_row risk_mapping_header_left">
+            <span className="icon_size_header" aria-hidden>
+              <ShieldAlert size={24} className="header_icon_svg" />
+            </span>
+            <div className="page_header_title_block">
+              <h1 className="org_settings_title page_header_title">Risk & Controls</h1>
+              <p className="org_settings_subtitle page_header_subtitle">
+                {isVendorPortal
+                  ? "Risk register and framework mapping from your generated analysis reports"
+                  : "Risk register, framework mappings, and gap analysis per assessment"}
+              </p>
+            </div>
+          </div>
+          <div className="risk_mapping_header_select">
             <Select
               id="risk_mapping_assessment"
               name="risk_mapping_assessment"
-              labelName="Assessment"
+              ariaLabel="Assessment"
               value={selectedAssessmentId}
-              default_option="Select completed active assessment"
+              default_option={
+                isVendorPortal
+                  ? "Select assessment with a complete report"
+                  : "Select completed active assessment"
+              }
               options={completedActiveAssessmentOptions}
               onChange={(e) => setSelectedAssessmentId(e.target.value)}
             />
           </div>
         </div>
-        <div
-          role="tablist"
-          aria-label="Risk mapping views"
-          style={{
-            marginTop: "1rem",
-            display: "flex",
-            gap: "0.5rem",
-            borderBottom: "1px solid #e5e7eb",
-            paddingBottom: "0.5rem",
-          }}
+      </div>
+      <div className="page_tabs" role="tablist" aria-label="Risk mapping views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "risk_register"}
+          onClick={() => setActiveTab("risk_register")}
+          className={`page_tab ${activeTab === "risk_register" ? "page_tab_active" : ""}`}
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "risk_register"}
-            onClick={() => setActiveTab("risk_register")}
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              padding: "0.5rem 0.8rem",
-              background: activeTab === "risk_register" ? "#eff6ff" : "#ffffff",
-              color: activeTab === "risk_register" ? "#1d4ed8" : "#374151",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Risk Register
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "framework_mappings"}
-            onClick={() => setActiveTab("framework_mappings")}
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              padding: "0.5rem 0.8rem",
-              background: activeTab === "framework_mappings" ? "#eff6ff" : "#ffffff",
-              color: activeTab === "framework_mappings" ? "#1d4ed8" : "#374151",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Framework Mappings
-          </button>
+          Risk Register
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "framework_mappings"}
+          onClick={() => setActiveTab("framework_mappings")}
+          className={`page_tab ${activeTab === "framework_mappings" ? "page_tab_active" : ""}`}
+        >
+          Framework Mappings
+        </button>
+        {!isVendorPortal ? (
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === "gap_analysis"}
             onClick={() => setActiveTab("gap_analysis")}
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              padding: "0.5rem 0.8rem",
-              background: activeTab === "gap_analysis" ? "#eff6ff" : "#ffffff",
-              color: activeTab === "gap_analysis" ? "#1d4ed8" : "#374151",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            className={`page_tab ${activeTab === "gap_analysis" ? "page_tab_active" : ""}`}
           >
             Gap Analysis
           </button>
-        </div>
-        {activeTab === "risk_register" ? (
-          <>
-            <section
-              style={{
-                marginTop: "1rem",
-                display: "grid",
-                gridTemplateColumns: "repeat(4, minmax(180px, 1fr))",
-                gap: "0.75rem",
-              }}
-            >
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "0.9rem" }}>
-                <p style={{ margin: 0, fontSize: 13, color: "#4b5563", fontWeight: 600 }}>Total Risks</p>
-                <p style={{ margin: "0.35rem 0 0", fontSize: 32, fontWeight: 700, color: "#111827", lineHeight: 1.1 }}>{riskStats.total}</p>
+        ) : null}
+      </div>
+      {activeTab === "risk_register" ? (
+        <>
+            <section className="risk_mapping_stats_grid">
+              <div className="risk_mapping_stat_card">
+                <p className="risk_mapping_stat_label">Total Risks</p>
+                <p className="risk_mapping_stat_value">{riskStats.total}</p>
               </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "0.9rem" }}>
-                <p style={{ margin: 0, fontSize: 13, color: "#b91c1c", fontWeight: 600 }}>Critical/High</p>
-                <p style={{ margin: "0.35rem 0 0", fontSize: 32, fontWeight: 700, color: "#b91c1c", lineHeight: 1.1 }}>{riskStats.criticalHigh}</p>
+              <div className="risk_mapping_stat_card">
+                <p className="risk_mapping_stat_label risk_mapping_stat_label_critical">Critical/High</p>
+                <p className="risk_mapping_stat_value risk_mapping_stat_value_critical">{riskStats.criticalHigh}</p>
               </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "0.9rem" }}>
-                <p style={{ margin: 0, fontSize: 13, color: "#059669", fontWeight: 600 }}>Mitigated</p>
-                <p style={{ margin: "0.35rem 0 0", fontSize: 32, fontWeight: 700, color: "#059669", lineHeight: 1.1 }}>{riskStats.mitigated}</p>
+              <div className="risk_mapping_stat_card">
+                <p className="risk_mapping_stat_label risk_mapping_stat_label_mitigated">Mitigated</p>
+                <p className="risk_mapping_stat_value risk_mapping_stat_value_mitigated">{riskStats.mitigated}</p>
               </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "0.9rem" }}>
-                <p style={{ margin: 0, fontSize: 13, color: "#111827", fontWeight: 600 }}>Open</p>
-                <p style={{ margin: "0.35rem 0 0", fontSize: 32, fontWeight: 700, color: "#d97706", lineHeight: 1.1 }}>{riskStats.open}</p>
+              <div className="risk_mapping_stat_card">
+                <p className="risk_mapping_stat_label risk_mapping_stat_label_open">Open</p>
+                <p className="risk_mapping_stat_value risk_mapping_stat_value_open">{riskStats.open}</p>
               </div>
             </section>
-            <section
-              style={{
-                marginTop: "0.8rem",
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: "12px",
-                padding: "1rem",
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: 20, color: "#111827" }}>
+            <section className="risk_mapping_panel risk_mapping_panel_compact">
+              <h3 className="risk_mapping_panel_title">
                 Risk Register - {assessmentDetail?.assessmentLabel ?? "Selected Assessment"}
               </h3>
-              <p style={{ margin: "0.35rem 0 1rem", color: "#6b7280" }}>
+              <p className="risk_mapping_panel_subtitle">
                 Identified risks, owners, and mitigation status.
               </p>
               {riskItems.length === 0 ? (
-                <p style={{ margin: 0, color: "#6b7280" }}>No identified risks were found for this assessment.</p>
+                <p className="risk_mapping_empty_text">No identified risks were found for this assessment.</p>
               ) : (
-                <div style={{ display: "grid", gap: "0.7rem" }}>
+                <div className="risk_mapping_risk_list">
                   {riskItems.map((risk) => (
-                    <div
-                      key={risk.id}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "10px",
-                        padding: "0.85rem",
-                        background: "#fafafa",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, background: "#f3f4f6", borderRadius: 6, padding: "2px 6px" }}>{risk.id}</span>
+                    <div key={risk.id} className="risk_mapping_risk_card">
+                      <div className="risk_mapping_risk_top">
+                        <div className="risk_mapping_chip_row">
+                          <span className="risk_mapping_chip risk_mapping_chip_id">{risk.id}</span>
                           <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: risk.severity === "critical/high" ? "#1d4ed8" : risk.severity === "medium" ? "#92400e" : "#475569",
-                              background: risk.severity === "critical/high" ? "#dbeafe" : risk.severity === "medium" ? "#fef3c7" : "#e2e8f0",
-                              borderRadius: 6,
-                              padding: "2px 6px",
-                              textTransform: "lowercase",
-                            }}
+                            className={`risk_mapping_chip ${
+                              risk.severity === "critical/high"
+                                ? "risk_mapping_chip_critical"
+                                : risk.severity === "medium"
+                                  ? "risk_mapping_chip_medium"
+                                  : "risk_mapping_chip_low"
+                            }`}
                           >
                             {risk.severity}
                           </span>
                           <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: risk.status === "open" ? "#be123c" : "#047857",
-                              background: risk.status === "open" ? "#ffe4e6" : "#d1fae5",
-                              borderRadius: 6,
-                              padding: "2px 6px",
-                              textTransform: "lowercase",
-                            }}
+                            className={`risk_mapping_chip ${
+                              risk.status === "open" ? "risk_mapping_chip_open" : "risk_mapping_chip_mitigated"
+                            }`}
                           >
                             {risk.status}
                           </span>
                         </div>
-                        <span style={{ fontSize: 12, color: "#6b7280" }}>{risk.date}</span>
+                        <span className="risk_mapping_meta">{risk.date}</span>
                       </div>
-                      <h4 style={{ margin: "0.45rem 0 0.2rem", fontSize: 20, fontWeight: 600, color: "#111827" }}>{risk.title}</h4>
-                      <p style={{ margin: 0, color: "#6b7280" }}>{risk.description}</p>
-                      <div style={{ marginTop: "0.55rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.6rem" }}>
-                        <span style={{ color: "#6b7280", fontSize: 13 }}>{risk.owner}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 120 }}>
-                          <div style={{ height: 6, flex: 1, borderRadius: 999, background: "#dbeafe" }}>
-                            <div style={{ width: `${risk.progressPercent}%`, height: "100%", borderRadius: 999, background: "#2563eb" }} />
+                      <h4 className="risk_mapping_risk_title">{risk.title}</h4>
+                      <p className="risk_mapping_risk_desc">{risk.description}</p>
+                      <div className="risk_mapping_risk_footer">
+                        <span className="risk_mapping_owner">{risk.owner}</span>
+                        <div className="risk_mapping_progress_wrap">
+                          <div className="risk_mapping_progress_track">
+                            <div className="risk_mapping_progress_fill" style={{ width: `${risk.progressPercent}%` }} />
                           </div>
-                          <span style={{ color: "#6b7280", fontSize: 12 }}>{risk.progressPercent}%</span>
+                          <span className="risk_mapping_progress_label">{risk.progressPercent}%</span>
                         </div>
                       </div>
                     </div>
@@ -524,36 +702,57 @@ const MyVendors = () => {
             </section>
           </>
         ) : activeTab === "framework_mappings" ? (
-          <section
-            style={{
-              marginTop: "1rem",
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              padding: "1rem",
-            }}
-          >
-            <p style={{ margin: 0, color: "#4b5563" }}>
-              Framework Mappings view for the selected assessment.
-            </p>
+          <section className="risk_mapping_panel">
+            {isVendorPortal ? (
+              <>
+                <h3 className="risk_mapping_panel_title" style={{ marginBottom: "0.75rem" }}>
+                  Framework mapping — {assessmentDetail?.assessmentLabel ?? "Selected assessment"}
+                </h3>
+                <div className="risk_mapping_table_wrap">
+                  <table className="risk_mapping_table">
+                    <thead>
+                      <tr>
+                        <th>Framework</th>
+                        <th>Coverage</th>
+                        <th>Controls</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendorFrameworkRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="risk_mapping_empty_text">
+                            No framework mapping rows in the complete report for this assessment.
+                          </td>
+                        </tr>
+                      ) : (
+                        vendorFrameworkRows.map((row, i) => (
+                          <tr key={i}>
+                            <td>{formatFrameworkCell(row.framework)}</td>
+                            <td>{formatFrameworkCell(row.coverage)}</td>
+                            <td>{formatFrameworkCell(row.controls)}</td>
+                            <td>{formatFrameworkCell(row.notes)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <p className="risk_mapping_empty_text">
+                Framework Mappings view for the selected assessment.
+              </p>
+            )}
           </section>
         ) : (
-          <section
-            style={{
-              marginTop: "1rem",
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              padding: "1rem",
-            }}
-          >
-            <p style={{ margin: 0, color: "#4b5563" }}>
+          <section className="risk_mapping_panel">
+            <p className="risk_mapping_empty_text">
               Gap Analysis view for the selected assessment.
             </p>
           </section>
         )}
-      </div>
-    </>
+    </div>
   );
 };
 

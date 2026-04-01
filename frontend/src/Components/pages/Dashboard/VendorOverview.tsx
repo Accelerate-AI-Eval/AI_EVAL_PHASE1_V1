@@ -517,7 +517,7 @@ const VendorOverview = () => {
             </span>
           </Link>
           <Link
-            to="/sales-enablement"
+            to="/salesEnablement"
             className="vendor_portal_action_card vendor_portal_action_card_primary"
           >
             <Bot
