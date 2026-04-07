@@ -1,0 +1,1789 @@
+{
+  "framework": {
+    "name": "CMMC v2",
+    "version": "2.0",
+    "description": "Cybersecurity Maturity Model Certification (CMMC)",
+    "sourceDocument": "CMMC-2.0",
+    "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+    "lastVerified": "2024-03-02",
+    "mandatory": false
+  },
+  "controls": [
+    {
+      "controlId": "AC.L1-3.1.1",
+      "title": "Authorized Access Control",
+      "description": "Limit information system access to authorized users, processes acting on behalf of authorized users, or devices (including other information systems).\n• FAR Clause 52.204-21 b.1.i\n• NIST SP 800-171 Rev 2 3.1.1",
+      "implementationGuidance": "Limit information system access to authorized users, processes acting on behalf of authorized users, or devices (including other information systems).\n• FAR Clause 52.204-21 b.1.i\n• NIST SP 800-171 Rev 2 3.1.1",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L1-3.1.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AC.L1-3.1.2",
+      "title": "Transaction & Function Control",
+      "description": "Limit information system access to the types of transactions and functions that authorized users are permitted to execute. \n• FAR Clause 52.204-21 b.1.ii\n• NIST SP 800-171 Rev 2 3.1.2",
+      "implementationGuidance": "Limit information system access to the types of transactions and functions that authorized users are permitted to execute. \n• FAR Clause 52.204-21 b.1.ii\n• NIST SP 800-171 Rev 2 3.1.2",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L1-3.1.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.3",
+      "title": "Control CUI Flow",
+      "description": "Control the flow of CUI in accordance with approved authorizations. \n• NIST SP 800-171 Rev 2 3.1.3",
+      "implementationGuidance": "Control the flow of CUI in accordance with approved authorizations. \n• NIST SP 800-171 Rev 2 3.1.3",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.4",
+      "title": "Separation of Duties",
+      "description": "Separate the duties of individuals to reduce the risk of malevolent activity without collusion.\n• NIST SP 800-171 Rev 2 3.1.4\n",
+      "implementationGuidance": "Separate the duties of individuals to reduce the risk of malevolent activity without collusion.\n• NIST SP 800-171 Rev 2 3.1.4\n",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.5",
+      "title": "Least Privilege",
+      "description": "Employ the principle of least privilege, including for specific security functions and privileged accounts.\n• NIST SP 800-171 Rev 2 3.1.5",
+      "implementationGuidance": "Employ the principle of least privilege, including for specific security functions and privileged accounts.\n• NIST SP 800-171 Rev 2 3.1.5",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.6",
+      "title": "Non-Privileged Account Use",
+      "description": "Use non-privileged accounts or roles when accessing nonsecurity functions.\n• NIST SP 800-171 Rev 2 3.1.6",
+      "implementationGuidance": "Use non-privileged accounts or roles when accessing nonsecurity functions.\n• NIST SP 800-171 Rev 2 3.1.6",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.7",
+      "title": "Privileged Functions",
+      "description": "Prevent non-privileged users from executing privileged functions and capture the execution of such functions in audit logs.\n• NIST SP 800-171 Rev 2 3.1.7",
+      "implementationGuidance": "Prevent non-privileged users from executing privileged functions and capture the execution of such functions in audit logs.\n• NIST SP 800-171 Rev 2 3.1.7",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.8",
+      "title": "Unsuccessful Logon Attempts",
+      "description": "Limit unsuccessful logon attempts. \n• NIST SP 800-171 Rev 2 3.1.8 ",
+      "implementationGuidance": "Limit unsuccessful logon attempts. \n• NIST SP 800-171 Rev 2 3.1.8 ",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.9",
+      "title": "Privacy & Security Notices",
+      "description": "Provide privacy and security notices consistent with applicable CUI rules.\n• NIST SP 800-171 Rev 2 3.1.9",
+      "implementationGuidance": "Provide privacy and security notices consistent with applicable CUI rules.\n• NIST SP 800-171 Rev 2 3.1.9",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.10",
+      "title": "Session Lock",
+      "description": "Use session lock with pattern-hiding displays to prevent access and viewing of data after a period of inactivity. \n• NIST SP 800-171 Rev 2 3.1.10",
+      "implementationGuidance": "Use session lock with pattern-hiding displays to prevent access and viewing of data after a period of inactivity. \n• NIST SP 800-171 Rev 2 3.1.10",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.10",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.11",
+      "title": "Session Termination",
+      "description": "Terminate (automatically) a user session after a defined condition.\n • NIST SP 800-171 Rev 2 3.1.11",
+      "implementationGuidance": "Terminate (automatically) a user session after a defined condition.\n • NIST SP 800-171 Rev 2 3.1.11",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.11",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.12",
+      "title": "Control Remote Access",
+      "description": "Monitor and control remote access sessions.\n• NIST SP 800-171 Rev 2 3.1.12",
+      "implementationGuidance": "Monitor and control remote access sessions.\n• NIST SP 800-171 Rev 2 3.1.12",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.12",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.13",
+      "title": "Remote Access Confidentiality",
+      "description": "Employ cryptographic mechanisms to protect the confidentiality of remote access sessions.\n• NIST SP 800-171 Rev 2 3.1.13",
+      "implementationGuidance": "Employ cryptographic mechanisms to protect the confidentiality of remote access sessions.\n• NIST SP 800-171 Rev 2 3.1.13",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.13",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.14",
+      "title": "Remote Access Routing",
+      "description": "Route remote access via managed access control points. \n• NIST SP 800-171 Rev 2 3.1.14",
+      "implementationGuidance": "Route remote access via managed access control points. \n• NIST SP 800-171 Rev 2 3.1.14",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.14",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.15",
+      "title": "Privileged Remote Access",
+      "description": "Authorize remote execution of privileged commands and remote access to security-relevant information. \n• NIST SP 800-171 Rev 2 3.1.15",
+      "implementationGuidance": "Authorize remote execution of privileged commands and remote access to security-relevant information. \n• NIST SP 800-171 Rev 2 3.1.15",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.15",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.16",
+      "title": "Wireless Access Authorization",
+      "description": "Authorize wireless access prior to allowing such connections.\n • NIST SP 800-171 Rev 2 3.1.16",
+      "implementationGuidance": "Authorize wireless access prior to allowing such connections.\n • NIST SP 800-171 Rev 2 3.1.16",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.16",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.17",
+      "title": "Wireless Access Protection",
+      "description": "Protect wireless access using authentication and encryption. \n• NIST SP 800-171 Rev 2 3.1.17",
+      "implementationGuidance": "Protect wireless access using authentication and encryption. \n• NIST SP 800-171 Rev 2 3.1.17",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.17",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.18",
+      "title": "Mobile Device Connection",
+      "description": "Control connection of mobile devices.\n• NIST SP 800-171 Rev 2 3.1.18",
+      "implementationGuidance": "Control connection of mobile devices.\n• NIST SP 800-171 Rev 2 3.1.18",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.18",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.19",
+      "title": "Encrypt CUI on Mobile",
+      "description": "Encrypt CUI on mobile devices and mobile computing platforms. \n• NIST SP 800-171 Rev 2 3.1.19",
+      "implementationGuidance": "Encrypt CUI on mobile devices and mobile computing platforms. \n• NIST SP 800-171 Rev 2 3.1.19",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.19",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L1-3.1.20",
+      "title": "External Connections",
+      "description": "Verify and control/limit connections to and use of external information systems. \n• FAR Clause 52.204-21 b.1.iii\n• NIST SP 800-171 Rev 2 3.1.20",
+      "implementationGuidance": "Verify and control/limit connections to and use of external information systems. \n• FAR Clause 52.204-21 b.1.iii\n• NIST SP 800-171 Rev 2 3.1.20",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L1-3.1.20",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L2-3.1.21",
+      "title": "Portable Storage Use",
+      "description": "Limit use of portable storage devices on external systems.\n • NIST SP 800-171 Rev 2 3.1.21",
+      "implementationGuidance": "Limit use of portable storage devices on external systems.\n • NIST SP 800-171 Rev 2 3.1.21",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L2-3.1.21",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AC.L1-3.1.22",
+      "title": "Control Public Information",
+      "description": "Control information posted or processed on publicly accessible information systems.\n• FAR Clause 52.204-21 b.1.iv\n• NIST SP 800-171 Rev 2 3.1.22",
+      "implementationGuidance": "Control information posted or processed on publicly accessible information systems.\n• FAR Clause 52.204-21 b.1.iv\n• NIST SP 800-171 Rev 2 3.1.22",
+      "category": "Requirement",
+      "officialControlNumber": "AC.L1-3.1.22",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AT.L2-3.2.1",
+      "title": "Role-Based Risk Awareness",
+      "description": "Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems.\n• NIST SP 800-171 Rev 2 3.2.1\n",
+      "implementationGuidance": "Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems.\n• NIST SP 800-171 Rev 2 3.2.1\n",
+      "category": "Requirement",
+      "officialControlNumber": "AT.L2-3.2.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AT.L2-3.2.2",
+      "title": "Role-Based Training",
+      "description": "Ensure that personnel are trained to carry out their assigned information security-related duties and responsibilities. \n• NIST SP 800-171 Rev 2 3.2.2",
+      "implementationGuidance": "Ensure that personnel are trained to carry out their assigned information security-related duties and responsibilities. \n• NIST SP 800-171 Rev 2 3.2.2",
+      "category": "Requirement",
+      "officialControlNumber": "AT.L2-3.2.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AT.L2-3.2.3",
+      "title": "Insider Threat Awareness",
+      "description": "Provide security awareness training on recognizing and reporting potential indicators of insider threat.\n• NIST SP 800-171 Rev 2 3.2.3",
+      "implementationGuidance": "Provide security awareness training on recognizing and reporting potential indicators of insider threat.\n• NIST SP 800-171 Rev 2 3.2.3",
+      "category": "Requirement",
+      "officialControlNumber": "AT.L2-3.2.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.1",
+      "title": "System Auditing",
+      "description": "Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity. \n• NIST SP 800-171 Rev 2 3.3.1",
+      "implementationGuidance": "Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity. \n• NIST SP 800-171 Rev 2 3.3.1",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.2",
+      "title": "User Accountability",
+      "description": "Ensure that the actions of individual system users can be uniquely traced to those users, so they can be held accountable for their actions.\n • NIST SP 800-171 Rev 2 3.3.2",
+      "implementationGuidance": "Ensure that the actions of individual system users can be uniquely traced to those users, so they can be held accountable for their actions.\n • NIST SP 800-171 Rev 2 3.3.2",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.3",
+      "title": "Event Review",
+      "description": "Review and update logged events.\n• NIST SP 800-171 Rev 2 3.3.3",
+      "implementationGuidance": "Review and update logged events.\n• NIST SP 800-171 Rev 2 3.3.3",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.4",
+      "title": "Audit Failure Alerting",
+      "description": "Alert in the event of an audit logging process failure. \n• NIST SP 800-171 Rev 2 3.3.4",
+      "implementationGuidance": "Alert in the event of an audit logging process failure. \n• NIST SP 800-171 Rev 2 3.3.4",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.5",
+      "title": "Audit Correlation",
+      "description": "Correlate audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity.\n• NIST SP 800-171 Rev 2 3.3.5",
+      "implementationGuidance": "Correlate audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity.\n• NIST SP 800-171 Rev 2 3.3.5",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.6",
+      "title": "Reduction & Reporting",
+      "description": "Provide audit record reduction and report generation to support on-demand analysis and reporting.\n• NIST SP 800-171 Rev 2 3.3.6",
+      "implementationGuidance": "Provide audit record reduction and report generation to support on-demand analysis and reporting.\n• NIST SP 800-171 Rev 2 3.3.6",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.7",
+      "title": "Authoritative Time Source",
+      "description": "Provide a system capability that compares and synchronizes internal system clocks with an authoritative source to generate time stamps for audit records.\n• NIST SP 800-171 Rev 2 3.3.7",
+      "implementationGuidance": "Provide a system capability that compares and synchronizes internal system clocks with an authoritative source to generate time stamps for audit records.\n• NIST SP 800-171 Rev 2 3.3.7",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.8",
+      "title": "Audit Protection",
+      "description": "Protect audit information and audit logging tools from unauthorized access, modification, and deletion.\n• NIST SP 800-171 Rev 2 3.3.8",
+      "implementationGuidance": "Protect audit information and audit logging tools from unauthorized access, modification, and deletion.\n• NIST SP 800-171 Rev 2 3.3.8",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "AU.L2-3.3.9",
+      "title": "Audit Management",
+      "description": "Limit management of audit logging functionality to a subset of privileged users. \n• NIST SP 800-171 Rev 2 3.3.9",
+      "implementationGuidance": "Limit management of audit logging functionality to a subset of privileged users. \n• NIST SP 800-171 Rev 2 3.3.9",
+      "category": "Requirement",
+      "officialControlNumber": "AU.L2-3.3.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.1",
+      "title": "System Baselining",
+      "description": "Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles.\n• NIST SP 800-171 Rev 2 3.4.1",
+      "implementationGuidance": "Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles.\n• NIST SP 800-171 Rev 2 3.4.1",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.2",
+      "title": "Security Configuration Enforcement",
+      "description": "Establish and enforce security configuration settings for information technology products employed in organizational systems.\n• NIST SP 800-171 Rev 2 3.4.2",
+      "implementationGuidance": "Establish and enforce security configuration settings for information technology products employed in organizational systems.\n• NIST SP 800-171 Rev 2 3.4.2",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.3",
+      "title": "System Change Management",
+      "description": "Track, review, approve or disapprove, and log changes to organizational systems. \n• NIST SP 800-171 Rev 2 3.4.3",
+      "implementationGuidance": "Track, review, approve or disapprove, and log changes to organizational systems. \n• NIST SP 800-171 Rev 2 3.4.3",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.4",
+      "title": "Security Impact Analysis",
+      "description": "Analyze the security impact of changes prior to implementation. \n• NIST SP 800-171 Rev 2 3.4.4",
+      "implementationGuidance": "Analyze the security impact of changes prior to implementation. \n• NIST SP 800-171 Rev 2 3.4.4",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.5",
+      "title": "Access Restrictions for Change",
+      "description": "Define, document, approve, and enforce physical and logical access restrictions associated with changes to organizational systems.\n • NIST SP 800-171 Rev 2 3.4.5",
+      "implementationGuidance": "Define, document, approve, and enforce physical and logical access restrictions associated with changes to organizational systems.\n • NIST SP 800-171 Rev 2 3.4.5",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.6",
+      "title": "Least Functionality",
+      "description": "Employ the principle of least functionality by configuring organizational systems to provide only essential capabilities. \n• NIST SP 800-171 Rev 2 3.4.6",
+      "implementationGuidance": "Employ the principle of least functionality by configuring organizational systems to provide only essential capabilities. \n• NIST SP 800-171 Rev 2 3.4.6",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.7",
+      "title": "Nonessential Functionality",
+      "description": "Restrict, disable, or prevent the use of nonessential programs, functions, ports, protocols, and services. \n• NIST SP 800-171 Rev 2 3.4.7",
+      "implementationGuidance": "Restrict, disable, or prevent the use of nonessential programs, functions, ports, protocols, and services. \n• NIST SP 800-171 Rev 2 3.4.7",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.8",
+      "title": "Application Execution Policy",
+      "description": "Apply deny-by-exception (blacklisting) policy to prevent the use of unauthorized software or deny-all, permit-by-exception (whitelisting) policy to allow the execution of authorized software. \n• NIST SP 800-171 Rev 2 3.4.8",
+      "implementationGuidance": "Apply deny-by-exception (blacklisting) policy to prevent the use of unauthorized software or deny-all, permit-by-exception (whitelisting) policy to allow the execution of authorized software. \n• NIST SP 800-171 Rev 2 3.4.8",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CM.L2-3.4.9",
+      "title": "User-Installed Software",
+      "description": "Control and monitor user-installed software.\n• NIST SP 800-171 Rev 2 3.4.9",
+      "implementationGuidance": "Control and monitor user-installed software.\n• NIST SP 800-171 Rev 2 3.4.9",
+      "category": "Requirement",
+      "officialControlNumber": "CM.L2-3.4.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "IA.L1-3.5.1",
+      "title": "Identification",
+      "description": "Identify information system users, processes acting on behalf of users, or devices.\n• FAR Clause 52.204-21 b.1.v\n• NIST SP 800-171 Rev 2 3.5.1\n",
+      "implementationGuidance": "Identify information system users, processes acting on behalf of users, or devices.\n• FAR Clause 52.204-21 b.1.v\n• NIST SP 800-171 Rev 2 3.5.1\n",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L1-3.5.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "IA.L1-3.5.2",
+      "title": "Authentication",
+      "description": "Authenticate (or verify) the identities of those users, processes, or devices, as a prerequisite to allowing access to organizational information systems.\n• FAR Clause 52.204-21 b.1.vi\n• NIST SP 800-171 Rev 2 3.5.2",
+      "implementationGuidance": "Authenticate (or verify) the identities of those users, processes, or devices, as a prerequisite to allowing access to organizational information systems.\n• FAR Clause 52.204-21 b.1.vi\n• NIST SP 800-171 Rev 2 3.5.2",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L1-3.5.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.3",
+      "title": "Multifactor Authentication",
+      "description": "Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts. \n• NIST SP 800-171 Rev 2 3.5.3",
+      "implementationGuidance": "Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts. \n• NIST SP 800-171 Rev 2 3.5.3",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.4",
+      "title": "Replay-Resistant Authentication",
+      "description": "Employ replay-resistant authentication mechanisms for network access to privileged and non-privileged accounts.\n• NIST SP 800-171 Rev 2 3.5.4",
+      "implementationGuidance": "Employ replay-resistant authentication mechanisms for network access to privileged and non-privileged accounts.\n• NIST SP 800-171 Rev 2 3.5.4",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.5",
+      "title": "Identifier Reuse",
+      "description": "Prevent reuse of identifiers for a defined period. \n• NIST SP 800-171 Rev 2 3.5.5",
+      "implementationGuidance": "Prevent reuse of identifiers for a defined period. \n• NIST SP 800-171 Rev 2 3.5.5",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.6",
+      "title": "Identifier Handling",
+      "description": "Disable identifiers after a defined period of inactivity. \n • NIST SP 800-171 Rev 2 3.5.6",
+      "implementationGuidance": "Disable identifiers after a defined period of inactivity. \n • NIST SP 800-171 Rev 2 3.5.6",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.7",
+      "title": "Password Complexity",
+      "description": "Enforce a minimum password complexity and change of characters when new passwords are created.\n• NIST SP 800-171 Rev 2 3.5.7",
+      "implementationGuidance": "Enforce a minimum password complexity and change of characters when new passwords are created.\n• NIST SP 800-171 Rev 2 3.5.7",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.8",
+      "title": "Password Reuse",
+      "description": "Prohibit password reuse for a specified number of generations.\n • NIST SP 800-171 Rev 2 3.5.8\n",
+      "implementationGuidance": "Prohibit password reuse for a specified number of generations.\n • NIST SP 800-171 Rev 2 3.5.8\n",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.9",
+      "title": "Temporary Passwords",
+      "description": "Allow temporary password use for system logons with an immediate change to a permanent password. \n• NIST SP 800-171 Rev 2 3.5.9",
+      "implementationGuidance": "Allow temporary password use for system logons with an immediate change to a permanent password. \n• NIST SP 800-171 Rev 2 3.5.9",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.10",
+      "title": "Cryptographically-Protected Passwords",
+      "description": "Store and transmit only cryptographically-protected passwords. \n• NIST SP 800-171 Rev 2 3.5.10",
+      "implementationGuidance": "Store and transmit only cryptographically-protected passwords. \n• NIST SP 800-171 Rev 2 3.5.10",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.10",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IA.L2-3.5.11",
+      "title": "Obscure Feedback",
+      "description": "Obscure feedback of authentication information. \n• NIST SP 800-171 Rev 2 3.5.11",
+      "implementationGuidance": "Obscure feedback of authentication information. \n• NIST SP 800-171 Rev 2 3.5.11",
+      "category": "Requirement",
+      "officialControlNumber": "IA.L2-3.5.11",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IR.L2-3.6.1",
+      "title": "Incident Handling",
+      "description": "Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.\n• NIST SP 800-171 Rev 2 3.6.1",
+      "implementationGuidance": "Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.\n• NIST SP 800-171 Rev 2 3.6.1",
+      "category": "Requirement",
+      "officialControlNumber": "IR.L2-3.6.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "IR.L2-3.6.2",
+      "title": "Incident Reporting",
+      "description": "Track, document, and report incidents to designated officials and/or authorities both internal and external to the organization.\n• NIST SP 800-171 Rev 2 3.6.2",
+      "implementationGuidance": "Track, document, and report incidents to designated officials and/or authorities both internal and external to the organization.\n• NIST SP 800-171 Rev 2 3.6.2",
+      "category": "Requirement",
+      "officialControlNumber": "IR.L2-3.6.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "IR.L2-3.6.3",
+      "title": "Incident Response Testing",
+      "description": "Test the organizational incident response capability.\n• NIST SP 800-171 Rev 2 3.6.3",
+      "implementationGuidance": "Test the organizational incident response capability.\n• NIST SP 800-171 Rev 2 3.6.3",
+      "category": "Requirement",
+      "officialControlNumber": "IR.L2-3.6.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.1",
+      "title": "Perform Maintenance",
+      "description": "Perform maintenance on organizational systems.\n• NIST SP 800-171 Rev 2 3.7.1",
+      "implementationGuidance": "Perform maintenance on organizational systems.\n• NIST SP 800-171 Rev 2 3.7.1",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.2",
+      "title": "System Maintenance Control",
+      "description": "Provide controls on the tools, techniques, mechanisms, and personnel used to conduct system maintenance.\n• NIST SP 800-171 Rev 2 3.7.2",
+      "implementationGuidance": "Provide controls on the tools, techniques, mechanisms, and personnel used to conduct system maintenance.\n• NIST SP 800-171 Rev 2 3.7.2",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.3",
+      "title": "Equipment Sanitization",
+      "description": "Ensure equipment removed for off-site maintenance is sanitized of any CUI. \n• NIST SP 800-171 Rev 2 3.7.3",
+      "implementationGuidance": "Ensure equipment removed for off-site maintenance is sanitized of any CUI. \n• NIST SP 800-171 Rev 2 3.7.3",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.4",
+      "title": "Media Inspection",
+      "description": "Check media containing diagnostic and test programs for malicious code before the media are used in organizational systems. \n• NIST SP 800-171 Rev 2 3.7.4",
+      "implementationGuidance": "Check media containing diagnostic and test programs for malicious code before the media are used in organizational systems. \n• NIST SP 800-171 Rev 2 3.7.4",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.5",
+      "title": "Nonlocal Maintenance",
+      "description": "Require multifactor authentication to establish nonlocal maintenance sessions via external network connections and terminate such connections when nonlocal maintenance is complete.\n• NIST SP 800-171 Rev 2 3.7.5",
+      "implementationGuidance": "Require multifactor authentication to establish nonlocal maintenance sessions via external network connections and terminate such connections when nonlocal maintenance is complete.\n• NIST SP 800-171 Rev 2 3.7.5",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MA.L2-3.7.6",
+      "title": "Maintenance Personnel",
+      "description": "Supervise the maintenance activities of maintenance personnel without required access authorization. \n• NIST SP 800-171 Rev 2 3.7.6",
+      "implementationGuidance": "Supervise the maintenance activities of maintenance personnel without required access authorization. \n• NIST SP 800-171 Rev 2 3.7.6",
+      "category": "Requirement",
+      "officialControlNumber": "MA.L2-3.7.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.1",
+      "title": "Media Protection",
+      "description": "Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital. \n• NIST SP 800-171 Rev 2 3.8.1",
+      "implementationGuidance": "Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital. \n• NIST SP 800-171 Rev 2 3.8.1",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.2",
+      "title": "Media Access",
+      "description": "Limit access to CUI on system media to authorized users.\n• NIST SP 800-171 Rev 2 3.8.2",
+      "implementationGuidance": "Limit access to CUI on system media to authorized users.\n• NIST SP 800-171 Rev 2 3.8.2",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MP.L1-3.8.3",
+      "title": "Media Disposal",
+      "description": "Sanitize or destroy information system media containing Federal Contract Information before disposal or release for reuse.\n• FAR Clause 52.204-21 b.1.vii\n• NIST SP 800-171 Rev 2 3.8.3",
+      "implementationGuidance": "Sanitize or destroy information system media containing Federal Contract Information before disposal or release for reuse.\n• FAR Clause 52.204-21 b.1.vii\n• NIST SP 800-171 Rev 2 3.8.3",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L1-3.8.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.4",
+      "title": "Media Markings",
+      "description": "Mark media with necessary CUI markings and distribution limitations.\n • NIST SP 800-171 Rev 2 3.8.4",
+      "implementationGuidance": "Mark media with necessary CUI markings and distribution limitations.\n • NIST SP 800-171 Rev 2 3.8.4",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.5",
+      "title": "Media Accountability",
+      "description": "Control access to media containing CUI and maintain accountability for media during transport outside of controlled areas. \n• NIST SP 800-171 Rev 2 3.8.5",
+      "implementationGuidance": "Control access to media containing CUI and maintain accountability for media during transport outside of controlled areas. \n• NIST SP 800-171 Rev 2 3.8.5",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.6",
+      "title": "Portable Storage Encryption",
+      "description": "Implement cryptographic mechanisms to protect the confidentiality of CUI stored on digital media during transport unless otherwise protected by alternative physical safeguards. \n• NIST SP 800-171 Rev 2 3.8.6",
+      "implementationGuidance": "Implement cryptographic mechanisms to protect the confidentiality of CUI stored on digital media during transport unless otherwise protected by alternative physical safeguards. \n• NIST SP 800-171 Rev 2 3.8.6",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.7",
+      "title": "Removable Media",
+      "description": "Control the use of removable media on system components.\n• NIST SP 800-171 Rev 2 3.8.7",
+      "implementationGuidance": "Control the use of removable media on system components.\n• NIST SP 800-171 Rev 2 3.8.7",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.8",
+      "title": "Shared Media",
+      "description": "Prohibit the use of portable storage devices when such devices have no identifiable owner.\n• NIST SP 800-171 Rev 2 3.8.8",
+      "implementationGuidance": "Prohibit the use of portable storage devices when such devices have no identifiable owner.\n• NIST SP 800-171 Rev 2 3.8.8",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "MP.L2-3.8.9",
+      "title": "Protect Backups",
+      "description": "Protect the confidentiality of backup CUI at storage locations. \n• NIST SP 800-171 Rev 2 3.8.9",
+      "implementationGuidance": "Protect the confidentiality of backup CUI at storage locations. \n• NIST SP 800-171 Rev 2 3.8.9",
+      "category": "Requirement",
+      "officialControlNumber": "MP.L2-3.8.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PS.L2-3.9.1",
+      "title": "Screen Individuals",
+      "description": "Screen individuals prior to authorizing access to organizational systems containing CUI.\n• NIST SP 800-171 Rev 2 3.9.1",
+      "implementationGuidance": "Screen individuals prior to authorizing access to organizational systems containing CUI.\n• NIST SP 800-171 Rev 2 3.9.1",
+      "category": "Requirement",
+      "officialControlNumber": "PS.L2-3.9.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PS.L2-3.9.2",
+      "title": "Personnel Actions",
+      "description": "Ensure that organizational systems containing CUI are protected during and after personnel actions such as terminations and transfers.\n • NIST SP 800-171 Rev 2 3.9.2\n",
+      "implementationGuidance": "Ensure that organizational systems containing CUI are protected during and after personnel actions such as terminations and transfers.\n • NIST SP 800-171 Rev 2 3.9.2\n",
+      "category": "Requirement",
+      "officialControlNumber": "PS.L2-3.9.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L1-3.10.1",
+      "title": "Limit Physical Access",
+      "description": "Limit physical access to organizational information systems, equipment, and the respective operating environments to authorized individuals. \n• FAR Clause 52.204-21 b.1.viii\n• NIST SP 800-171 Rev 2 3.10.1",
+      "implementationGuidance": "Limit physical access to organizational information systems, equipment, and the respective operating environments to authorized individuals. \n• FAR Clause 52.204-21 b.1.viii\n• NIST SP 800-171 Rev 2 3.10.1",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L1-3.10.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L2-3.10.2",
+      "title": "Monitor Facility",
+      "description": "Protect and monitor the physical facility and support infrastructure for organizational systems.\n• NIST SP 800-171 Rev 2 3.10.2",
+      "implementationGuidance": "Protect and monitor the physical facility and support infrastructure for organizational systems.\n• NIST SP 800-171 Rev 2 3.10.2",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L2-3.10.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L1-3.10.3",
+      "title": "Escort Visitors",
+      "description": "Escort visitors and monitor visitor activity. \n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.3",
+      "implementationGuidance": "Escort visitors and monitor visitor activity. \n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.3",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L1-3.10.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L1-3.10.4",
+      "title": "Physical Access Logs",
+      "description": "Maintain audit logs of physical access.\n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.4",
+      "implementationGuidance": "Maintain audit logs of physical access.\n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.4",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L1-3.10.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L1-3.10.5",
+      "title": "Manage Physical Access",
+      "description": "Control and manage physical access devices.\n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.5",
+      "implementationGuidance": "Control and manage physical access devices.\n• FAR Clause 52.204-21 Partial b.1.ix \n• NIST SP 800-171 Rev 2 3.10.5",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L1-3.10.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PE.L2-3.10.6",
+      "title": "Alternative Work Sites",
+      "description": "Enforce safeguarding measures for CUI at alternate work sites.\n • NIST SP 800-171 Rev 2 3.10.6",
+      "implementationGuidance": "Enforce safeguarding measures for CUI at alternate work sites.\n • NIST SP 800-171 Rev 2 3.10.6",
+      "category": "Requirement",
+      "officialControlNumber": "PE.L2-3.10.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "RA.L2-3.11.1",
+      "title": "Risk Assessments",
+      "description": "Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.\n• NIST SP 800-171 Rev 2 3.11.1",
+      "implementationGuidance": "Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.\n• NIST SP 800-171 Rev 2 3.11.1",
+      "category": "Requirement",
+      "officialControlNumber": "RA.L2-3.11.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "RA.L2-3.11.2",
+      "title": "Vulnerability Scan",
+      "description": "Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified. \n• NIST SP 800-171 Rev 2 3.11.2",
+      "implementationGuidance": "Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified. \n• NIST SP 800-171 Rev 2 3.11.2",
+      "category": "Requirement",
+      "officialControlNumber": "RA.L2-3.11.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "RA.L2-3.11.3",
+      "title": "Vulnerability Remediation",
+      "description": "Remediate vulnerabilities in accordance with risk assessments.\n • NIST SP 800-171 Rev 2 3.11.3",
+      "implementationGuidance": "Remediate vulnerabilities in accordance with risk assessments.\n • NIST SP 800-171 Rev 2 3.11.3",
+      "category": "Requirement",
+      "officialControlNumber": "RA.L2-3.11.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CA.L2-3.12.1",
+      "title": "Security Control Assessment",
+      "description": "Periodically assess the security controls in organizational systems to determine if the controls are effective in their application. \n • NIST SP 800-171 Rev 2 3.12.1",
+      "implementationGuidance": "Periodically assess the security controls in organizational systems to determine if the controls are effective in their application. \n • NIST SP 800-171 Rev 2 3.12.1",
+      "category": "Requirement",
+      "officialControlNumber": "CA.L2-3.12.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CA.L2-3.12.2",
+      "title": "Plan of Action",
+      "description": "Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems.\n• NIST SP 800-171 Rev 2 3.12.2",
+      "implementationGuidance": "Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems.\n• NIST SP 800-171 Rev 2 3.12.2",
+      "category": "Requirement",
+      "officialControlNumber": "CA.L2-3.12.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CA.L2-3.12.3",
+      "title": "Security Control Monitoring",
+      "description": "Monitor security controls on an ongoing basis to ensure the continued effectiveness of the controls. \n• NIST SP 800-171 Rev 2 3.12.3",
+      "implementationGuidance": "Monitor security controls on an ongoing basis to ensure the continued effectiveness of the controls. \n• NIST SP 800-171 Rev 2 3.12.3",
+      "category": "Requirement",
+      "officialControlNumber": "CA.L2-3.12.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "CA.L2-3.12.4",
+      "title": "System Security Plan",
+      "description": "Develop, document, and periodically update system security plans that describe system boundaries, system environments of operation, how security requirements are implemented, and the relationships with or connections to other systems. \n• NIST SP 800-171 Rev 2 3.12.4",
+      "implementationGuidance": "Develop, document, and periodically update system security plans that describe system boundaries, system environments of operation, how security requirements are implemented, and the relationships with or connections to other systems. \n• NIST SP 800-171 Rev 2 3.12.4",
+      "category": "Requirement",
+      "officialControlNumber": "CA.L2-3.12.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L1-3.13.1",
+      "title": "Boundary Protection",
+      "description": "Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational information systems) at the external boundaries and key internal boundaries of the information systems.\n• FAR Clause 52.204-21 b.1.x\n• NIST SP 800-171 Rev 2 3.13.1",
+      "implementationGuidance": "Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational information systems) at the external boundaries and key internal boundaries of the information systems.\n• FAR Clause 52.204-21 b.1.x\n• NIST SP 800-171 Rev 2 3.13.1",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L1-3.13.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.2",
+      "title": "Security Engineering",
+      "description": "Employ architectural designs, software development techniques, and systems engineering principles that promote effective information security within organizational systems.\n• NIST SP 800-171 Rev 2 3.13.2",
+      "implementationGuidance": "Employ architectural designs, software development techniques, and systems engineering principles that promote effective information security within organizational systems.\n• NIST SP 800-171 Rev 2 3.13.2",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.3",
+      "title": "Role Separation",
+      "description": "Separate user functionality from system management functionality. \n• NIST SP 800-171 Rev 2 3.13.3",
+      "implementationGuidance": "Separate user functionality from system management functionality. \n• NIST SP 800-171 Rev 2 3.13.3",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.4",
+      "title": "Shared Resource Control",
+      "description": "Prevent unauthorized and unintended information transfer via shared system resources. \n• NIST SP 800-171 Rev 2 3.13.4",
+      "implementationGuidance": "Prevent unauthorized and unintended information transfer via shared system resources. \n• NIST SP 800-171 Rev 2 3.13.4",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L1-3.13.5",
+      "title": "Public-Access System Separation",
+      "description": "Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks.\n• FAR Clause 52.204-21 b.1.xi\n• NIST SP 800-171 Rev 2 3.13.5",
+      "implementationGuidance": "Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks.\n• FAR Clause 52.204-21 b.1.xi\n• NIST SP 800-171 Rev 2 3.13.5",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L1-3.13.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.6",
+      "title": "Network Communication by Exception",
+      "description": "Deny network communications traffic by default and allow network communications traffic by exception (i.e., deny all, permit by exception).\n • NIST SP 800-171 Rev 2 3.13.6",
+      "implementationGuidance": "Deny network communications traffic by default and allow network communications traffic by exception (i.e., deny all, permit by exception).\n • NIST SP 800-171 Rev 2 3.13.6",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.7",
+      "title": "Split Tunneling",
+      "description": "Prevent remote devices from simultaneously establishing non-remote connections with organizational systems and communicating via some other connection to resources in external networks (i.e., split tunneling). \n • NIST SP 800-171 Rev 2 3.13.7",
+      "implementationGuidance": "Prevent remote devices from simultaneously establishing non-remote connections with organizational systems and communicating via some other connection to resources in external networks (i.e., split tunneling). \n • NIST SP 800-171 Rev 2 3.13.7",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.8",
+      "title": "Data in Transit",
+      "description": "Implement cryptographic mechanisms to prevent unauthorized disclosure of CUI during transmission unless otherwise protected by alternative physical safeguards.\n• NIST SP 800-171 Rev 2 3.13.8",
+      "implementationGuidance": "Implement cryptographic mechanisms to prevent unauthorized disclosure of CUI during transmission unless otherwise protected by alternative physical safeguards.\n• NIST SP 800-171 Rev 2 3.13.8",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.8",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.9",
+      "title": "Connections Termination",
+      "description": "Terminate network connections associated with communications sessions at the end of the sessions or after a defined period of inactivity. \n• NIST SP 800-171 Rev 2 3.13.9",
+      "implementationGuidance": "Terminate network connections associated with communications sessions at the end of the sessions or after a defined period of inactivity. \n• NIST SP 800-171 Rev 2 3.13.9",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.9",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.10",
+      "title": "Key Management",
+      "description": "Establish and manage cryptographic keys for cryptography employed in organizational systems. \n• NIST SP 800-171 Rev 2 3.13.10",
+      "implementationGuidance": "Establish and manage cryptographic keys for cryptography employed in organizational systems. \n• NIST SP 800-171 Rev 2 3.13.10",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.10",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.11",
+      "title": "CUI Encryption",
+      "description": "Employ FIPS-validated cryptography when used to protect the confidentiality of CUI. \n• NIST SP 800-171 Rev 2 3.13.11",
+      "implementationGuidance": "Employ FIPS-validated cryptography when used to protect the confidentiality of CUI. \n• NIST SP 800-171 Rev 2 3.13.11",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.11",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.12",
+      "title": "Collaborative Device Control",
+      "description": "Prohibit remote activation of collaborative computing devices and provide indication of devices in use to users present at the device. \n• NIST SP 800-171 Rev 2 3.13.12",
+      "implementationGuidance": "Prohibit remote activation of collaborative computing devices and provide indication of devices in use to users present at the device. \n• NIST SP 800-171 Rev 2 3.13.12",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.12",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.13",
+      "title": "Mobile Code",
+      "description": "Control and monitor the use of mobile code. \n• NIST SP 800-171 Rev 2 3.13.13",
+      "implementationGuidance": "Control and monitor the use of mobile code. \n• NIST SP 800-171 Rev 2 3.13.13",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.13",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.14",
+      "title": "Voice over Internet Protocol",
+      "description": "Control and monitor the use of Voice over Internet Protocol (VoIP) technologies.\n• NIST SP 800-171 Rev 2 3.13.14",
+      "implementationGuidance": "Control and monitor the use of Voice over Internet Protocol (VoIP) technologies.\n• NIST SP 800-171 Rev 2 3.13.14",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.14",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.15",
+      "title": "Communications Authenticity",
+      "description": "Protect the authenticity of communications sessions.\n• NIST SP 800-171 Rev 2 3.13.15",
+      "implementationGuidance": "Protect the authenticity of communications sessions.\n• NIST SP 800-171 Rev 2 3.13.15",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.15",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SC.L2-3.13.16",
+      "title": "Data at Rest",
+      "description": "Protect the confidentiality of CUI at rest.\n• NIST SP 800-171 Rev 2 3.13.16",
+      "implementationGuidance": "Protect the confidentiality of CUI at rest.\n• NIST SP 800-171 Rev 2 3.13.16",
+      "category": "Requirement",
+      "officialControlNumber": "SC.L2-3.13.16",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L1-3.14.1",
+      "title": "Flaw Remediation",
+      "description": "Identify, report, and correct information and information system flaws in a timely manner.\n• FAR Clause 52.204-21 b.1.xii\n• NIST SP 800-171 Rev 2 3.14.1",
+      "implementationGuidance": "Identify, report, and correct information and information system flaws in a timely manner.\n• FAR Clause 52.204-21 b.1.xii\n• NIST SP 800-171 Rev 2 3.14.1",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L1-3.14.1",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L1-3.14.2",
+      "title": "Malicious Code Protection",
+      "description": "Provide protection from malicious code at appropriate locations within organizational information systems.\n• FAR Clause 52.204-21 b.1.xiii\n • NIST SP 800-171 Rev 2 3.14.2",
+      "implementationGuidance": "Provide protection from malicious code at appropriate locations within organizational information systems.\n• FAR Clause 52.204-21 b.1.xiii\n • NIST SP 800-171 Rev 2 3.14.2",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L1-3.14.2",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L2-3.14.3",
+      "title": "Security Alerts & Advisories",
+      "description": "Monitor system security alerts and advisories and take action in response.\n• NIST SP 800-171 Rev 2 3.14.3",
+      "implementationGuidance": "Monitor system security alerts and advisories and take action in response.\n• NIST SP 800-171 Rev 2 3.14.3",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L2-3.14.3",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L1-3.14.4",
+      "title": "Update Malicious Code Protection",
+      "description": "Update malicious code protection mechanisms when new releases are available.\n• FAR Clause 52.204-21 b.1.xiv\n• NIST SP 800-171 Rev 2 3.14.4",
+      "implementationGuidance": "Update malicious code protection mechanisms when new releases are available.\n• FAR Clause 52.204-21 b.1.xiv\n• NIST SP 800-171 Rev 2 3.14.4",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L1-3.14.4",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L1-3.14.5",
+      "title": "System & File Scanning",
+      "description": "Perform periodic scans of the information system and real-time scans of files from external sources as files are downloaded, opened, or executed.\n• FAR Clause 52.204-21 b.1.xv\n• NIST SP 800-171 Rev 2 3.14.5",
+      "implementationGuidance": "Perform periodic scans of the information system and real-time scans of files from external sources as files are downloaded, opened, or executed.\n• FAR Clause 52.204-21 b.1.xv\n• NIST SP 800-171 Rev 2 3.14.5",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L1-3.14.5",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L2-3.14.6",
+      "title": "Monitor Communications for Attacks",
+      "description": "Monitor organizational systems, including inbound and outbound communications traffic, to detect attacks and indicators of potential attacks.\n • NIST SP 800-171 Rev 2 3.14.6",
+      "implementationGuidance": "Monitor organizational systems, including inbound and outbound communications traffic, to detect attacks and indicators of potential attacks.\n • NIST SP 800-171 Rev 2 3.14.6",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L2-3.14.6",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "SI.L2-3.14.7",
+      "title": "Identify Unauthorized Use",
+      "description": "Identify unauthorized use of organizational systems. \n• NIST SP 800-171 Rev 2 3.14.7",
+      "implementationGuidance": "Identify unauthorized use of organizational systems. \n• NIST SP 800-171 Rev 2 3.14.7",
+      "category": "Requirement",
+      "officialControlNumber": "SI.L2-3.14.7",
+      "sourceDocument": "CMMC-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/cmmc-2.0.yaml",
+      "lastVerified": "2024-03-02",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "Malicious Actors and Misuse"
+      ]
+    }
+  ]
+}

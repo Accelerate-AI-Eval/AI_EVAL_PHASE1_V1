@@ -1,6 +1,9 @@
-import { ShieldAlert } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { ChevronDown, CircleX, Search, ShieldAlert } from "lucide-react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Modal from "../../UI/Modal";
 import Select from "../../UI/Select";
+import { ReportsPagination, REPORTS_PAGE_SIZE } from "../Reports/ReportsPagination";
+import "../../../styles/page_tabs.css";
 import "./MyVendors.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -133,14 +136,334 @@ function vendorReportToRiskMappings(storedReport: Record<string, unknown>): {
 
 function vendorReportFrameworkRows(storedReport: Record<string, unknown>): FrameworkMappingRow[] {
   const generated = storedReport.generatedAnalysis as { fullReport?: Record<string, unknown> } | undefined;
-  const rows = generated?.fullReport?.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
-  return Array.isArray(rows?.rows) ? rows.rows : [];
+  const nested = generated?.fullReport?.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
+  if (Array.isArray(nested?.rows) && nested.rows.length > 0) return nested.rows;
+  const top = storedReport.frameworkMappingRows as FrameworkMappingRow[] | undefined;
+  if (Array.isArray(top) && top.length > 0) return top;
+  return Array.isArray(nested?.rows) ? nested.rows : [];
 }
 
 function formatFrameworkCell(v: unknown): string {
   if (v == null) return "—";
   const s = String(v).trim();
   return s || "—";
+}
+
+function filterRiskItemsByQuery(items: RiskItem[], query: string): RiskItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((r) =>
+    [r.id, r.title, r.description, r.owner, r.severity, r.status, r.date].some((field) =>
+      String(field).toLowerCase().includes(q),
+    ),
+  );
+}
+
+function filterFrameworkRowsByQuery(rows: FrameworkMappingRow[], query: string): FrameworkMappingRow[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((row) => {
+    const haystack = [
+      formatFrameworkCell(row.framework),
+      formatFrameworkCell(row.coverage),
+      String(row.controls ?? ""),
+      String(row.notes ?? ""),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+}
+
+/** Split framework control text on semicolons; each segment on its own line in the table. */
+function splitFrameworkControlsLines(v: unknown): string[] {
+  if (v == null) return [];
+  const s = String(v).trim();
+  if (!s) return [];
+  return s
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function FrameworkControlsCell({ value }: { value: unknown }) {
+  const lines = splitFrameworkControlsLines(value);
+  if (lines.length === 0) return <span>—</span>;
+  return (
+    <div className="risk_mapping_controls_stack">
+      {lines.map((line, idx) => (
+        <div key={idx} className="risk_mapping_control_line">
+          {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const CONTROL_LINE_PREVIEW_MAX = 100;
+const NOTES_PREVIEW_MAX_CHARS = 160;
+
+function truncateLineForPreview(s: string, max: number): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(0, max - 1))}…`;
+}
+
+function getControlsPreviewState(value: unknown): {
+  previewLines: string[];
+  isTruncated: boolean;
+} {
+  const fullLines = splitFrameworkControlsLines(value);
+  if (fullLines.length === 0) return { previewLines: [], isTruncated: false };
+  const longLine = fullLines.some((l) => l.length > CONTROL_LINE_PREVIEW_MAX);
+  const manyLines = fullLines.length > 2;
+  const isTruncated = longLine || manyLines;
+  const previewLines = fullLines
+    .slice(0, 2)
+    .map((l) => truncateLineForPreview(l, CONTROL_LINE_PREVIEW_MAX));
+  return { previewLines, isTruncated };
+}
+
+function getNotesPreviewText(value: unknown): { preview: string; isTruncated: boolean } {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "—") return { preview: "", isTruncated: false };
+  if (raw.length <= NOTES_PREVIEW_MAX_CHARS) return { preview: raw, isTruncated: false };
+  return { preview: `${raw.slice(0, NOTES_PREVIEW_MAX_CHARS - 1)}…`, isTruncated: true };
+}
+
+interface FrameworkMultiSelectDropdownProps {
+  frameworkNames: string[];
+  selected: Set<string>;
+  onSelectionChange: (next: Set<string>) => void;
+}
+
+function FrameworkMultiSelectDropdown({
+  frameworkNames,
+  selected,
+  onSelectionChange,
+}: FrameworkMultiSelectDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const allSelected =
+    frameworkNames.length > 0 && selected.size === frameworkNames.length;
+  const noneSelected = selected.size === 0;
+
+  useEffect(() => {
+    const el = selectAllRef.current;
+    if (!el) return;
+    el.indeterminate = !allSelected && !noneSelected && frameworkNames.length > 0;
+  }, [allSelected, noneSelected, frameworkNames.length]);
+
+  function toggleAll() {
+    if (allSelected) onSelectionChange(new Set());
+    else onSelectionChange(new Set(frameworkNames));
+  }
+
+  function toggleOne(name: string) {
+    const next = new Set(selected);
+    if (next.has(name)) next.delete(name);
+    else next.add(name);
+    onSelectionChange(next);
+  }
+
+  const summaryLabel = (() => {
+    if (frameworkNames.length === 0) return "Frameworks";
+    if (allSelected) return `All frameworks (${frameworkNames.length})`;
+    if (noneSelected) return "Select frameworks";
+    return `${selected.size} of ${frameworkNames.length} frameworks`;
+  })();
+
+  return (
+    <div className="risk_mapping_fw_multiselect" ref={wrapRef}>
+      <button
+        type="button"
+        className="risk_mapping_fw_multiselect_trigger"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="risk_mapping_fw_multiselect_trigger_label">{summaryLabel}</span>
+        <ChevronDown
+          size={18}
+          aria-hidden
+          className={`risk_mapping_fw_multiselect_chevron ${open ? "risk_mapping_fw_multiselect_chevron_open" : ""}`}
+        />
+      </button>
+      {open ? (
+        <div className="risk_mapping_fw_multiselect_panel" role="listbox" aria-label="Filter by framework">
+          <label className="risk_mapping_fw_multiselect_row risk_mapping_fw_multiselect_row_all">
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+            />
+            <span>Select all</span>
+          </label>
+          <div className="risk_mapping_fw_multiselect_divider" />
+          {frameworkNames.map((name) => (
+            <label key={name} className="risk_mapping_fw_multiselect_row">
+              <input
+                type="checkbox"
+                checked={selected.has(name)}
+                onChange={() => toggleOne(name)}
+              />
+              <span className="risk_mapping_fw_multiselect_framework_name">{name}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface FrameworkMappingCardGridProps {
+  rows: FrameworkMappingRow[];
+  emptyMessage: React.ReactNode;
+}
+
+function FrameworkMappingCardGrid({ rows, emptyMessage }: FrameworkMappingCardGridProps) {
+  const [detailRow, setDetailRow] = useState<FrameworkMappingRow | null>(null);
+
+  if (rows.length === 0) {
+    return <div className="risk_mapping_empty_text">{emptyMessage}</div>;
+  }
+
+  return (
+    <>
+      <div className="risk_mapping_fw_grid">
+        {rows.map((row, i) => {
+          const fw = formatFrameworkCell(row.framework);
+          const cov = formatFrameworkCell(row.coverage);
+          const { previewLines, isTruncated: controlsTruncated } = getControlsPreviewState(row.controls);
+          const { preview: notesPreview, isTruncated: notesTruncated } = getNotesPreviewText(row.notes);
+          const showKnowMore = controlsTruncated || notesTruncated;
+
+          return (
+            <article key={i} className="risk_mapping_fw_card">
+              <header className="risk_mapping_fw_card_head">
+                <div className="risk_mapping_fw_card_titles">
+                  <h4 className="risk_mapping_fw_card_framework">{fw}</h4>
+                  <p className="risk_mapping_fw_card_coverage">
+                    <span className="risk_mapping_fw_card_label">Coverage</span>
+                    <span className="risk_mapping_fw_card_coverage_value">{cov}</span>
+                  </p>
+                </div>
+              </header>
+
+              <div className="risk_mapping_fw_card_body">
+                <div className="risk_mapping_fw_card_section">
+                  <span className="risk_mapping_fw_card_section_label">Controls</span>
+                  {previewLines.length === 0 ? (
+                    <span className="risk_mapping_fw_card_muted">—</span>
+                  ) : (
+                    <ul className="risk_mapping_fw_controls_preview_list">
+                      {previewLines.map((line, idx) => (
+                        <li key={idx} className="risk_mapping_fw_controls_preview_item">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {controlsTruncated ? (
+                    <p className="risk_mapping_fw_card_hint">Showing a preview of mapped controls.</p>
+                  ) : null}
+                </div>
+
+                <div className="risk_mapping_fw_card_section">
+                  <span className="risk_mapping_fw_card_section_label">Notes</span>
+                  {notesPreview ? (
+                    <p className="risk_mapping_fw_notes_preview">{notesPreview}</p>
+                  ) : (
+                    <span className="risk_mapping_fw_card_muted">—</span>
+                  )}
+                  {notesTruncated ? (
+                    <p className="risk_mapping_fw_card_hint">Notes are truncated in this card.</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <footer className="risk_mapping_fw_card_footer">
+                <button
+                  type="button"
+                  className="risk_mapping_fw_know_more"
+                  onClick={() => setDetailRow(row)}
+                >
+                  {showKnowMore ? "Know more" : "View details"}
+                </button>
+              </footer>
+            </article>
+          );
+        })}
+      </div>
+
+      <Modal
+        isOpen={detailRow != null}
+        onClose={() => setDetailRow(null)}
+        overlayClassName="profile_modal_overlay"
+        popupClassName=""
+      >
+        {detailRow ? (
+          <div className="risk_mapping_fw_modal profile_modal_content">
+            <div className="profile_modal_header risk_mapping_fw_modal_header">
+              <div>
+                <h2 id="risk_mapping_fw_modal_title" className="profile_modal_title risk_mapping_fw_modal_title">
+                  {formatFrameworkCell(detailRow.framework)}
+                </h2>
+                <p className="risk_mapping_fw_modal_sub">Framework mapping</p>
+              </div>
+              <button
+                type="button"
+                className="modal_close_btn"
+                onClick={() => setDetailRow(null)}
+                aria-label="Close"
+              >
+                <CircleX size={20} />
+              </button>
+            </div>
+            <div className="profile_modal_body risk_mapping_fw_modal_body">
+              <div className="risk_mapping_fw_modal_field">
+                <span className="risk_mapping_fw_modal_field_label">Coverage</span>
+                <p className="risk_mapping_fw_modal_field_value">{formatFrameworkCell(detailRow.coverage)}</p>
+              </div>
+              <div className="risk_mapping_fw_modal_field">
+                <span className="risk_mapping_fw_modal_field_label">Controls</span>
+                <div className="risk_mapping_fw_modal_field_block">
+                  <FrameworkControlsCell value={detailRow.controls} />
+                </div>
+              </div>
+              <div className="risk_mapping_fw_modal_field">
+                <span className="risk_mapping_fw_modal_field_label">Notes</span>
+                <div className="risk_mapping_fw_modal_field_block">
+                  <FrameworkNotesCell value={detailRow.notes} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+    </>
+  );
 }
 
 function isAssessmentExpired(row: AssessmentRow): boolean {
@@ -200,11 +523,131 @@ function severityFromDomainScores(raw: unknown, idx: number): RiskItem["severity
   return idx % 3 === 0 ? "critical/high" : idx % 3 === 1 ? "medium" : "low";
 }
 
+const RISK_CARD_MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/** Display as e.g. 09-Mar-2025 (local calendar date). */
+function formatRiskCardDate(d: Date): string {
+  const day = String(d.getDate()).padStart(2, "0");
+  const mon = RISK_CARD_MONTH_LABELS[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day}-${mon}-${year}`;
+}
+
 function toDateLabel(iso: string | undefined): string {
-  if (!iso) return new Date().toISOString().slice(0, 10);
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
-  return d.toISOString().slice(0, 10);
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return formatRiskCardDate(new Date());
+  return formatRiskCardDate(d);
+}
+
+/** Split attestation-style notes (middle-dot or newline separated). */
+function splitFrameworkNotesSegments(raw: string): string[] {
+  const t = raw.trim();
+  if (!t) return [];
+  if (t.includes("·")) return t.split(/\s*·\s*/).map((s) => s.trim()).filter(Boolean);
+  return t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+}
+
+/**
+ * Renders Category, Class (section), Expiry (DD-Mon-YYYY), then post-expiry text as pills (split on `;`).
+ * Matches backend buildFrameworkMappingRowsFromComplianceExpiries notes shape.
+ */
+function FrameworkNotesCell({ value }: { value: unknown }) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "—") return <span>—</span>;
+
+  const parts = splitFrameworkNotesSegments(raw);
+  let category: string | undefined;
+  let sectionClass: string | undefined;
+  let expiryIdx = -1;
+  let expiryRaw: string | undefined;
+
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    const mCat = p.match(/^Category:\s*(.+)$/i);
+    if (mCat) {
+      category = mCat[1].trim();
+      continue;
+    }
+    const mCls = p.match(/^Class:\s*(.+)$/i);
+    if (mCls) {
+      sectionClass = mCls[1].trim();
+      continue;
+    }
+    const mExp = p.match(/^Expiry:\s*(.+)$/i);
+    if (mExp) {
+      if (expiryIdx < 0) {
+        expiryRaw = mExp[1].trim();
+        expiryIdx = i;
+      }
+      continue;
+    }
+  }
+
+  const hasExpirySegment = expiryIdx >= 0;
+  const expiryFormatted =
+    expiryRaw != null && expiryRaw !== ""
+      ? (() => {
+          const d = new Date(expiryRaw);
+          return Number.isNaN(d.getTime()) ? expiryRaw : formatRiskCardDate(d);
+        })()
+      : undefined;
+
+  const afterExpiryJoined = hasExpirySegment ? parts.slice(expiryIdx + 1).join(" · ") : "";
+  const pills = afterExpiryJoined
+    .split(/[;]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const looksStructured = Boolean(category || sectionClass || hasExpirySegment);
+
+  if (!looksStructured) {
+    return <span className="risk_mapping_notes_plain">{raw}</span>;
+  }
+
+  return (
+    <div className="risk_mapping_notes_stack">
+      {category ? (
+        <div className="risk_mapping_notes_block">
+          <span className="risk_mapping_notes_label">Category</span>
+          <span className="risk_mapping_notes_value">{category}</span>
+        </div>
+      ) : null}
+      {sectionClass ? (
+        <div className="risk_mapping_notes_block">
+          <span className="risk_mapping_notes_label">Class</span>
+          <span className="risk_mapping_notes_value">{sectionClass}</span>
+        </div>
+      ) : null}
+      {expiryFormatted ? (
+        <div className="risk_mapping_notes_block risk_mapping_notes_block_expiry">
+          <span className="risk_mapping_notes_label">Expiry</span>
+          <span className="risk_mapping_notes_expiry_value">{expiryFormatted}</span>
+        </div>
+      ) : null}
+      {pills.length > 0 ? (
+        <div className="risk_mapping_notes_pills" role="list">
+          {pills.map((pill, idx) => (
+            <span key={idx} className="risk_mapping_notes_pill" role="listitem">
+              {pill}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function buildRiskItems(
@@ -297,6 +740,24 @@ const MyVendors = () => {
   const [dbTop5Risks, setDbTop5Risks] = useState<DbMatchedRisk[]>([]);
   const [dbMitigationsByRiskId, setDbMitigationsByRiskId] = useState<Record<string, DbMitigation[]>>({});
   const [vendorFrameworkRows, setVendorFrameworkRows] = useState<FrameworkMappingRow[]>([]);
+  const [buyerFrameworkRowsFromReport, setBuyerFrameworkRowsFromReport] = useState<
+    FrameworkMappingRow[]
+  >([]);
+  const [buyerFrameworkRowsFromRiskMap, setBuyerFrameworkRowsFromRiskMap] = useState<
+    FrameworkMappingRow[]
+  >([]);
+  const [riskRegisterPage, setRiskRegisterPage] = useState(1);
+  const [riskRegisterPageSize, setRiskRegisterPageSize] = useState(REPORTS_PAGE_SIZE);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFrameworkNames, setSelectedFrameworkNames] = useState<Set<string>>(() => new Set());
+
+  const buyerFrameworkRows = useMemo(
+    () =>
+      buyerFrameworkRowsFromRiskMap.length > 0
+        ? buyerFrameworkRowsFromRiskMap
+        : buyerFrameworkRowsFromReport,
+    [buyerFrameworkRowsFromRiskMap, buyerFrameworkRowsFromReport],
+  );
 
   useEffect(() => {
     setIsVendorPortal(readIsVendorPortal());
@@ -388,6 +849,10 @@ const MyVendors = () => {
   }, [isVendorPortal, activeTab]);
 
   useEffect(() => {
+    setSearchQuery("");
+  }, [activeTab]);
+
+  useEffect(() => {
     if (completedActiveAssessmentOptions.length === 0) {
       setSelectedAssessmentId("");
       return;
@@ -407,6 +872,8 @@ const MyVendors = () => {
       setDbTop5Risks([]);
       setDbMitigationsByRiskId({});
       setVendorFrameworkRows([]);
+      setBuyerFrameworkRowsFromReport([]);
+      setBuyerFrameworkRowsFromRiskMap([]);
       return;
     }
     const currentAssessmentId = selectedAssessmentId;
@@ -433,13 +900,19 @@ const MyVendors = () => {
           setDbTop5Risks([]);
           setDbMitigationsByRiskId({});
           setVendorFrameworkRows([]);
+          setBuyerFrameworkRowsFromReport([]);
+          setBuyerFrameworkRowsFromRiskMap([]);
           return;
         }
         const { top5Risks, mitigationsByRiskId } = vendorReportToRiskMappings(blob);
         setCompleteReportRiskAnalysis([]);
         setDbTop5Risks(top5Risks);
         setDbMitigationsByRiskId(mitigationsByRiskId);
-        setVendorFrameworkRows(vendorReportFrameworkRows(blob));
+        const apiFw = Array.isArray(first?.frameworkMappingRows)
+          ? (first.frameworkMappingRows as FrameworkMappingRow[])
+          : [];
+        const blobFw = vendorReportFrameworkRows(blob);
+        setVendorFrameworkRows(apiFw.length > 0 ? apiFw : blobFw);
         const createdAt = first?.createdAt != null ? String(first.createdAt) : undefined;
         setAssessmentDetail({
           assessmentId: currentAssessmentId,
@@ -499,15 +972,21 @@ const MyVendors = () => {
             riskDomainScores: d.riskAnalysis,
             updatedAt: (d.generatedAt as string | undefined) ?? undefined,
           });
+          const fw = Array.isArray(data.frameworkMappingRows)
+            ? (data.frameworkMappingRows as FrameworkMappingRow[])
+            : [];
+          setBuyerFrameworkRowsFromReport(fw);
         } else {
           setAssessmentDetail(null);
           setCompleteReportRiskAnalysis([]);
+          setBuyerFrameworkRowsFromReport([]);
         }
       })
       .catch(() => {
         if (controller.signal.aborted) return;
         setAssessmentDetail(null);
         setCompleteReportRiskAnalysis([]);
+        setBuyerFrameworkRowsFromReport([]);
       });
     return () => controller.abort();
   }, [selectedAssessmentId, completedActiveAssessmentOptions, isVendorPortal]);
@@ -518,6 +997,7 @@ const MyVendors = () => {
     if (!token || !selectedAssessmentId) {
       setDbTop5Risks([]);
       setDbMitigationsByRiskId({});
+      setBuyerFrameworkRowsFromRiskMap([]);
       return;
     }
     const currentAssessmentId = selectedAssessmentId;
@@ -537,15 +1017,22 @@ const MyVendors = () => {
               : {};
           setDbTop5Risks(top5);
           setDbMitigationsByRiskId(mitigations);
+          setBuyerFrameworkRowsFromRiskMap(
+            Array.isArray(data.data.frameworkMappingRows)
+              ? (data.data.frameworkMappingRows as FrameworkMappingRow[])
+              : [],
+          );
         } else {
           setDbTop5Risks([]);
           setDbMitigationsByRiskId({});
+          setBuyerFrameworkRowsFromRiskMap([]);
         }
       })
       .catch(() => {
         if (controller.signal.aborted) return;
         setDbTop5Risks([]);
         setDbMitigationsByRiskId({});
+        setBuyerFrameworkRowsFromRiskMap([]);
       });
     return () => controller.abort();
   }, [selectedAssessmentId, isVendorPortal]);
@@ -554,6 +1041,61 @@ const MyVendors = () => {
     () => buildRiskItems(assessmentDetail, completeReportRiskAnalysis, dbTop5Risks, dbMitigationsByRiskId),
     [assessmentDetail, completeReportRiskAnalysis, dbTop5Risks, dbMitigationsByRiskId],
   );
+
+  const filteredRiskItems = useMemo(
+    () => filterRiskItemsByQuery(riskItems, searchQuery),
+    [riskItems, searchQuery],
+  );
+
+  const frameworkRowsForTab = isVendorPortal ? vendorFrameworkRows : buyerFrameworkRows;
+  const filteredFrameworkRows = useMemo(
+    () => filterFrameworkRowsByQuery(frameworkRowsForTab, searchQuery),
+    [frameworkRowsForTab, searchQuery],
+  );
+
+  const uniqueFrameworkNames = useMemo(() => {
+    const s = new Set<string>();
+    frameworkRowsForTab.forEach((row) => {
+      s.add(formatFrameworkCell(row.framework));
+    });
+    return [...s].sort((a, b) => {
+      if (a === "—") return 1;
+      if (b === "—") return -1;
+      return a.localeCompare(b);
+    });
+  }, [frameworkRowsForTab]);
+
+  useLayoutEffect(() => {
+    const next = new Set<string>();
+    frameworkRowsForTab.forEach((row) => {
+      next.add(formatFrameworkCell(row.framework));
+    });
+    setSelectedFrameworkNames(next);
+  }, [frameworkRowsForTab]);
+
+  const frameworkGridRows = useMemo(() => {
+    if (uniqueFrameworkNames.length === 0) return filteredFrameworkRows;
+    if (selectedFrameworkNames.size === 0) return [];
+    return filteredFrameworkRows.filter((row) =>
+      selectedFrameworkNames.has(formatFrameworkCell(row.framework)),
+    );
+  }, [filteredFrameworkRows, selectedFrameworkNames, uniqueFrameworkNames.length]);
+
+  useEffect(() => {
+    setRiskRegisterPage(1);
+  }, [selectedAssessmentId, searchQuery]);
+
+  const riskRegisterTotalPages = Math.max(1, Math.ceil(filteredRiskItems.length / riskRegisterPageSize));
+
+  useEffect(() => {
+    if (riskRegisterPage > riskRegisterTotalPages) setRiskRegisterPage(riskRegisterTotalPages);
+  }, [riskRegisterPage, riskRegisterTotalPages]);
+
+  const paginatedRiskItems = useMemo(() => {
+    const start = (riskRegisterPage - 1) * riskRegisterPageSize;
+    return filteredRiskItems.slice(start, start + riskRegisterPageSize);
+  }, [filteredRiskItems, riskRegisterPage, riskRegisterPageSize]);
+
   const riskStats = useMemo(() => {
     const total = riskItems.length;
     const criticalHigh = riskItems.filter((r) => r.severity === "critical/high").length;
@@ -596,36 +1138,49 @@ const MyVendors = () => {
           </div>
         </div>
       </div>
-      <div className="page_tabs" role="tablist" aria-label="Risk mapping views">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "risk_register"}
-          onClick={() => setActiveTab("risk_register")}
-          className={`page_tab ${activeTab === "risk_register" ? "page_tab_active" : ""}`}
-        >
-          Risk Register
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "framework_mappings"}
-          onClick={() => setActiveTab("framework_mappings")}
-          className={`page_tab ${activeTab === "framework_mappings" ? "page_tab_active" : ""}`}
-        >
-          Framework Mappings
-        </button>
-        {!isVendorPortal ? (
+      <div className="risk_mapping_tabs_section">
+        <div className="page_tabs" role="tablist" aria-label="Risk mapping views">
           <button
             type="button"
             role="tab"
-            aria-selected={activeTab === "gap_analysis"}
-            onClick={() => setActiveTab("gap_analysis")}
-            className={`page_tab ${activeTab === "gap_analysis" ? "page_tab_active" : ""}`}
+            aria-selected={activeTab === "risk_register"}
+            onClick={() => setActiveTab("risk_register")}
+            className={`page_tab ${activeTab === "risk_register" ? "page_tab_active" : ""}`}
           >
-            Gap Analysis
+            Risk Register
           </button>
-        ) : null}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "framework_mappings"}
+            onClick={() => setActiveTab("framework_mappings")}
+            className={`page_tab ${activeTab === "framework_mappings" ? "page_tab_active" : ""}`}
+          >
+            Framework Mappings
+          </button>
+          {!isVendorPortal ? (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "gap_analysis"}
+              onClick={() => setActiveTab("gap_analysis")}
+              className={`page_tab ${activeTab === "gap_analysis" ? "page_tab_active" : ""}`}
+            >
+              Gap Analysis
+            </button>
+          ) : null}
+        </div>
+        <div className="risk_mapping_search_wrap">
+          <Search size={18} className="risk_mapping_search_icon" aria-hidden />
+          <input
+            type="search"
+            placeholder="Search risk ID, title, owner, framework, controls, notes…"
+            className="risk_mapping_search_input"
+            aria-label="Search risk mapping"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
       {activeTab === "risk_register" ? (
         <>
@@ -656,9 +1211,12 @@ const MyVendors = () => {
               </p>
               {riskItems.length === 0 ? (
                 <p className="risk_mapping_empty_text">No identified risks were found for this assessment.</p>
+              ) : filteredRiskItems.length === 0 ? (
+                <p className="risk_mapping_empty_text">No risks match your search.</p>
               ) : (
+                <>
                 <div className="risk_mapping_risk_list">
-                  {riskItems.map((risk) => (
+                  {paginatedRiskItems.map((risk) => (
                     <div key={risk.id} className="risk_mapping_risk_card">
                       <div className="risk_mapping_risk_top">
                         <div className="risk_mapping_chip_row">
@@ -684,8 +1242,10 @@ const MyVendors = () => {
                         </div>
                         <span className="risk_mapping_meta">{risk.date}</span>
                       </div>
-                      <h4 className="risk_mapping_risk_title">{risk.title}</h4>
-                      <p className="risk_mapping_risk_desc">{risk.description}</p>
+                      <div className="risk_mapping_risk_body">
+                        <h4 className="risk_mapping_risk_title">{risk.title}</h4>
+                        <p className="risk_mapping_risk_desc">{risk.description}</p>
+                      </div>
                       <div className="risk_mapping_risk_footer">
                         <span className="risk_mapping_owner">{risk.owner}</span>
                         <div className="risk_mapping_progress_wrap">
@@ -698,51 +1258,76 @@ const MyVendors = () => {
                     </div>
                   ))}
                 </div>
+                <footer className="risk_mapping_register_footer">
+                  <ReportsPagination
+                    totalItems={filteredRiskItems.length}
+                    currentPage={riskRegisterPage}
+                    pageSize={riskRegisterPageSize}
+                    onPageChange={setRiskRegisterPage}
+                    onPageSizeChange={(size) => {
+                      setRiskRegisterPageSize(size);
+                      setRiskRegisterPage(1);
+                    }}
+                  />
+                </footer>
+                </>
               )}
             </section>
           </>
         ) : activeTab === "framework_mappings" ? (
           <section className="risk_mapping_panel">
-            {isVendorPortal ? (
-              <>
-                <h3 className="risk_mapping_panel_title" style={{ marginBottom: "0.75rem" }}>
+            <div className="risk_mapping_fw_panel_head">
+              <div className="risk_mapping_fw_panel_text_block">
+                <h3 className="risk_mapping_panel_title">
                   Framework mapping — {assessmentDetail?.assessmentLabel ?? "Selected assessment"}
                 </h3>
-                <div className="risk_mapping_table_wrap">
-                  <table className="risk_mapping_table">
-                    <thead>
-                      <tr>
-                        <th>Framework</th>
-                        <th>Coverage</th>
-                        <th>Controls</th>
-                        <th>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vendorFrameworkRows.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="risk_mapping_empty_text">
-                            No framework mapping rows in the complete report for this assessment.
-                          </td>
-                        </tr>
-                      ) : (
-                        vendorFrameworkRows.map((row, i) => (
-                          <tr key={i}>
-                            <td>{formatFrameworkCell(row.framework)}</td>
-                            <td>{formatFrameworkCell(row.coverage)}</td>
-                            <td>{formatFrameworkCell(row.controls)}</td>
-                            <td>{formatFrameworkCell(row.notes)}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {isVendorPortal ? (
+                  <p className="risk_mapping_panel_subtitle risk_mapping_fw_panel_subtitle_vendor">
+                    Control coverage derived from the selected product&apos;s attestation (compliance certificate
+                    uploads) and stored on your complete analysis report.
+                  </p>
+                ) : null}
+              </div>
+              {uniqueFrameworkNames.length > 0 ? (
+                <FrameworkMultiSelectDropdown
+                  frameworkNames={uniqueFrameworkNames}
+                  selected={selectedFrameworkNames}
+                  onSelectionChange={setSelectedFrameworkNames}
+                />
+              ) : null}
+            </div>
+            {isVendorPortal ? (
+              <>
+                {vendorFrameworkRows.length === 0 ? (
+                  <div className="risk_mapping_empty_text">
+                    No framework mapping for this assessment yet. Upload compliance PDFs under your product
+                    attestation (certifications slot), complete attestation processing, then submit the vendor
+                    assessment so the complete report can include mapped controls.
+                  </div>
+                ) : filteredFrameworkRows.length === 0 ? (
+                  <p className="risk_mapping_empty_text">No framework rows match your search.</p>
+                ) : frameworkGridRows.length === 0 ? (
+                  <p className="risk_mapping_empty_text">
+                    Select at least one framework in the filter above to see mapped controls.
+                  </p>
+                ) : (
+                  <FrameworkMappingCardGrid rows={frameworkGridRows} emptyMessage="" />
+                )}
               </>
             ) : (
-              <p className="risk_mapping_empty_text">
-                Framework Mappings view for the selected assessment.
-              </p>
+              <>
+                {buyerFrameworkRows.length === 0 ? (
+                  <p className="risk_mapping_empty_text">No framework mapping rows found for this assessment.</p>
+                ) : filteredFrameworkRows.length === 0 ? (
+                  <p className="risk_mapping_empty_text">No framework rows match your search.</p>
+                ) : frameworkGridRows.length === 0 ? (
+                  <p className="risk_mapping_empty_text">
+                    Select at least one framework in the filter above to see mapped controls.
+                  </p>
+                ) : (
+                  <FrameworkMappingCardGrid rows={frameworkGridRows} emptyMessage="" />
+                )}
+              </>
             )}
           </section>
         ) : (

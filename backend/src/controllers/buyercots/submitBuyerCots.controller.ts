@@ -4,8 +4,27 @@ import { usersTable } from "../../schema/schema.js";
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsBuyerAssessments } from "../../schema/assessments/cotsBuyerAssessments.js";
 import { eq, and } from "drizzle-orm";
-import { findAttestationForBuyerVendorProduct } from "../../services/findAttestationForBuyerVendorProduct.js";
+import { findAttestationForBuyerAssessment } from "../../services/findAttestationForBuyerVendorProduct.js";
+import { resolveFrameworkMappingRowsForAttestation } from "../../services/frameworkMappingFromCompliance.js";
 import { generateBuyerVendorRiskReport } from "../agents/buyerVendorRiskReportAgent.js";
+
+function readBuyerAttestationIdFromBody(body: Record<string, unknown>): string | null {
+  const keys = [
+    "vendorAttestationId",
+    "vendor_attestation_id",
+    "attestationId",
+    "attestation_id",
+    "selectedProductId",
+    "selected_product_id",
+    "productAttestationId",
+    "product_attestation_id",
+  ];
+  for (const k of keys) {
+    const v = body[k];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  return null;
+}
 
 function buildBuyerContextForReport(body: Record<string, unknown>): Record<string, unknown> {
   const g = (k: string) => body[k];
@@ -56,17 +75,26 @@ async function persistVendorRiskReport(
   productName: string,
 ): Promise<void> {
   try {
-    const attestation = await findAttestationForBuyerVendorProduct(vendorName, productName);
+    const attestation = await findAttestationForBuyerAssessment({
+      attestationId: readBuyerAttestationIdFromBody(body),
+      vendorName,
+      productName,
+    });
     const report = await generateBuyerVendorRiskReport(
       buildBuyerContextForReport(body),
       attestation,
       vendorName || "Vendor",
       productName || "Product",
     );
+    const frameworkRows = resolveFrameworkMappingRowsForAttestation(attestation);
+    const reportStored = {
+      ...report,
+      frameworkMapping: { rows: frameworkRows },
+    } as unknown as Record<string, unknown>;
     await db
       .update(cotsBuyerAssessments)
       .set({
-        vendor_risk_assessment_report: report as unknown as Record<string, unknown>,
+        vendor_risk_assessment_report: reportStored,
         updated_at: new Date(),
       })
       .where(eq(cotsBuyerAssessments.assessment_id, assessmentId));

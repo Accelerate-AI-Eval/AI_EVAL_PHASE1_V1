@@ -8,6 +8,7 @@ import Home from "./Components/pages/Home/Home";
 import Dashboard from "./Components/pages/Dashboard/Dashboard";
 import Assessments from "./Components/pages/Assessments/Assessments";
 import VendorDirectory from "./Components/pages/VendorDirectory/VendorDirectory";
+import VendorDirectoryIntelligence from "./Components/pages/VendorDirectory/VendorDirectoryIntelligence";
 import Compilance from "./Components/pages/SecurityCenter/Compilance";
 import Goverance from "./Components/pages/Goverance/Goverance";
 import { SalesEnablement } from "./Components/pages/SalesEnablement/SalesEnablement";
@@ -71,6 +72,10 @@ function App() {
                   element={<BuyerVendorRiskReport />}
                 />
                 <Route path="/vendor-directory" element={<VendorDirectory />} />
+                <Route
+                  path="/vendor-directory/intelligence/:vendorId/:productId"
+                  element={<VendorDirectoryIntelligence />}
+                />
                 <Route path="/riskMappings" element={<MyVendors />} />
                 <Route path="/security_center" element={<Compilance />} />
                 <Route path="/governance" element={<Goverance />} />

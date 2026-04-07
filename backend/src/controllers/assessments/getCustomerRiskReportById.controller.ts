@@ -8,6 +8,12 @@ import { cotsVendorAssessments } from "../../schema/assessments/cotsVendorAssess
 import { vendorSelfAttestations } from "../../schema/assessments/vendorSelfAttestations.js";
 import { riskMappings } from "../../schema/risks/riskMappings.js";
 import { riskTop5Mitigations } from "../../schema/risks/riskTop5Mitigations.js";
+import {
+  resolveFrameworkMappingRowsForAttestation,
+  mergeFrameworkMappingRows,
+  extractFrameworkMappingRowsFromCustomerRiskReport,
+  countSubstantiveFrameworkMappingRows,
+} from "../../services/frameworkMappingFromCompliance.js";
 
 /**
  * GET /customerRiskReports/:id
@@ -65,6 +71,8 @@ const getCustomerRiskReportById = async (req: Request, res: Response): Promise<v
         createdAt: customerRiskAssessmentReports.created_at,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        attestationFrameworkRows: vendorSelfAttestations.framework_mapping_rows,
+        attestationComplianceExpiries: vendorSelfAttestations.compliance_document_expiries,
       })
       .from(customerRiskAssessmentReports)
       .innerJoin(assessments, eq(customerRiskAssessmentReports.assessment_id, assessments.id))
@@ -200,6 +208,118 @@ const getCustomerRiskReportById = async (req: Request, res: Response): Promise<v
         top5Risks: enrichedTop5,
         mitigationsByRiskId: enrichedMitByRisk,
       };
+    }
+
+    /** Vendor COTS: merge frameworks from vendor_self_attestations with stored report rows. */
+    let attestationSrc: Record<string, unknown> | null = null;
+    if (
+      row.attestationFrameworkRows != null ||
+      row.attestationComplianceExpiries != null
+    ) {
+      attestationSrc = {
+        framework_mapping_rows: row.attestationFrameworkRows,
+        compliance_document_expiries: row.attestationComplianceExpiries,
+      };
+    }
+    if (!attestationSrc) {
+      const sel = String(reportObj.selectedProductId ?? "").trim();
+      if (sel) {
+        const [a] = await db
+          .select({
+            framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
+            compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
+          })
+          .from(vendorSelfAttestations)
+          .where(
+            or(
+              eq(vendorSelfAttestations.id, sel),
+              eq(vendorSelfAttestations.vendor_self_attestation_id, sel),
+            ),
+          )
+          .limit(1);
+        if (a) {
+          attestationSrc = {
+            framework_mapping_rows: a.framework_mapping_rows,
+            compliance_document_expiries: a.compliance_document_expiries,
+          };
+        }
+      }
+    }
+    /** Join can leave attestation columns null; always resolve via cots row when possible (vendor portal). */
+    if (!attestationSrc && row.assessmentId) {
+      const [cots] = await db
+        .select({
+          vendor_attestation_id: cotsVendorAssessments.vendor_attestation_id,
+        })
+        .from(cotsVendorAssessments)
+        .where(eq(cotsVendorAssessments.assessment_id, row.assessmentId))
+        .limit(1);
+      const vid =
+        cots?.vendor_attestation_id != null ? String(cots.vendor_attestation_id).trim() : "";
+      if (vid) {
+        const [a] = await db
+          .select({
+            framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
+            compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
+          })
+          .from(vendorSelfAttestations)
+          .where(
+            or(
+              eq(vendorSelfAttestations.id, vid),
+              eq(vendorSelfAttestations.vendor_self_attestation_id, vid),
+            ),
+          )
+          .limit(1);
+        if (a) {
+          attestationSrc = {
+            framework_mapping_rows: a.framework_mapping_rows,
+            compliance_document_expiries: a.compliance_document_expiries,
+          };
+        }
+      }
+    }
+    const fromAttestation = attestationSrc
+      ? resolveFrameworkMappingRowsForAttestation(attestationSrc)
+      : [];
+    const fromStoredReport = extractFrameworkMappingRowsFromCustomerRiskReport(reportObj);
+    const mergedFrameworkRows = mergeFrameworkMappingRows(fromAttestation, fromStoredReport);
+    const frameworkRowsForResponse =
+      mergedFrameworkRows.length > 0
+        ? mergedFrameworkRows
+        : fromAttestation.length > 0
+          ? fromAttestation
+          : fromStoredReport;
+    if (frameworkRowsForResponse.length > 0) {
+      const mapped = frameworkRowsForResponse.map((r) => ({
+        framework: r.framework,
+        coverage: r.coverage,
+        controls: r.controls,
+        notes: r.notes,
+      }));
+      reportObj.frameworkMappingRows = mapped;
+      const g =
+        reportObj.generatedAnalysis && typeof reportObj.generatedAnalysis === "object"
+          ? ({ ...(reportObj.generatedAnalysis as object) } as Record<string, unknown>)
+          : {};
+      const frRaw = g.fullReport;
+      const fr =
+        frRaw && typeof frRaw === "object"
+          ? ({ ...(frRaw as object) } as Record<string, unknown>)
+          : {};
+      g.fullReport = { ...fr, frameworkMapping: { rows: mapped } };
+      reportObj.generatedAnalysis = g;
+    }
+
+    const storedFwStatus =
+      reportObj.frameworkMappingAttestationStatus ?? reportObj.framework_mapping_attestation_status;
+    if (storedFwStatus == null || String(storedFwStatus).trim() === "") {
+      const subAtt = countSubstantiveFrameworkMappingRows(fromAttestation);
+      if (attestationSrc) {
+        reportObj.frameworkMappingAttestationStatus =
+          subAtt > 0 ? "available" : "incomplete";
+      } else {
+        reportObj.frameworkMappingAttestationStatus = "missing";
+      }
     }
 
     res.status(200).json({

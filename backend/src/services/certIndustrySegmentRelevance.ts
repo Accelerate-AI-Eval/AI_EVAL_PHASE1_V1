@@ -1,0 +1,198 @@
+/**
+ * Buyer industry segment → certification frameworks relevant for vendor trust scoring / org portal gap analysis.
+ * Keep in sync with product rules (vendor attestation certifications score).
+ */
+
+export const CERTIFICATIONS_SCORE_CAP = 50;
+
+export const CERT_FRAMEWORK_KEYS = {
+  SOC2_T2: "SOC 2 Type 2",
+  SOC2_T1: "SOC 2 Type 1",
+  HIPAA_HITRUST: "HIPAA BAA + HITRUST",
+  HIPAA_BAA: "HIPAA BAA only",
+  ISO27001: "ISO 27001:2022",
+  ISO42001: "ISO 42001",
+  NIST_AI_RMF: "NIST AI RMF",
+  NIST_CSF: "NIST CSF v2.0",
+  NIST_800_53: "NIST SP 800-53 Rev 5",
+  NIST_800_171: "NIST SP 800-171 Rev 3",
+  CMMC: "CMMC v2 Level 2+",
+  PCI: "PCI DSS 4.0",
+  DORA: "DORA",
+  GDPR: "GDPR",
+} as const;
+
+export const CERT_RELEVANCE_FRAMEWORKS_BY_SEGMENT: Record<string, Set<string>> = {
+  "federal government (us)": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_800_53,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+    CERT_FRAMEWORK_KEYS.CMMC,
+  ]),
+  "state government (us)": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "local government (us)": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "education - k-12": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.GDPR,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "education - higher education": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_800_171,
+    CERT_FRAMEWORK_KEYS.GDPR,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "energy & utilities": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_800_53,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "financial services - banking": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.PCI,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.DORA,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "financial services - investment mgmt": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.DORA,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "financial services - insurance": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.DORA,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "healthcare - hospitals & health systems": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.HIPAA_HITRUST,
+    CERT_FRAMEWORK_KEYS.HIPAA_BAA,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "healthcare - payers (insurance)": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.HIPAA_HITRUST,
+    CERT_FRAMEWORK_KEYS.HIPAA_BAA,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "healthcare - pharmaceuticals": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.GDPR,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "healthcare - medical devices": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.HIPAA_HITRUST,
+    CERT_FRAMEWORK_KEYS.HIPAA_BAA,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "manufacturing - industrial": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "manufacturing - consumer goods": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.GDPR,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "professional services": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "retail & e-commerce": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.PCI,
+    CERT_FRAMEWORK_KEYS.GDPR,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  "technology & software": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.ISO42001,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.CMMC,
+  ]),
+  "transportation & logistics": new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+  other: new Set([
+    CERT_FRAMEWORK_KEYS.SOC2_T2,
+    CERT_FRAMEWORK_KEYS.SOC2_T1,
+    CERT_FRAMEWORK_KEYS.ISO27001,
+    CERT_FRAMEWORK_KEYS.NIST_CSF,
+    CERT_FRAMEWORK_KEYS.NIST_AI_RMF,
+  ]),
+};
+
+export function normalizeCertIndustrySegmentInput(raw: string): string {
+  const s = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\s*&\s*/g, " & ")
+    .replace(/\s*-\s*/g, " - ");
+  return s.length > 0 ? s : "other";
+}
+
+export function getRelevantCertificationFrameworkSet(segmentNormalized: string): Set<string> {
+  const direct = CERT_RELEVANCE_FRAMEWORKS_BY_SEGMENT[segmentNormalized];
+  if (direct) return direct;
+  return CERT_RELEVANCE_FRAMEWORKS_BY_SEGMENT.other;
+}

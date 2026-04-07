@@ -3,6 +3,14 @@ import { db } from "../../database/db.js";
 import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
+function firstNonEmptyText(...vals: (string | null | undefined)[]): string | undefined {
+  for (const v of vals) {
+    const t = typeof v === "string" ? v.trim() : "";
+    if (t) return t;
+  }
+  return undefined;
+}
+
 /**
  * GET /vendorDirectory/:vendorId/products
  * Returns only products (attestations) that are COMPLETED, visible_to_buyer = true,
@@ -77,6 +85,9 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               updated_at: vendorSelfAttestations.updated_at,
               visible_to_buyer: vendorSelfAttestations.visible_to_buyer,
               target_industries: vendorSelfAttestations.target_industries,
+              market_product_material: vendorSelfAttestations.market_product_material,
+              unique_solution: vendorSelfAttestations.unique_solution,
+              tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
             })
             .from(vendorSelfAttestations)
             .where(eq(vendorSelfAttestations.user_id, vendorUserId))
@@ -89,6 +100,9 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               updated_at: vendorSelfAttestations.updated_at,
               visible_to_buyer: vendorSelfAttestations.visible_to_buyer,
               target_industries: vendorSelfAttestations.target_industries,
+              market_product_material: vendorSelfAttestations.market_product_material,
+              unique_solution: vendorSelfAttestations.unique_solution,
+              tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
             })
             .from(vendorSelfAttestations)
             .where(
@@ -108,6 +122,7 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
      * Fallback to trust_score column if overallScore is missing in report JSON.
      */
     const trustScoreByAttestation: Record<string, number> = {};
+    const trustSummaryByAttestation: Record<string, string> = {};
     if (attestationIds.length > 0) {
       const reportRows = await db
         .select({
@@ -120,18 +135,25 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
         .orderBy(desc(generatedProfileReports.created_at));
       for (const row of reportRows) {
         const aid = row.attestation_id != null ? String(row.attestation_id) : "";
-        if (aid && trustScoreByAttestation[aid] === undefined) {
-          let report = row.report as Record<string, unknown> | string | null | undefined;
-          if (typeof report === "string") {
-            try {
-              report = JSON.parse(report) as Record<string, unknown>;
-            } catch {
-              report = null;
-            }
+        if (!aid) continue;
+        let report = row.report as Record<string, unknown> | string | null | undefined;
+        if (typeof report === "string") {
+          try {
+            report = JSON.parse(report) as Record<string, unknown>;
+          } catch {
+            report = null;
           }
-          const ts = report?.trustScore as Record<string, unknown> | null | undefined;
+        }
+        const ts = report?.trustScore as Record<string, unknown> | null | undefined;
+        if (trustScoreByAttestation[aid] === undefined) {
           const overallScore = typeof ts?.overallScore === "number" ? ts.overallScore : null;
-          trustScoreByAttestation[aid] = overallScore ?? row.trust_score;
+          const col = row.trust_score != null && Number.isFinite(Number(row.trust_score)) ? Number(row.trust_score) : null;
+          const val = overallScore ?? col;
+          if (val != null && Number.isFinite(val)) trustScoreByAttestation[aid] = val;
+        }
+        if (trustSummaryByAttestation[aid] === undefined) {
+          const summ = typeof ts?.summary === "string" ? ts.summary.trim() : "";
+          if (summ) trustSummaryByAttestation[aid] = summ;
         }
       }
     }
@@ -141,6 +163,12 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
       const status = apiStatus === "COMPLETED" ? "Completed" : apiStatus === "REJECTED" ? "Rejected" : "Draft";
       const idStr = r.id != null ? String(r.id) : "";
       const trustScore = idStr ? (trustScoreByAttestation[idStr] ?? null) : null;
+      const productDescription = firstNonEmptyText(
+        r.market_product_material,
+        r.unique_solution,
+        r.tech_product_specifications,
+        idStr ? trustSummaryByAttestation[idStr] : undefined,
+      );
       const sectorRaw = r.target_industries;
       let sector: Record<string, unknown> | string | null = null;
       if (sectorRaw != null && typeof sectorRaw === "object" && !Array.isArray(sectorRaw)) {
@@ -158,7 +186,12 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
         productName: (r.product_name ?? "").trim() || "Product",
         status,
         updated_at: r.updated_at ?? null,
+        /** Echo for clients (admin ?all=true may include non-visible rows). */
+        visible_to_buyer: Boolean(r.visible_to_buyer),
         trustScore,
+        summary: idStr ? trustSummaryByAttestation[idStr] : undefined,
+        /** Product-facing blurb for directory cards (attestation fields, then trust report summary). */
+        productDescription: productDescription ?? undefined,
         sector: sector ?? undefined,
       };
     });

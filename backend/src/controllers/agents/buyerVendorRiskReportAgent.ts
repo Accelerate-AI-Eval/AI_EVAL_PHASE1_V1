@@ -53,10 +53,21 @@ export type CapabilityGapsByVendor = {
   gaps: string[];
 };
 
+export type FrameworkMappingReportBlock = {
+  rows: Array<{
+    framework?: string;
+    coverage?: string;
+    controls?: string;
+    notes?: string;
+  }>;
+};
+
 export type BuyerVendorRiskReport = {
   generatedAt: string;
   overallRiskScore: number;
   implementationRiskScore?: number;
+  /** Letter grade (A–D) from implementation risk formula; matches rounded IRS. */
+  implementationReadinessGrade?: string;
   implementationRiskClassification?: string;
   implementationRiskDecision?: string;
   implementationRiskRecommendedAction?: string;
@@ -771,6 +782,7 @@ export async function generateBuyerVendorRiskReport(
       return {
         ...normalized,
         implementationRiskScore: implementationRisk.implementationRiskScore,
+        implementationReadinessGrade: implementationRisk.grade,
         implementationRiskClassification: implementationRisk.classification,
         implementationRiskDecision: implementationRisk.decision,
         implementationRiskRecommendedAction: implementationRisk.recommendedAction,
@@ -784,6 +796,7 @@ export async function generateBuyerVendorRiskReport(
   return {
     ...fallback,
     implementationRiskScore: implementationRisk.implementationRiskScore,
+    implementationReadinessGrade: implementationRisk.grade,
     implementationRiskClassification: implementationRisk.classification,
     implementationRiskDecision: implementationRisk.decision,
     implementationRiskRecommendedAction: implementationRisk.recommendedAction,
@@ -831,8 +844,15 @@ export function enrichStoredBuyerVendorReport(
       ...ctx,
       regulatorySnippet: regSnip,
     });
+  const preservedFramework =
+    report.frameworkMapping != null && typeof report.frameworkMapping === "object"
+      ? (report.frameworkMapping as FrameworkMappingReportBlock)
+      : undefined;
   return {
     ...normalized,
     buyerPrioritiesAndWeights: priorities,
+    ...(preservedFramework != null && Array.isArray(preservedFramework.rows)
+      ? { frameworkMapping: preservedFramework }
+      : {}),
   };
 }

@@ -6,6 +6,11 @@ import { customerRiskAssessmentReports } from "../../schema/assessments/customer
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsVendorAssessments } from "../../schema/assessments/cotsVendorAssessments.js";
 import { vendorSelfAttestations } from "../../schema/assessments/vendorSelfAttestations.js";
+import {
+  resolveFrameworkMappingRowsForAttestation,
+  extractFrameworkMappingRowsFromCustomerRiskReport,
+  mergeFrameworkMappingRows,
+} from "../../services/frameworkMappingFromCompliance.js";
 
 /**
  * GET /customerRiskReports
@@ -66,6 +71,8 @@ const listCustomerRiskReports = async (req: Request, res: Response): Promise<voi
         createdAt: customerRiskAssessmentReports.created_at,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
+        compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
       })
       .from(customerRiskAssessmentReports)
       .innerJoin(assessments, eq(customerRiskAssessmentReports.assessment_id, assessments.id))
@@ -81,15 +88,35 @@ const listCustomerRiskReports = async (req: Request, res: Response): Promise<voi
       .orderBy(desc(customerRiskAssessmentReports.created_at))
       .limit(100);
 
-    const reports = rows.map((r) => ({
-      id: r.id,
-      assessmentId: r.assessmentId,
-      title: r.title,
-      report: r.report,
-      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
-      expiryAt: r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
-      attestationExpiryAt: r.attestationExpiryAt instanceof Date ? r.attestationExpiryAt.toISOString() : (r.attestationExpiryAt != null ? String(r.attestationExpiryAt) : null),
-    }));
+    const reports = rows.map((r) => {
+      const fromAttestation = resolveFrameworkMappingRowsForAttestation({
+        framework_mapping_rows: r.framework_mapping_rows,
+        compliance_document_expiries: r.compliance_document_expiries,
+      } as Record<string, unknown>);
+      const fromStoredReport = extractFrameworkMappingRowsFromCustomerRiskReport(r.report);
+      const merged = mergeFrameworkMappingRows(fromAttestation, fromStoredReport);
+      const frameworkMappingRows =
+        merged.length > 0
+          ? merged
+          : fromAttestation.length > 0
+            ? fromAttestation
+            : fromStoredReport;
+      return {
+        id: r.id,
+        assessmentId: r.assessmentId,
+        title: r.title,
+        report: r.report,
+        createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
+        expiryAt: r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
+        attestationExpiryAt:
+          r.attestationExpiryAt instanceof Date
+            ? r.attestationExpiryAt.toISOString()
+            : r.attestationExpiryAt != null
+              ? String(r.attestationExpiryAt)
+              : null,
+        frameworkMappingRows,
+      };
+    });
 
     res.status(200).json({
       success: true,

@@ -294,16 +294,58 @@ export interface AssessmentPreviewModalContentProps {
   };
   vendorDetail?: Record<string, unknown> | null;
   vendorLoading?: boolean;
+  /** Full buyer COTS row from GET /buyerCotsAssessment/:id (includes formula grade/score when submitted). */
+  buyerDetail?: Record<string, unknown> | null;
+  buyerLoading?: boolean;
+}
+
+function buyerFormulaReadinessRows(merged: Record<string, unknown>): React.ReactNode {
+  const status = String(merged.status ?? "").toLowerCase();
+  if (status === "draft") return null;
+  const gradeRaw = merged.implementationReadinessGrade;
+  const gradeStr =
+    gradeRaw != null && String(gradeRaw).trim() !== ""
+      ? String(gradeRaw).trim()
+      : "";
+  const irsRaw = merged.implementationRiskScore;
+  const irsNum = typeof irsRaw === "number" ? irsRaw : Number(irsRaw);
+  const hasIrs = Number.isFinite(irsNum);
+  if (!gradeStr && !hasIrs) return null;
+  return (
+    <section className="vendor_preview_card">
+      <h3 className="vendor_preview_card_title">Readiness (formula)</h3>
+      <dl className="vendor_preview_list">
+        {gradeStr ? (
+          <div className="vendor_preview_row">
+            <dt className="vendor_preview_label">Grade</dt>
+            <dd className="vendor_preview_value">{gradeStr}</dd>
+          </div>
+        ) : null}
+        {hasIrs ? (
+          <div className="vendor_preview_row">
+            <dt className="vendor_preview_label">Implementation risk score</dt>
+            <dd className="vendor_preview_value">{Math.round(irsNum)}/100</dd>
+          </div>
+        ) : null}
+      </dl>
+    </section>
+  );
 }
 
 export default function AssessmentPreviewModalContent({
   previewRow,
   vendorDetail,
   vendorLoading = false,
+  buyerDetail = null,
+  buyerLoading = false,
 }: AssessmentPreviewModalContentProps) {
   const isVendor = (previewRow?.type ?? "").toLowerCase() === "cots_vendor";
   const isDraft = (previewRow?.status ?? "").toLowerCase() === "draft";
   const src = vendorDetail || previewRow;
+  const buyerMerged: Record<string, unknown> = {
+    ...previewRow,
+    ...(buyerDetail ?? {}),
+  };
 
   return (
     <div className="vendor_preview">
@@ -372,49 +414,57 @@ export default function AssessmentPreviewModalContent({
             </section>
           </>
         ) : (
-          ASSESSMENT_PREVIEW_SECTIONS.map((section) => (
-            <section
-              key={section.title}
-              className="vendor_preview_card"
-            >
-              <h3 className="vendor_preview_card_title">{section.title}</h3>
-              <dl className="vendor_preview_list">
-                {section.fields
-                  .filter(
-                    (field) =>
-                      !(
-                        field.label === "Expires on" &&
-                        (previewRow?.status ?? "").toLowerCase() === "draft"
-                      ),
-                  )
-                  .map((field) => {
-                    const isDraftPreview =
-                      (previewRow?.status ?? "").toLowerCase() === "draft";
-                    const label =
-                      field.label === "Created on" && isDraftPreview
-                        ? "Drafted on"
-                        : field.label;
-                    const isExpiry = field.label === "Expires on";
-                    return (
-                      <div
-                        key={field.label}
-                        className="vendor_preview_row"
-                      >
-                        <dt className="vendor_preview_label">{label}</dt>
-                        <dd
-                          className={`vendor_preview_value${isExpiry ? " vendor_preview_value_expiry" : ""}`}
+          <>
+            {buyerLoading ? (
+              <section className="vendor_preview_card">
+                <LoadingMessage message="Loading assessment details…" />
+              </section>
+            ) : null}
+            {ASSESSMENT_PREVIEW_SECTIONS.map((section) => (
+              <section
+                key={section.title}
+                className="vendor_preview_card"
+              >
+                <h3 className="vendor_preview_card_title">{section.title}</h3>
+                <dl className="vendor_preview_list">
+                  {section.fields
+                    .filter(
+                      (field) =>
+                        !(
+                          field.label === "Expires on" &&
+                          (previewRow?.status ?? "").toLowerCase() === "draft"
+                        ),
+                    )
+                    .map((field) => {
+                      const isDraftPreview =
+                        (previewRow?.status ?? "").toLowerCase() === "draft";
+                      const label =
+                        field.label === "Created on" && isDraftPreview
+                          ? "Drafted on"
+                          : field.label;
+                      const isExpiry = field.label === "Expires on";
+                      return (
+                        <div
+                          key={field.label}
+                          className="vendor_preview_row"
                         >
-                          {formatPreviewValue(
-                            field.value(previewRow),
-                            field.label,
-                          )}
-                        </dd>
-                      </div>
-                    );
-                  })}
-              </dl>
-            </section>
-          ))
+                          <dt className="vendor_preview_label">{label}</dt>
+                          <dd
+                            className={`vendor_preview_value${isExpiry ? " vendor_preview_value_expiry" : ""}`}
+                          >
+                            {formatPreviewValue(
+                              field.value(previewRow),
+                              field.label,
+                            )}
+                          </dd>
+                        </div>
+                      );
+                    })}
+                </dl>
+              </section>
+            ))}
+            {!buyerLoading ? buyerFormulaReadinessRows(buyerMerged) : null}
+          </>
         )}
       </div>
     </div>

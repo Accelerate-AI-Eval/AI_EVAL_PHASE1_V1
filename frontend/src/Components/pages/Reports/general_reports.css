@@ -708,6 +708,31 @@
   font-weight: 700;
 }
 
+/* Complete report cards: same copy/layout style as full report approval banner (no letter grade). */
+.general_rpr_approval_banner {
+  margin: -0.25rem 0.75rem 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border: 1px solid #bbf7d0;
+  text-align: left;
+}
+
+.general_rpr_approval_banner_title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #14532d;
+  line-height: 1.25;
+}
+
+.general_rpr_approval_banner_sub {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #166534;
+  line-height: 1.4;
+}
+
 .view_rpr_btn {
   background: none;
   border: none;

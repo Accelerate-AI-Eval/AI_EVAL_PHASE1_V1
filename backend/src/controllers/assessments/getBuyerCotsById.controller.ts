@@ -4,6 +4,32 @@ import { usersTable } from "../../schema/schema.js";
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsBuyerAssessments } from "../../schema/assessments/cotsBuyerAssessments.js";
 import { eq, and } from "drizzle-orm";
+import { buildBuyerCotsOrganizationalPortalInsights } from "../../services/orgPortalComplianceInsights.js";
+import { buyerImplementationReadinessGradeFromScore } from "../../services/buyerImplementationRiskScore.js";
+
+function extractImplementationReadinessFromVendorReport(report: unknown): {
+  implementationReadinessGrade: string | null;
+  implementationRiskScore: number | null;
+} {
+  if (report == null || typeof report !== "object") {
+    return { implementationReadinessGrade: null, implementationRiskScore: null };
+  }
+  const r = report as Record<string, unknown>;
+  const rawScore = r.implementationRiskScore;
+  const n = typeof rawScore === "number" ? rawScore : Number(rawScore);
+  const implementationRiskScore = Number.isFinite(n)
+    ? Math.min(100, Math.max(0, Math.round(n)))
+    : null;
+  const rawLetter = r.implementationReadinessGrade;
+  let implementationReadinessGrade: string | null =
+    rawLetter != null && String(rawLetter).trim() !== ""
+      ? String(rawLetter).trim().slice(0, 8)
+      : null;
+  if (implementationReadinessGrade == null && implementationRiskScore != null) {
+    implementationReadinessGrade = buyerImplementationReadinessGradeFromScore(implementationRiskScore);
+  }
+  return { implementationReadinessGrade, implementationRiskScore };
+}
 
 /** GET /buyerCotsAssessment/:id - return one buyer COTS assessment for resume. User must belong to same org. */
 const getBuyerCotsById = async (req: Request, res: Response) => {
@@ -79,6 +105,7 @@ const getBuyerCotsById = async (req: Request, res: Response) => {
         contextual_multipliers: cotsBuyerAssessments.contextual_multipliers,
         buyer_risk_mitigation: cotsBuyerAssessments.buyer_risk_mitigation,
         risk_mitigation_mapping_ids: cotsBuyerAssessments.risk_mitigation_mapping_ids,
+        vendor_risk_assessment_report: cotsBuyerAssessments.vendor_risk_assessment_report,
       })
       .from(assessments)
       .leftJoin(cotsBuyerAssessments, eq(assessments.id, cotsBuyerAssessments.assessment_id))
@@ -146,7 +173,15 @@ const getBuyerCotsById = async (req: Request, res: Response) => {
       contextualMultipliers: r.contextual_multipliers ?? "",
       riskMitigation: r.buyer_risk_mitigation ?? "",
       riskMitigationMappingIds: Array.isArray(r.risk_mitigation_mapping_ids) ? r.risk_mitigation_mapping_ids : [],
+      ...extractImplementationReadinessFromVendorReport(
+        (r as { vendor_risk_assessment_report?: unknown }).vendor_risk_assessment_report,
+      ),
     };
+    data.organizationalPortal = buildBuyerCotsOrganizationalPortalInsights({
+      industrySector: r.industry_sector,
+      vendorCertifications: r.vendor_compliance_certifications,
+      vendorRiskReport: (r as { vendor_risk_assessment_report?: unknown }).vendor_risk_assessment_report,
+    });
     return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("getBuyerCotsById:", error instanceof Error ? error.message : String(error));

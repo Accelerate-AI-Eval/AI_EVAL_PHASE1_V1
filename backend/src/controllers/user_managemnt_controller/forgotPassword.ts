@@ -6,36 +6,48 @@ import jwt from "jsonwebtoken";
 import emailConfig from "../../functions/emailconfig.js";
 
 const RESET_TOKEN_EXPIRY = "1h";
-const BASE_URL = process.env.BASE_URL ;
+const BASE_URL = process.env.BASE_URL;
 
+const RESET_MAIL_PLATFORM_NAME = "AI-Q Platform";
+const RESET_MAIL_PRIMARY = "#3b66f5";
+const RESET_MAIL_PAGE_BG = "#f4f4f4";
+
+/** Password reset email: table layout + inline styles (aligned with invite mail). */
 function resetPasswordEmailTemplate(resetLink: string) {
+  const brandHyphen = RESET_MAIL_PLATFORM_NAME.replace("-", "&#8209;");
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reset your password</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333; }
-  .container { max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333; }
-  h1 { color: #2463eb; }
-  p { font-size:16px; line-height:1.5; color:#333333; }
-  .button-container { margin:20px 0; }
-  .confirm-button { background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block; }
-  .footer { font-size:12px; color:#666666; margin-top:20px; text-align:center; }
-</style>
 </head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div class="container" style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333;">
-  <h1 style="color: #2463eb;">Reset your password</h1>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">You requested a password reset for your AI Eval account. Click the button below to choose a new password.</p>
-  <div class="button-container" style="margin:20px 0;">
-    <a href="${resetLink}" class="confirm-button" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Reset Password</a>
-  </div>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Thanks,<br>The AI Eval Team</p>
-  <div class="footer" style="font-size:12px; color:#666666; margin-top:20px; text-align:center;">&copy; 2026 AI Eval. All rights reserved.</div>
-</div>
+<body style="margin:0;padding:0;background-color:${RESET_MAIL_PAGE_BG};font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#333333;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:${RESET_MAIL_PAGE_BG};padding:24px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;">
+        <tr>
+          <td style="padding:40px;">
+            <h1 style="margin:0 0 24px;font-size:22px;line-height:1.3;font-weight:700;color:${RESET_MAIL_PRIMARY};">Reset your password</h1>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">We received a request to reset the password for your ${brandHyphen} account.</p>
+            <p style="margin:0 0 28px;font-size:16px;line-height:1.5;color:#333333;">Click the button below to choose a new password.</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:6px;background-color:${RESET_MAIL_PRIMARY};">
+                  <a href="${resetLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;">Reset Password</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.</p>
+            <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#333333;">Thanks,<br>The ${RESET_MAIL_PLATFORM_NAME} Team</p>
+            <p style="margin:0;font-size:12px;line-height:1.5;color:#888888;text-align:center;">&copy; 2026 ${RESET_MAIL_PLATFORM_NAME}. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>`;
 }
@@ -86,11 +98,11 @@ const forgotPassword = async (req: Request, res: Response) => {
       const transporter = emailConfig();
       await transporter.sendMail({
         from: {
-          name: "AI Eval",
+          name: RESET_MAIL_PLATFORM_NAME,
           address: process.env.SENDER_EMAIL_ID || "",
         },
         to: email,
-        subject: "Reset your AI Eval password",
+        subject: `Reset your ${RESET_MAIL_PLATFORM_NAME} password`,
         html: resetPasswordEmailTemplate(resetLink),
       });
     } catch (emailErr: unknown) {

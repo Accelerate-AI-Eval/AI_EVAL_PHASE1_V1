@@ -9,11 +9,24 @@ import Breadcrumbs from "../../UI/Breadcrumbs";
 import AssessmentPreviewModalContent from "../Assessments/AssessmentPreviewModalContent";
 import LoadingMessage from "../../UI/LoadingMessage";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
+import {
+  overallRiskScoreFromReportJson,
+  riskLevelFromReportJson,
+  customerRiskReportApprovalHeading,
+  alignmentScoreFromRiskScore,
+} from "../../../utils/completeReportGrade";
 import "../UserManagement/user_management.css";
 import "../Assessments/assessments.css";
 import "../VendorAttestationDetails/vendor_attestation_details.css";
 import "../VendorDirectory/VendorDirectory.css";
 import "../Reports/general_reports.css";
+import "../Reports/reports.css";
+import {
+  OrgPortalFrameworkGapSectionVendor,
+  OrgPortalFrameworkGapSectionBuyer,
+  type VendorOrganizationalPortal,
+  type BuyerOrganizationalPortal,
+} from "./OrgPortalFrameworkGapSection";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || "";
 
@@ -24,6 +37,8 @@ interface CompleteReportItem {
   createdAt?: string;
   expiryAt?: string | null;
   attestationExpiryAt?: string | null;
+  /** Full stored report JSON (includes generatedAnalysis.overallRiskScore for grade/readiness). */
+  report?: Record<string, unknown>;
 }
 
 interface GeneralReportItem {
@@ -146,7 +161,26 @@ export default function OrganizationAssessmentView() {
           .catch(() => {})
           .finally(() => setLoading(false));
       } else {
-        setLoading(false);
+        setLoading(true);
+        fetch(`${BASE_URL.replace(/\/$/, "")}/buyerCotsAssessment/${encodeURIComponent(assessmentId)}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((result) => {
+            if (result?.success && result?.data) {
+              const data = result.data as Record<string, unknown>;
+              setPreviewRow({
+                ...(state.row as Record<string, unknown>),
+                ...data,
+              });
+              if (data.organizationName != null) {
+                setOrganizationName(String(data.organizationName));
+              }
+            }
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
       }
       return;
     }
@@ -301,6 +335,22 @@ export default function OrganizationAssessmentView() {
         />
       </div>
 
+      {(previewRow.type as string)?.toLowerCase() === "cots_vendor" &&
+        vendorDetail?.organizationalPortal != null &&
+        typeof vendorDetail.organizationalPortal === "object" && (
+          <OrgPortalFrameworkGapSectionVendor
+            portal={vendorDetail.organizationalPortal as VendorOrganizationalPortal}
+          />
+        )}
+
+      {(previewRow.type as string)?.toLowerCase() === "cots_buyer" &&
+        previewRow.organizationalPortal != null &&
+        typeof previewRow.organizationalPortal === "object" && (
+          <OrgPortalFrameworkGapSectionBuyer
+            portal={previewRow.organizationalPortal as BuyerOrganizationalPortal}
+          />
+        )}
+
       {(previewRow.type as string)?.toLowerCase() === "cots_vendor" && (
         <section className="assessment_details_reports_section" style={{ marginTop: "2rem", maxWidth: "900px" }}>
           <h2 className="assessment_details_reports_heading" style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
@@ -316,6 +366,14 @@ export default function OrganizationAssessmentView() {
             <div className="general_rpr_cards_sec vendor_directory_grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
               {completeReports.map((report) => {
                 const archived = isCompleteReportArchived(report);
+                const riskScore = overallRiskScoreFromReportJson(report.report);
+                const riskLevel = riskLevelFromReportJson(report.report) ?? "Low";
+                const approvalTitle =
+                  riskScore != null
+                    ? customerRiskReportApprovalHeading(riskScore, riskLevel)
+                    : null;
+                const alignmentScore =
+                  riskScore != null ? alignmentScoreFromRiskScore(riskScore) : null;
                 return (
                   <article
                     key={`complete-${report.id}`}
@@ -337,6 +395,15 @@ export default function OrganizationAssessmentView() {
                         </h2>
                       </div>
                     </div>
+                    {approvalTitle != null && alignmentScore != null ? (
+                      <div className="general_rpr_approval_banner">
+                        <h3 className="general_rpr_approval_banner_title">{approvalTitle}</h3>
+                        <p className="general_rpr_approval_banner_sub">
+                          Overall alignment score: {alignmentScore}/100 (higher indicates
+                          stronger alignment / lower residual risk)
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="general_rpr_card_footer">
                       <div className="general_rpr_card_dates">
                         <div className="general_rpr_card_date_row">
@@ -355,7 +422,9 @@ export default function OrganizationAssessmentView() {
                         className="view_rpr_btn vendor_directory_card_action_btn"
                         onClick={() =>
                           navigate(`/reports/${report.id}`, {
-                            state: { reportTitle: getReportCardTitle(report.title ?? "") },
+                            state: {
+                              reportTitle: getReportCardTitle(report.title ?? ""),
+                            },
                           })
                         }
                         aria-label={`View report: ${getReportCardTitle(report.title ?? "")}`}

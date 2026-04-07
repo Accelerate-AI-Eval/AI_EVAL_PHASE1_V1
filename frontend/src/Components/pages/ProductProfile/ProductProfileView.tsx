@@ -3,12 +3,11 @@
  * product cards with trust score and View details; details open on the page (no modal).
  */
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Shield,
-  FileCheck,
   Building2,
   Globe,
-  FileText,
   Package,
   CircleChevronLeft,
   ChevronRight,
@@ -25,6 +24,7 @@ import type {
 } from "../DirectoryListing/DirectoryListing";
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import "../UserManagement/user_management.css";
+import "../MyVendors/MyVendors.css";
 import "../../../styles/page_tabs.css";
 import "./product_profile.css";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
@@ -45,6 +45,17 @@ function productInitials(name: string): string {
   const s = (name || "Draft").trim();
   if (s.length >= 2) return s.slice(0, 2).toUpperCase();
   return s ? s.toUpperCase() : "Dr";
+}
+
+/** Chip accent for product status — matches Risk & Controls chip vocabulary (MyVendors.css). */
+function productStatusToRiskChipClass(status: string): string {
+  const s = String(status ?? "").toLowerCase().trim();
+  if (s === "completed") return "risk_mapping_chip_mitigated";
+  if (s === "draft") return "risk_mapping_chip_medium";
+  if (s === "expired") return "risk_mapping_chip_open";
+  if (s === "rejected") return "risk_mapping_chip_critical";
+  if (s === "submitted" || s === "pending") return "risk_mapping_chip_low";
+  return "risk_mapping_chip_low";
 }
 
 const SECTOR_KEYS_ORDER = ["public_sector", "private_sector", "non_profit_sector"] as const;
@@ -210,6 +221,63 @@ export type SectionVisibilityKey =
   | "visible_operations_support"
   | "visible_vendor_management";
 
+interface ProductProfileProductListCardProps {
+  product: ProductProfileProduct;
+  trustScoreDisplay: string;
+  onView: (product: ProductProfileProduct) => void;
+}
+
+function ProductProfileProductListCard({
+  product,
+  trustScoreDisplay,
+  onView,
+}: ProductProfileProductListCardProps) {
+  const statusChipClass = productStatusToRiskChipClass(product.status);
+  const hasTrustScore = trustScoreDisplay !== "—";
+  return (
+    <div className="risk_mapping_risk_card">
+      <div className="risk_mapping_risk_top product_profile_card_risk_top_with_trust">
+        <div className="risk_mapping_chip_row">
+          <span className="risk_mapping_chip risk_mapping_chip_id" aria-hidden>
+            {productInitials(product.productName)}
+          </span>
+          <span className={`risk_mapping_chip ${statusChipClass}`}>{product.status}</span>
+        </div>
+        <div className="product_profile_card_trust_block" aria-label={`Trust score ${trustScoreDisplay}`}>
+          <span className="product_profile_card_trust_label_top">Trust score</span>
+          <span
+            className={
+              hasTrustScore
+                ? "product_profile_card_trust_value_top"
+                : "product_profile_card_trust_value_top product_profile_card_trust_value_top_muted"
+            }
+          >
+            {trustScoreDisplay}
+          </span>
+        </div>
+      </div>
+      <div className="risk_mapping_risk_body">
+        <h4 className="risk_mapping_risk_title">{product.productName}</h4>
+        <p className="risk_mapping_risk_desc">
+          Review attestation detail, trust breakdown, and buyer visibility.
+        </p>
+      </div>
+      <div className="risk_mapping_risk_footer_product">
+        {/* <span className="risk_mapping_owner">Product attestation</span> */}
+        <button
+          type="button"
+          className="product_profile_product_card_view_btn"
+          onClick={() => onView(product)}
+          aria-label={`View details for ${product.productName}`}
+        >
+          View details
+          <ChevronRight size={16} aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProductProfileView({
   formState,
   products = [],
@@ -279,6 +347,10 @@ function ProductProfileView({
     setCurrentProductPage(1);
     setArchivedProductPage(1);
   }, [productSearchQuery]);
+
+  useEffect(() => {
+    setProductSearchQuery("");
+  }, [productTab]);
 
   /** When set, product details are shown on the page instead of in a modal. */
   const [selectedProductIdForDetail, setSelectedProductIdForDetail] = useState<string | null>(null);
@@ -404,16 +476,45 @@ function ProductProfileView({
 
   return (
     <div className="sec_user_page attestation_page org_settings_page product_profile_page">
-      {!selectedProductIdForDetail && (
-        <div className="heading_user_page page_header_align">
+      {selectedProductIdForDetail && (
+        <div className="heading_user_page page_header_align product_profile_page_header product_profile_detail_parent_header">
           <div className="headers page_header_row">
             <span className="icon_size_header" aria-hidden>
-              <FileText size={24} className="header_icon_svg" />
+              <Globe size={24} className="header_icon_svg" />
+            </span>
+            <div className="page_header_title_block">
+              <nav className="product_profile_breadcrumb" aria-label="Breadcrumb">
+                <button
+                  type="button"
+                  className="product_profile_breadcrumb_root"
+                  onClick={handleBackToProducts}
+                  aria-label="Back to Product Profile list"
+                >
+                  Product Profile
+                </button>
+                <ChevronRight size={16} className="product_profile_breadcrumb_sep" aria-hidden />
+                <h1 className="product_profile_breadcrumb_current">
+                  {viewProductMeta?.productName ?? "Product details"}
+                </h1>
+              </nav>
+              <p className="sub_title page_header_subtitle product_profile_breadcrumb_subtitle">
+                Attestation status, trust breakdown, and what buyers can see.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!selectedProductIdForDetail && (
+        <div className="heading_user_page page_header_align product_profile_page_header">
+          <div className="headers page_header_row">
+            <span className="icon_size_header" aria-hidden>
+              <Globe size={24} className="header_icon_svg" />
             </span>
             <div className="page_header_title_block">
               <h1 className="page_header_title">Product Profile</h1>
               <p className="sub_title page_header_subtitle">
-                Your AI product attestation data and compliance posture.
+                Your AI product attestation data, trust scores, and directory visibility in one place.
               </p>
             </div>
           </div>
@@ -541,19 +642,23 @@ function ProductProfileView({
 
       <section className="product_profile_products_section">
           {selectedProductIdForDetail ? (
-            <div className="product_profile_detail_on_page">
+            <div
+              className="product_profile_detail_on_page"
+              aria-label={
+                viewProductMeta?.productName
+                  ? `Details for ${viewProductMeta.productName}`
+                  : "Product details"
+              }
+            >
               <button
                 type="button"
                 className="product_profile_back_to_products_btn"
                 onClick={handleBackToProducts}
                 aria-label="Back to products"
               >
-                <CircleChevronLeft size={20} aria-hidden />
+                <CircleChevronLeft size={18} aria-hidden />
                 Back to products
               </button>
-              <h2 className="product_profile_detail_on_page_title">
-                {viewProductMeta?.productName ?? "Product details"}
-              </h2>
               <div className="product_profile_detail_on_page_body">
                 {viewProductLoading && <LoadingMessage message="Loading…" />}
                 {!viewProductLoading && viewProductMeta && (
@@ -618,10 +723,7 @@ function ProductProfileView({
                           )?.generated_profile_report,
                         );
                       return pageReport ? (
-                        <div
-                          className="product_profile_modal_generated_wrap"
-                          style={{ marginTop: "1rem" }}
-                        >
+                        <div className="product_profile_modal_generated_wrap">
                           <GeneratedProductProfileCards
                             report={pageReport}
                             sectionVisibility={showVisibilityToggle ? getSectionVisibility : undefined}
@@ -633,24 +735,47 @@ function ProductProfileView({
                 )}
               </div>
             </div>
+          ) : products.length === 0 ? (
+            <div className="product_profile_empty_hero" role="region" aria-labelledby="product_profile_empty_title">
+              <div className="product_profile_empty_hero_inner">
+                <span className="product_profile_empty_hero_icon" aria-hidden>
+                  <Package size={40} strokeWidth={1.25} />
+                </span>
+                <h2 id="product_profile_empty_title" className="product_profile_empty_hero_title">
+                  No product profiles yet
+                </h2>
+                <p className="product_profile_empty_hero_lead">
+                  {viewOnly
+                    ? "Completed attestations will appear here with trust scores and visibility controls."
+                    : "When you complete a product attestation, it shows up here with trust scores, generated profile cards, and directory visibility."}
+                </p>
+                {!viewOnly && (
+                  <div className="product_profile_empty_hero_actions">
+                    <Link
+                      to="/attestation_details"
+                      className="product_profile_empty_hero_primary"
+                    >
+                      Go to Attestation
+                      <ChevronRight size={18} aria-hidden />
+                    </Link>
+                    <p className="product_profile_empty_hero_hint">
+                      Finish or submit your attestation to populate this page.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             <>
-          <div className="product_profile_products_header_row">
-            <h2 className="product_profile_products_heading">Products</h2>
-            <div className="product_profile_products_search_wrap">
-              <Search size={18} className="product_profile_products_search_icon" aria-hidden />
-              <input
-                type="search"
-                placeholder="Search by product name or trust score…"
-                className="product_profile_products_search_input"
-                aria-label="Search products by name or trust score"
-                value={productSearchQuery}
-                onChange={(e) => setProductSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-          {onProductTabChange && (
-            <div className="product_profile_products_tabs_row">
+          <header className="product_profile_products_intro">
+            <h2 className="product_profile_products_section_title">Products</h2>
+            <p className="product_profile_products_section_lead">
+              Review trust scores, attestation status, and buyer visibility. Search by name or score, then open a
+              product for full details.
+            </p>
+          </header>
+             <div className="product_profile_tabs_section">
+            {onProductTabChange ? (
               <div className="page_tabs" role="tablist" aria-label="Product list">
                 <button
                   type="button"
@@ -675,8 +800,23 @@ function ProductProfileView({
                   Archived
                 </button>
               </div>
+            ) : (
+              <div className="product_profile_tabs_spacer" aria-hidden />
+            )}
+            <div className="product_profile_products_search_wrap">
+              <Search size={18} className="product_profile_products_search_icon" aria-hidden />
+              <input
+                type="search"
+                placeholder="Search by product name or trust score…"
+                className="product_profile_products_search_input"
+                aria-label="Search products by name or trust score"
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+              />
             </div>
-          )}
+          </div>
+          <div className="product_profile_products_shell">
+       
           <div
             id="product_profile_current_panel"
             role="tabpanel"
@@ -688,62 +828,33 @@ function ProductProfileView({
               <>
                 {filteredCurrentProducts.length === 0 ? (
                   <p className="product_profile_no_products" role="status">
-                    No products
+                    {currentProducts.length === 0
+                      ? "No current products yet."
+                      : productSearchQuery.trim()
+                        ? "No products match your search."
+                        : "No products."}
                   </p>
                 ) : (
                 <>
                 <div className="product_profile_product_cards">
                   {paginatedCurrentProducts.map((product) => {
-              const productReport = asGeneratedReport(product.generated_profile_report);
-              const overallFromReport = getOverallScoreFromReport(product.generated_profile_report);
-              const trustScoreDisplay =
-                productReport?.trustScore != null
-                  ? `${productReport.trustScore.overallScore}%`
-                  : overallFromReport != null
-                    ? `${overallFromReport}%`
-                    : "—";
-              return (
-              <div key={product.id} className="product_profile_product_card">
-                <div className="product_profile_product_card_top">
-                  <div className="product_profile_product_card_content">
-                    <div className="product_profile_product_card_title_row">
-                      <span
-                        className="product_profile_product_card_icon"
-                        aria-hidden
-                      >
-                        {productInitials(product.productName)}
-                      </span>
-                      <div className="product_status_Data">
-                        <h3 className="product_profile_product_card_title">
-                          {product.productName}
-                        </h3>
-                        <span
-                          className={`product_profile_product_card_status product_profile_product_card_status_${product.status.toLowerCase()}`}
-                        >
-                          {product.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="product_profile_product_card_trust_badge">
-                    <span className="product_profile_product_card_trust_label">Trust score</span>
-                    <span className="product_profile_product_card_trust_value">{trustScoreDisplay}</span>
-                  </div>
-                </div>
-                <div className="product_profile_product_card_footer">
-                  <button
-                    type="button"
-                    className="product_profile_product_card_view_btn"
-                    onClick={() => handleViewProduct(product)}
-                    aria-label={`View details for ${product.productName}`}
-                  >
-                    View details
-                    <ChevronRight size={16} aria-hidden />
-                  </button>
-                </div>
-              </div>
-              );
-            })}
+                    const productReport = asGeneratedReport(product.generated_profile_report);
+                    const overallFromReport = getOverallScoreFromReport(product.generated_profile_report);
+                    const trustScoreDisplay =
+                      productReport?.trustScore != null
+                        ? `${productReport.trustScore.overallScore}%`
+                        : overallFromReport != null
+                          ? `${overallFromReport}%`
+                          : "—";
+                    return (
+                      <ProductProfileProductListCard
+                        key={product.id}
+                        product={product}
+                        trustScoreDisplay={trustScoreDisplay}
+                        onView={handleViewProduct}
+                      />
+                    );
+                  })}
                 </div>
                 <ReportsPagination
                   totalItems={filteredCurrentProducts.length}
@@ -771,62 +882,33 @@ function ProductProfileView({
               <>
                 {filteredArchivedProducts.length === 0 ? (
                   <p className="product_profile_no_products" role="status">
-                    No products
+                    {archivedProducts.length === 0
+                      ? "No archived products."
+                      : productSearchQuery.trim()
+                        ? "No products match your search."
+                        : "No products."}
                   </p>
                 ) : (
                 <>
                 <div className="product_profile_product_cards">
                   {paginatedArchivedProducts.map((product) => {
-              const productReport = asGeneratedReport(product.generated_profile_report);
-              const overallFromReport = getOverallScoreFromReport(product.generated_profile_report);
-              const trustScoreDisplay =
-                productReport?.trustScore != null
-                  ? `${productReport.trustScore.overallScore}%`
-                  : overallFromReport != null
-                    ? `${overallFromReport}%`
-                    : "—";
-              return (
-              <div key={product.id} className="product_profile_product_card">
-                <div className="product_profile_product_card_top">
-                  <div className="product_profile_product_card_content">
-                    <div className="product_profile_product_card_title_row">
-                      <span
-                        className="product_profile_product_card_icon"
-                        aria-hidden
-                      >
-                        {productInitials(product.productName)}
-                      </span>
-                      <div className="product_status_Data">
-                        <h3 className="product_profile_product_card_title">
-                          {product.productName}
-                        </h3>
-                        <span
-                          className={`product_profile_product_card_status product_profile_product_card_status_${product.status.toLowerCase()}`}
-                        >
-                          {product.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="product_profile_product_card_trust_badge">
-                    <span className="product_profile_product_card_trust_label">Trust score</span>
-                    <span className="product_profile_product_card_trust_value">{trustScoreDisplay}</span>
-                  </div>
-                </div>
-                <div className="product_profile_product_card_footer">
-                  <button
-                    type="button"
-                    className="product_profile_product_card_view_btn"
-                    onClick={() => handleViewProduct(product)}
-                    aria-label={`View details for ${product.productName}`}
-                  >
-                    View details
-                    <ChevronRight size={16} aria-hidden />
-                  </button>
-                </div>
-              </div>
-              );
-            })}
+                    const productReport = asGeneratedReport(product.generated_profile_report);
+                    const overallFromReport = getOverallScoreFromReport(product.generated_profile_report);
+                    const trustScoreDisplay =
+                      productReport?.trustScore != null
+                        ? `${productReport.trustScore.overallScore}%`
+                        : overallFromReport != null
+                          ? `${overallFromReport}%`
+                          : "—";
+                    return (
+                      <ProductProfileProductListCard
+                        key={product.id}
+                        product={product}
+                        trustScoreDisplay={trustScoreDisplay}
+                        onView={handleViewProduct}
+                      />
+                    );
+                  })}
                 </div>
                 <ReportsPagination
                   totalItems={filteredArchivedProducts.length}
@@ -842,6 +924,7 @@ function ProductProfileView({
                 )}
               </>
             )}
+          </div>
           </div>
             </>
           )}

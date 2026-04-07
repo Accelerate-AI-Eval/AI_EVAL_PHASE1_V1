@@ -49,6 +49,7 @@ export default function ProductProfileSummaryCard({
       </div>
       <div className="summary_card_body">
         <div className={primaryClass}>{primary}</div>
+        {secondary.trim() ? <p className="summary_card_secondary">{secondary}</p> : null}
       </div>
     </div>
   );

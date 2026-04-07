@@ -362,3 +362,31 @@
   border: none;
   background: #fff;
 }
+
+/* Framework mapping table (complete attestation preview) */
+.vendor-attestation-preview .vendor_preview_framework_table_wrap {
+  overflow-x: auto;
+  margin-top: 0.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+.vendor-attestation-preview .vendor_preview_framework_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.vendor-attestation-preview .vendor_preview_framework_table th,
+.vendor-attestation-preview .vendor_preview_framework_table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #e5e7eb;
+}
+.vendor-attestation-preview .vendor_preview_framework_table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+.vendor-attestation-preview .vendor_preview_framework_table tbody tr:last-child td {
+  border-bottom: none;
+}

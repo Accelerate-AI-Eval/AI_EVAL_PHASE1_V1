@@ -90,6 +90,13 @@ function appendixRiskMitigationActions(
   return items.length ? items : undefined;
 }
 import { calculateRoiFromAssessment } from "../../services/roiCalculator.js";
+import {
+  resolveFrameworkMappingRowsForAttestation,
+  mergeFrameworkMappingRows,
+  frameworkRowsFromUnknownArray,
+  countSubstantiveFrameworkMappingRows,
+} from "../../services/frameworkMappingFromCompliance.js";
+import { buildFrameworkMappingRowsFromVendorCotsAssessment } from "../../services/vendorCotsFrameworkMappingGenerator.js";
 
 /** Fixed appendix text for all reports; only reviewedBy is set from the user who submitted. */
 const APPENDIX_METHODOLOGY = "AI EVAL 3-Layer Risk Assessment Framework v2.1 — Customer-Specific Analysis";
@@ -105,9 +112,14 @@ async function createCustomerRiskReport(
 ): Promise<void> {
   const vendorAttestationId = payloadCots.vendor_attestation_id != null ? String(payloadCots.vendor_attestation_id).trim() : null;
   let productName = "";
+  let attestationFrameworkSource: Record<string, unknown> | null = null;
   if (vendorAttestationId) {
     const [row] = await db
-      .select({ product_name: vendorSelfAttestations.product_name })
+      .select({
+        product_name: vendorSelfAttestations.product_name,
+        compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
+        framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
+      })
       .from(vendorSelfAttestations)
       .where(
         or(
@@ -117,9 +129,40 @@ async function createCustomerRiskReport(
       )
       .limit(1);
     productName = (row?.product_name ?? "").trim() || "Product";
+    if (row) {
+      attestationFrameworkSource = {
+        framework_mapping_rows: row.framework_mapping_rows,
+        compliance_document_expiries: row.compliance_document_expiries,
+      };
+    }
   } else {
     productName = "Product";
   }
+
+  const frameworkRowsFromDocuments = attestationFrameworkSource
+    ? resolveFrameworkMappingRowsForAttestation(attestationFrameworkSource)
+    : [];
+  const substantiveAttestationFrameworkCount =
+    countSubstantiveFrameworkMappingRows(frameworkRowsFromDocuments);
+  const frameworkMappingAttestationStatus: "missing" | "incomplete" | "available" =
+    !vendorAttestationId || !attestationFrameworkSource
+      ? "missing"
+      : substantiveAttestationFrameworkCount === 0
+        ? "incomplete"
+        : "available";
+  const frameworkRowsFromAssessmentFormula =
+    buildFrameworkMappingRowsFromVendorCotsAssessment(payloadCots);
+  /** Attestation PDF/snapshot rows first; merge assessment-derived rows (regulatory + CFR formula). */
+  const frameworkRowsAttestationAndFormula = mergeFrameworkMappingRows(
+    frameworkRowsFromDocuments,
+    frameworkRowsFromAssessmentFormula,
+  );
+  const frameworkRowsForStoredReport = frameworkRowsAttestationAndFormula.map((r) => ({
+    framework: r.framework,
+    coverage: r.coverage,
+    controls: r.controls,
+    notes: r.notes,
+  }));
   const orgName = (payloadCots.customer_organization_name != null ? String(payloadCots.customer_organization_name).trim() : "") || "Organization";
   const title = `Analysis Report: ${orgName} - ${productName}`;
   const toJson = (v: unknown) =>
@@ -128,6 +171,7 @@ async function createCustomerRiskReport(
     assessmentId,
     status: "submitted",
     organizationId: orgIdStr,
+    frameworkMappingAttestationStatus: frameworkMappingAttestationStatus,
     selectedProductId: vendorAttestationId ?? "",
     customerOrganizationName: payloadCots.customer_organization_name ?? "",
     customerSector: payloadCots.customer_sector ?? "",
@@ -198,7 +242,11 @@ async function createCustomerRiskReport(
     annualContractValue: payloadCots.customer_budget_range ?? "",
   };
 
-  const generated = await generateVendorCotsReport(payloadCots, top5RisksWithMitigations);
+  const generated = await generateVendorCotsReport(
+    payloadCots,
+    top5RisksWithMitigations,
+    frameworkRowsAttestationAndFormula,
+  );
   if (generated) {
     if (
       generated.matchedRiskSummaries &&
@@ -280,6 +328,19 @@ async function createCustomerRiskReport(
       ? (fullReport.appendix as Record<string, unknown>)
       : {};
     const calculatedRoi = calculateRoiFromAssessment(payloadCots);
+    const existingFm = fullReport?.frameworkMapping as { rows?: unknown[] } | undefined;
+    const llmFrameworkRows = frameworkRowsFromUnknownArray(existingFm?.rows ?? []);
+    let frameworkMappingRows = mergeFrameworkMappingRows(
+      frameworkRowsForStoredReport,
+      llmFrameworkRows,
+    );
+    if (frameworkMappingRows.length === 0 && frameworkRowsForStoredReport.length > 0) {
+      frameworkMappingRows = frameworkRowsForStoredReport;
+    }
+    if (frameworkMappingRows.length === 0 && llmFrameworkRows.length > 0) {
+      frameworkMappingRows = llmFrameworkRows;
+    }
+
     report.generatedAnalysis = {
       overallRiskScore: generated.overallRiskScore,
       riskLevel: generated.riskLevel,
@@ -290,6 +351,7 @@ async function createCustomerRiskReport(
       recommendationsWithPriority: generated.recommendationsWithPriority,
       fullReport: {
         ...fullReport,
+        frameworkMapping: { rows: frameworkMappingRows },
         roiAnalysis: calculatedRoi,
         appendix: {
           ...appendix,
@@ -303,6 +365,16 @@ async function createCustomerRiskReport(
         },
       },
     };
+    if (frameworkMappingRows.length > 0) {
+      report.frameworkMappingRows = frameworkMappingRows;
+    }
+  } else if (frameworkRowsForStoredReport.length > 0) {
+    report.generatedAnalysis = {
+      fullReport: {
+        frameworkMapping: { rows: frameworkRowsForStoredReport },
+      },
+    };
+    report.frameworkMappingRows = frameworkRowsForStoredReport;
   }
 
   await db.insert(customerRiskAssessmentReports).values({
@@ -356,8 +428,17 @@ const submitVendorCotsAssessment = async (req: Request, res: Response) => {
       return v;
     };
 
+    const selectedProduct = get("selectedProductId");
+    const vendorAttestationAlt = get("vendor_attestation_id") ?? get("vendorAttestationId");
+    const resolvedAttestationId = (() => {
+      const a = selectedProduct != null ? String(selectedProduct).trim() : "";
+      if (a) return a;
+      const b = vendorAttestationAlt != null ? String(vendorAttestationAlt).trim() : "";
+      return b || null;
+    })();
+
     const payloadCots = {
-      vendor_attestation_id: get("selectedProductId") != null && String(get("selectedProductId")).trim() !== "" ? String(get("selectedProductId")).trim() : null,
+      vendor_attestation_id: resolvedAttestationId,
       customer_organization_name: get("customerOrganizationName") != null ? String(get("customerOrganizationName")).slice(0, 200) : null,
       customer_sector: get("customerSector") != null ? String(get("customerSector")).slice(0, 200) : null,
       primary_pain_point: get("primaryPainPoint") != null ? String(get("primaryPainPoint")) : null,

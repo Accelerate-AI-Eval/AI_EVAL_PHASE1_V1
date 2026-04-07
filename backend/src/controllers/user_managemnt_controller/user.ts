@@ -7,6 +7,10 @@ import { eq, and } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import emailConfig from "../../functions/emailconfig.js";
 import { ONBOARDING_LINK_EXPIRY_JWT, SIGNUP_LINK_EXPIRY_JWT } from "../../constants/tokenExpiry.js";
+import {
+  buildOnboardingEmailHtml,
+  ONBOARDING_MAIL_PLATFORM_NAME,
+} from "../../email/onboardingEmailHtml.js";
 
 /** Capitalize first letter of each word (e.g. "system admin" -> "System Admin"). */
 function capitalizeFirstLetter(str: string): string {
@@ -18,47 +22,59 @@ function capitalizeFirstLetter(str: string): string {
     .join(" ");
 }
 
-export const inviteUser = async (req: Request, res: Response) => {
-  const BASE_URL = process.env.BASE_URL;
-  // Helper to generate email HTML (inline styles for reliable font color in email clients e.g. Chrome)
-  function userEmailTemplate(
-    email: string,
-    organizationName: string,
-    role: string,
-    confirmationLink: string,
-    user: string,
-  ) {
-    return `<!DOCTYPE html>
-<html>
+const INVITE_MAIL_PLATFORM_NAME = "AI-Q Platform";
+const INVITE_MAIL_PRIMARY = "#3b66f5";
+const INVITE_MAIL_PAGE_BG = "#f4f4f4";
+
+/** Invite / reinvite email body: table layout + inline styles for common clients. */
+function buildInviteUserEmailHtml(
+  organizationName: string,
+  role: string,
+  confirmationLink: string,
+): string {
+  return `<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to AI Eval</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333; }
-  .container { max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333; }
-  h1 { color: #2463eb; }
-  p { font-size:16px; line-height:1.5; color:#333333; }
-  .button-container { margin:20px 0; }
-  .confirm-button { background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; }
-  .footer { font-size:12px; color:#666666; margin-top:20px; text-align:center; }
-</style>
+<title>Welcome to ${INVITE_MAIL_PLATFORM_NAME}</title>
 </head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div class="container" style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333;">
-  <h1 style="color: #2463eb;">Welcome to AI Eval!</h1>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Hello,</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">You've been invited to join <strong>AI Eval</strong> as a <strong>${role}</strong> in <strong>${organizationName}</strong>. Please confirm your email address to activate your account and set your password.</p>
-  <div class="button-container" style="margin:20px 0;">
-    <a href="${confirmationLink}" class="confirm-button" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold;">Confirm Email</a>
-  </div>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">If you did not request this invitation, you can safely ignore this email.</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Thanks,<br>The AI Eval Team</p>
-  <div class="footer" style="font-size:12px; color:#666666; margin-top:20px; text-align:center;">&copy; 2026 AI Eval. All rights reserved.</div>
-</div>
+<body style="margin:0;padding:0;background-color:${INVITE_MAIL_PAGE_BG};font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#333333;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:${INVITE_MAIL_PAGE_BG};padding:24px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;">
+        <tr>
+          <td style="padding:40px;">
+            <h1 style="margin:0 0 24px;font-size:22px;line-height:1.3;font-weight:700;color:${INVITE_MAIL_PRIMARY};">Welcome to ${INVITE_MAIL_PLATFORM_NAME.replace(
+              "-",
+              "&#8209;",
+            )}</h1>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">Hello,</p>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">You've been invited to join <strong>${INVITE_MAIL_PLATFORM_NAME}</strong> as a <strong>${role}</strong> in <strong>${organizationName}</strong>.</p>
+            <p style="margin:0 0 28px;font-size:16px;line-height:1.5;color:#333333;">Please confirm your email address to activate your account and set your password.</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:6px;background-color:${INVITE_MAIL_PRIMARY};">
+                  <a href="${confirmationLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;">Confirm Email</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">If you did not request this invitation, you can safely ignore this email.</p>
+            <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#333333;">Thanks,<br>The ${INVITE_MAIL_PLATFORM_NAME} Team</p>
+            <p style="margin:0;font-size:12px;line-height:1.5;color:#888888;text-align:center;">&copy; 2026 ${INVITE_MAIL_PLATFORM_NAME}. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>`;
-  }
+}
+
+export const inviteUser = async (req: Request, res: Response) => {
+  const BASE_URL = process.env.BASE_URL;
 
   try {
     let { email, organization, role, user } = req.body;
@@ -128,6 +144,53 @@ export const inviteUser = async (req: Request, res: Response) => {
       platform_role = "";
     }
 
+    const secret = process.env.JWT_SECRET_KEY;
+    if (!secret) throw new Error("JWT_SECRET_KEY not set");
+    if (!BASE_URL) {
+      return res.status(500).json({ message: "Server configuration error: BASE_URL is not set" });
+    }
+
+    const token = jwt.sign({ email }, secret, { expiresIn: SIGNUP_LINK_EXPIRY_JWT } as jwt.SignOptions);
+    const confirmationLink = `${BASE_URL}/signup/${token}`;
+
+    const orgRows = await db
+      .select({ organizationName: createOrganization.organizationName })
+      .from(createOrganization)
+      .where(eq(createOrganization.id, orgIdNum))
+      .limit(1);
+    const organizationNameForEmail = orgRows[0]?.organizationName ?? "Organization";
+    const organizationNameCapitalized = capitalizeFirstLetter(organizationNameForEmail);
+    const roleCapitalized = capitalizeFirstLetter(role);
+
+    const senderAddress = process.env.SENDER_EMAIL_ID;
+    if (!senderAddress) {
+      return res.status(500).json({ message: "Server configuration error: sender email is not configured" });
+    }
+
+    const transporter = emailConfig();
+    try {
+      await transporter.sendMail({
+        from: {
+          name: INVITE_MAIL_PLATFORM_NAME,
+          address: senderAddress,
+        },
+        to: email,
+        subject: `You're invited to join ${INVITE_MAIL_PLATFORM_NAME}`,
+        html: buildInviteUserEmailHtml(
+          organizationNameCapitalized,
+          roleCapitalized,
+          confirmationLink,
+        ),
+      });
+    } catch (emailErr: unknown) {
+      console.error("Invite user: failed to send invitation email", emailErr);
+      return res.status(502).json({
+        message: "Failed to send invitation email. No user was created. Please try again or contact support.",
+      });
+    }
+
+    console.log("Invitation email sent to:", email);
+
     await db.insert(usersTable).values({
       email,
       organization_id: orgIdNum,
@@ -139,41 +202,6 @@ export const inviteUser = async (req: Request, res: Response) => {
     });
 
     console.log("User inserted successfully into DB:", email);
-
-    const secret = process.env.JWT_SECRET_KEY;
-    if (!secret) throw new Error("JWT_SECRET_KEY not set");
-    const token = jwt.sign({ email }, secret, { expiresIn: SIGNUP_LINK_EXPIRY_JWT } as jwt.SignOptions);
-
-    const confirmationLink = `${BASE_URL}/signup/${token}`;
-
-    const transporter = emailConfig();
-
-    const orgRows = await db
-      .select({ organizationName: createOrganization.organizationName })
-      .from(createOrganization)
-      .where(eq(createOrganization.id, orgIdNum))
-      .limit(1);
-    const organizationNameForEmail = orgRows[0]?.organizationName ?? "Organization";
-    const organizationNameCapitalized = capitalizeFirstLetter(organizationNameForEmail);
-    const roleCapitalized = capitalizeFirstLetter(role);
-
-    await transporter.sendMail({
-      from: {
-        name: "AI_Eval",
-        address: process.env.SENDER_EMAIL_ID! ,
-      },
-      to: email,
-      subject: "Confirm your AI Eval account",
-      html: userEmailTemplate(
-        email,
-        organizationNameCapitalized,
-        roleCapitalized,
-        confirmationLink,
-        user,
-      ),
-    });
-
-    console.log("Invitation email sent to:", email);
 
     return res.status(201).json({ message: "User invited successfully" });
   } catch (err: any) {
@@ -224,33 +252,12 @@ export const reinviteUser = async (req: Request, res: Response) => {
     const organizationNameCapitalized = capitalizeFirstLetter(orgRow?.organizationName ?? "Organization");
     const roleCapitalized = capitalizeFirstLetter(String(user.role ?? ""));
 
-    function inviteEmailTemplate(
-      email: string,
-      organizationName: string,
-      role: string,
-      confirmationLink: string,
-    ) {
-      return `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Welcome to AI Eval</title></head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px;">
-  <h1 style="color: #2463eb;">Welcome to AI Eval!</h1>
-  <p style="font-size:16px; line-height:1.5;">You've been invited to join <strong>AI Eval</strong> as a <strong>${role}</strong> in <strong>${organizationName}</strong>. Please confirm your email address to activate your account and set your password.</p>
-  <div style="margin:20px 0;"><a href="${confirmationLink}" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold;">Confirm Email</a></div>
-  <p style="font-size:16px; line-height:1.5;">If you did not request this invitation, you can safely ignore this email.</p>
-  <p style="font-size:16px; line-height:1.5;">Thanks,<br>The AI Eval Team</p>
-</div>
-</body>
-</html>`;
-    }
-
     const transporter = emailConfig();
     await transporter.sendMail({
-      from: { name: "AI_Eval", address: process.env.SENDER_EMAIL_ID! },
+      from: { name: INVITE_MAIL_PLATFORM_NAME, address: process.env.SENDER_EMAIL_ID! },
       to: email,
-      subject: "Confirm your AI Eval account",
-      html: inviteEmailTemplate(email, organizationNameCapitalized, roleCapitalized, confirmationLink),
+      subject: `You're invited to join ${INVITE_MAIL_PLATFORM_NAME}`,
+      html: buildInviteUserEmailHtml(organizationNameCapitalized, roleCapitalized, confirmationLink),
     });
     return res.status(200).json({ message: "Signup link resent successfully" });
   } catch (err: any) {
@@ -301,56 +308,12 @@ export const resendOnboardingLink = async (req: Request, res: Response) => {
     const name = (user.user_name ?? user.email ?? "User").toString();
     const roleCapitalized = capitalizeFirstLetter(String(user.role ?? ""));
 
-    function onboardingEmailTemplate(
-      name: string,
-      role: string,
-      onboardingLink: string,
-      organization: string,
-    ) {
-      return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to AI Eval!</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333; }
-  .container { max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333; }
-  h1 { color: #2463eb; }
-  p { font-size:16px; line-height:1.5; color:#333333; }
-  .button-container { margin:20px 0; }
-  .login-button { background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; }
-  .footer { font-size:12px; color:#666666; margin-top:20px; text-align:center; }
-</style>
-</head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div class="container" style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333;">
-  <h1 style="color: #2463eb;">Welcome to AI Eval, ${name}!</h1>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">We're excited to have you join <strong>${organization}</strong> as a <strong>${role}</strong>.</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Your account has been successfully activated, and you can now access all the features of AI Eval.</p>
-  <div class="button-container" style="margin:20px 0;">
-    <a href="${onboardingLink}" class="login-button" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold;">Go to Onboarding</a>
-  </div>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Here are a few things you can do next:</p>
-  <ul style="font-size:16px; line-height:1.5; color:#333333;">
-    <li>Set up your profile and preferences.</li>
-    <li>Explore AI Eval features tailored for your role.</li>
-    <li>Invite teammates to collaborate and evaluate efficiently.</li>
-  </ul>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">If you have any questions, feel free to reply to this email—we're here to help!</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Cheers,<br>The AI Eval Team</p>
-  <div class="footer" style="font-size:12px; color:#666666; margin-top:20px; text-align:center;">&copy; 2026 AI Eval. All rights reserved.</div>
-</div>
-</body>
-</html>`;
-    }
-
     const transporter = emailConfig();
     await transporter.sendMail({
-      from: { name: "AI_Eval", address: process.env.SENDER_EMAIL_ID! },
+      from: { name: ONBOARDING_MAIL_PLATFORM_NAME, address: process.env.SENDER_EMAIL_ID! },
       to: email,
-      subject: "Onboarding in AI Eval",
-      html: onboardingEmailTemplate(name, roleCapitalized, onboardingLink, orgDisplayName),
+      subject: `Welcome to ${ONBOARDING_MAIL_PLATFORM_NAME}`,
+      html: buildOnboardingEmailHtml(name, roleCapitalized, onboardingLink, orgDisplayName),
     });
     await db
       .update(usersTable)

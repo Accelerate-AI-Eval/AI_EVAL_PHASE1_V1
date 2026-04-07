@@ -11,6 +11,23 @@ import {
   regulatorySnippetFromJson,
 } from "../agents/buyerVendorRiskReportAgent.js";
 
+type FrameworkMappingRow = {
+  framework?: unknown;
+  coverage?: unknown;
+  controls?: unknown;
+  notes?: unknown;
+};
+
+function frameworkMappingRowsFromReport(rawReport: unknown): FrameworkMappingRow[] {
+  if (!rawReport || typeof rawReport !== "object") return [];
+  const reportObj = rawReport as Record<string, unknown>;
+  const top = reportObj.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
+  if (Array.isArray(top?.rows)) return top.rows;
+  const generated = reportObj.generatedAnalysis as { fullReport?: Record<string, unknown> } | undefined;
+  const nested = generated?.fullReport?.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
+  return Array.isArray(nested?.rows) ? nested.rows : [];
+}
+
 /**
  * GET /buyerCotsAssessment/:id/vendor-risk-report
  * Returns stored Vendor Risk Assessment Report (generated on submit).
@@ -133,6 +150,7 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
       targetTimeline: row.target_timeline,
       regulatorySnippet: regulatorySnippetFromJson(row.regulatory_requirments),
     });
+    const frameworkMappingRows = frameworkMappingRowsFromReport(reportObj);
 
     res.status(200).json({
       success: true,
@@ -142,6 +160,7 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
       productName,
       organizationName: row.organization_name ?? "",
       report: enriched,
+      frameworkMappingRows,
     });
   } catch (e) {
     console.error("getBuyerVendorRiskReport:", e);

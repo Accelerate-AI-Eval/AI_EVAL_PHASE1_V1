@@ -106,17 +106,34 @@ function buildCertificatesFromDocumentUploads(
 function mergeCertificateExpiries(
   certificates: Array<{ name: string; expiryDate: string | null; certificateType: string | null }>,
   expiries: unknown,
-): Array<{ name: string; expiryDate: string | null; certificateType: string | null }> {
+): Array<{
+  name: string;
+  expiryDate: string | null;
+  certificateType: string | null;
+  documentClass?: string;
+  frameworkMapping?: unknown;
+  validation?: unknown;
+}> {
   if (!expiries || typeof expiries !== "object" || Array.isArray(expiries)) return certificates;
-  const map = expiries as Record<string, { expiryAt?: string | null }>;
+  const map = expiries as Record<string, {
+    expiryAt?: string | null;
+    documentClass?: string;
+    frameworkMapping?: unknown;
+    validation?: unknown;
+  }>;
   return certificates.map((c) => {
     const key = String(c.name ?? "").trim();
     if (!key) return c;
     const base = /[/\\]/.test(key) ? (key.split(/[/\\]/).pop() ?? key) : key;
     const meta = map[key] ?? map[base];
     const exp = meta?.expiryAt;
-    if (exp != null && String(exp).trim() !== "") return { ...c, expiryDate: String(exp).trim() };
-    return { ...c, expiryDate: "Expiry date not specified" };
+    return {
+      ...c,
+      expiryDate: exp != null && String(exp).trim() !== "" ? String(exp).trim() : "Expiry date not specified",
+      documentClass: meta?.documentClass,
+      frameworkMapping: meta?.frameworkMapping,
+      validation: meta?.validation,
+    };
   });
 }
 
@@ -161,6 +178,9 @@ function mapAttestationRow(attestRow: Record<string, unknown>, completedByName?:
     expiryDate: c.expiryDate,
     certificateType: c.certificateType,
     complianceType: c.certificateType,
+    documentClass: c.documentClass,
+    frameworkMapping: c.frameworkMapping,
+    validation: c.validation,
   }));
   const sector = parseSectorFromRow(attestRow);
   const base: Record<string, unknown> = {
@@ -215,6 +235,7 @@ function mapAttestationRow(attestRow: Record<string, unknown>, completedByName?:
     document_uploads: attestRow.document_uploads ?? undefined,
     certificates,
     compliance_document_expiries: attestRow.compliance_document_expiries ?? undefined,
+    framework_mapping_rows: attestRow.framework_mapping_rows ?? undefined,
     generated_profile_report: attestRow.generated_profile_report ?? undefined,
   };
   if (completedByName != null && completedByName !== "") {
@@ -428,6 +449,7 @@ const fetchVendorSelfAttestation = async (req: Request, res: Response): Promise<
       submitted_at: vendorSelfAttestations.submitted_at,
       expiry_at: vendorSelfAttestations.expiry_at,
       compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
+      framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
       generated_profile_report: vendorSelfAttestations.generated_profile_report,
       user_name: usersTable.user_name,
       user_first_name: usersTable.user_first_name,

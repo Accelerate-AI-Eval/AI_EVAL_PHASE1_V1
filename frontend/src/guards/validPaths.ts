@@ -13,6 +13,7 @@ export const VALID_PROTECTED_PATHS: (string | RegExp)[] = [
   "/buyerAssessment",
   /^\/buyer-vendor-risk-report\/[^/]+$/,
   "/vendor-directory",
+  /^\/vendor-directory\/intelligence\/[^/]+\/[^/]+$/,
   "/riskMappings",
   "/security_center",
   "/governance",

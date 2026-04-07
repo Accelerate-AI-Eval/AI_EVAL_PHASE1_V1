@@ -3,6 +3,15 @@ import {
   BedrockRuntimeClient,
   InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
+import {
+  CERTIFICATIONS_SCORE_CAP,
+  normalizeCertIndustrySegmentInput,
+  getRelevantCertificationFrameworkSet,
+} from "../../services/certIndustrySegmentRelevance.js";
+import {
+  collectComplianceUploadFileNames,
+  certificationFormTextFromGetter,
+} from "../../services/complianceCertBlobs.js";
 
 const REGION = process.env.AWS_DEFAULT_REGION || "us-east-1";
 // const MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
@@ -14,6 +23,8 @@ export interface TrustScoreBlock {
   overallScore: number;
   label: string;
   summary: string;
+  /** Letter grade from trust formula when computed from formula path (A–E). */
+  grade?: string;
   scoreByCategory?: Record<string, string | number>;
 }
 
@@ -543,6 +554,7 @@ export async function generateVendorAttestationReport(
     return {
       trustScore: {
         overallScore: overallRounded,
+        grade: String(formula.grade ?? "").trim() || undefined,
         label: String(formula.classification ?? "Not specified"),
         summary,
         scoreByCategory: {
@@ -675,6 +687,20 @@ function buildFormulaInputFromPayload(payload: Record<string, unknown>): LooseIn
     employeeRaw.includes("51") ? "51-200" :
     employeeRaw.includes("11") ? "11-50" : "1-10";
   const geographicRegions = regionCount >= 5 ? "global" : regionCount >= 3 ? "multi_national" : regionCount === 2 ? "national" : "regional";
+  const complianceUploadNames = collectComplianceUploadFileNames(payload);
+  const complianceUploadBlob = complianceUploadNames.join(" ").toLowerCase();
+  const certFormBlob = certificationFormTextFromGetter(get).toLowerCase();
+  const certificationsSearchBlob = `${certFormBlob} ${complianceUploadBlob}`.trim();
+  const buyerIndustrySegment = normalizeCertIndustrySegmentInput(
+    asStr(
+      get("buyerIndustrySegment") ??
+        get("buyer_industry_segment") ??
+        get("industrySegment") ??
+        get("industry_segment") ??
+        get("buyerSegment") ??
+        "",
+    ),
+  );
   return {
     likelihoodScores: [3, 3, 3],
     impactScores: [3, 3, 3],
@@ -708,10 +734,20 @@ function buildFormulaInputFromPayload(payload: Record<string, unknown>): LooseIn
     assessmentMethod: "internal_audit",
     complianceDocumentationComplete: true,
     penetrationTestReportAvailable: !!asStr(get("adversarial_security_testing")),
-    soc2Type2Current: lower(get("security_certifications")).includes("soc2"),
-    soc2Certification: lower(get("security_certifications")).includes("type 2") ? "Type 2 (current)" : "None",
-    isoCertifications: lower(get("security_certifications")).includes("iso 27001") ? "ISO 27001 only" : "None",
-    hipaaCertification: lower(get("security_certifications")).includes("hipaa") ? "HIPAA BAA only" : "None",
+    soc2Type2Current:
+      /\bsoc\s*2\b|soc2/i.test(certificationsSearchBlob) &&
+      /type\s*2|type\s*ii|type2/i.test(certificationsSearchBlob),
+    soc2Certification: /type\s*2|type\s*ii|type2/i.test(certificationsSearchBlob) ? "Type 2 (current)" : "None",
+    isoCertifications: /\biso\s*27001\b|27001/i.test(certificationsSearchBlob) ? "ISO 27001 only" : "None",
+    hipaaCertification:
+      /hipaa/i.test(certificationsSearchBlob) && /hitrust/i.test(certificationsSearchBlob)
+        ? "HIPAA BAA + HITRUST"
+        : /hipaa|\bbaa\b/i.test(certificationsSearchBlob)
+          ? "HIPAA BAA only"
+          : "None",
+    certificationsSearchBlob,
+    complianceUploadBlob,
+    buyerIndustrySegment,
     yearFounded,
     fundingStatus: "series_a",
     revenueSufficient: true,
@@ -1364,20 +1400,179 @@ function calculateProductRisk({ inherentRisk, mitigationEffectiveness, confidenc
   };
 }
 
-function calcCertificationsScore(p: LooseInput) {
-  const soc2Map: Record<string, number> = { 'Type 2 (current)': 20, 'Type 1 (current)': 12, 'Type 2 (expired < 1 year)': 8, None: 0 };
-  const isoMap: Record<string, number>  = { 'ISO 27001 + ISO 42001': 25, 'ISO 27001 only': 15, 'ISO 42001 only': 12, 'ISO 9001': 5, None: 0 };
-  const hipaaMap: Record<string, number> = { 'HIPAA BAA + HITRUST': 20, 'HIPAA BAA only': 15, 'HIPAA self-attestation': 8, None: 0 };
+/** Vendor trust certifications matrix (Certified / Self-Attested points). Capped when summed for governance balance. */
 
-  const soc2Points  = soc2Map[p.soc2Certification] ?? 0;
-  const isoPoints   = isoMap[p.isoCertifications]  ?? 0;
-  const hipaaPoints = p.sector === 'Healthcare' ? Math.min(15, hipaaMap[p.hipaaCertification] ?? 0) : 0;
+const CERT_EVIDENCE_NEAR_FW =
+  /(certif|certificate|audit|report|attestation|third[\s-]?party|external assessment|assessor|aico|\.pdf|\.docx?)/i;
+
+/** True if an evidence keyword appears near a regex match in `combined` (avoids unrelated "audit" elsewhere). */
+function certifiedEvidenceNearFramework(combined: string, fwRegex: RegExp): boolean {
+  const re = new RegExp(fwRegex.source, fwRegex.flags.includes("g") ? fwRegex.flags : `${fwRegex.flags}g`);
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(combined)) !== null) {
+    const idx = m.index;
+    const winStart = Math.max(0, idx - 100);
+    const winEnd = Math.min(combined.length, idx + m[0].length + 100);
+    if (CERT_EVIDENCE_NEAR_FW.test(combined.slice(winStart, winEnd))) return true;
+  }
+  return false;
+}
+
+function calcCertificationsScore(p: LooseInput) {
+  let combined = String(p.certificationsSearchBlob ?? "").toLowerCase();
+  const u = String(p.complianceUploadBlob ?? "").toLowerCase();
+  if (!combined.trim()) {
+    const legacy: string[] = [];
+    if (p.soc2Certification && p.soc2Certification !== "None") legacy.push(String(p.soc2Certification));
+    if (p.isoCertifications && p.isoCertifications !== "None") legacy.push(String(p.isoCertifications));
+    if (p.hipaaCertification && p.hipaaCertification !== "None") legacy.push(String(p.hipaaCertification));
+    combined = legacy.join(" ").toLowerCase();
+  }
+
+  const breakdown: Record<string, number | string>[] = [];
+
+  const add = (key: string, pts: number, detail?: string) => {
+    if (pts <= 0) return;
+    breakdown.push({ framework: key, points: pts, ...(detail ? { detail } : {}) });
+  };
+
+  // SOC 2 — certified only (no self-attested column)
+  let soc2Points = 0;
+  const hasSoc2 = /\bsoc\s*2\b|soc2/i.test(combined);
+  if (hasSoc2) {
+    if (/type\s*2|type\s*ii|type2/i.test(combined)) soc2Points = 15;
+    else if (/type\s*1|type\s*i\b|type1/i.test(combined)) soc2Points = 8;
+  }
+  if (soc2Points === 15) add("SOC 2 Type 2", 15);
+  else if (soc2Points === 8) add("SOC 2 Type 1", 8);
+
+  // HIPAA — scored only when buyer segment lists HIPAA in CERT_RELEVANCE_FRAMEWORKS_BY_SEGMENT
+  let hipaaPoints = 0;
+  if (/hipaa/i.test(combined) && /hitrust/i.test(combined)) {
+    hipaaPoints = 15;
+    add("HIPAA BAA + HITRUST", 15);
+  } else if (/hipaa|\bbaa\b/i.test(combined)) {
+    hipaaPoints = 10;
+    add("HIPAA BAA only", 10);
+  }
+
+  // ISO 27001:2022 — 10 / 5
+  let iso27001Points = 0;
+  const iso27001Re = /\biso\s*27001\b|27001:2022|\b27001\b/i;
+  if (iso27001Re.test(combined)) {
+    const uploadHint = /27001/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, iso27001Re);
+    iso27001Points = certified ? 10 : 5;
+    add("ISO 27001:2022", iso27001Points, certified ? "certified" : "self-attested");
+  }
+
+  // ISO 42001 — 8 / 4
+  let iso42001Points = 0;
+  const iso42001Re = /\biso\s*42001\b|\b42001\b/i;
+  if (iso42001Re.test(combined)) {
+    const uploadHint = /42001/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, iso42001Re);
+    iso42001Points = certified ? 8 : 4;
+    add("ISO 42001", iso42001Points, certified ? "certified" : "self-attested");
+  }
+
+  // NIST AI RMF — self 5 only
+  if (/nist/i.test(combined) && /ai\s*rmf|ai\s*risk\s*management(\s*framework)?/i.test(combined)) {
+    add("NIST AI RMF", 5, "self-attested");
+  }
+
+  // NIST CSF v2.0 — self 5 only
+  if (
+    /nist/i.test(combined) &&
+    /(\bcsf\b|cybersecurity\s*framework)/i.test(combined) &&
+    !/800[\s.-]*53/.test(combined) &&
+    !/800[\s.-]*171/.test(combined)
+  ) {
+    add("NIST CSF v2.0", 5, "self-attested");
+  }
+
+  // NIST SP 800-53 Rev 5 — 10 / 5
+  const n53Re = /800[\s.-]*53\b/i;
+  if (n53Re.test(combined)) {
+    const uploadHint = /800[\s.-]*53/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, n53Re);
+    const pts = certified ? 10 : 5;
+    add("NIST SP 800-53 Rev 5", pts, certified ? "certified" : "self-attested");
+  }
+
+  // NIST SP 800-171 Rev 3 — 10 / 5
+  const n171Re = /800[\s.-]*171\b/i;
+  if (n171Re.test(combined)) {
+    const uploadHint = /800[\s.-]*171/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, n171Re);
+    const pts = certified ? 10 : 5;
+    add("NIST SP 800-171 Rev 3", pts, certified ? "certified" : "self-attested");
+  }
+
+  // CMMC v2 Level 2+ — 12 certified only
+  if (/\bcmmc\b/i.test(combined)) add("CMMC v2 Level 2+", 12);
+
+  // PCI DSS 4.0 — 10 certified only
+  if (/pci[\s.-]*dss|payment card industry/i.test(combined)) add("PCI DSS 4.0", 10);
+
+  // DORA — 8 / 4
+  const doraRe = /\bdora\b|digital operational resilience/i;
+  if (doraRe.test(combined)) {
+    const uploadHint = /\bdora\b/i.test(u) || /digital operational resilience/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, doraRe);
+    const pts = certified ? 8 : 4;
+    add("DORA", pts, certified ? "certified" : "self-attested");
+  }
+
+  // GDPR — 8 / 4
+  const gdprRe = /\bgdpr\b|general data protection regulation/i;
+  if (gdprRe.test(combined)) {
+    const uploadHint = /\bgdpr\b/i.test(u);
+    const certified = uploadHint || certifiedEvidenceNearFramework(combined, gdprRe);
+    const pts = certified ? 8 : 4;
+    add("GDPR", pts, certified ? "certified" : "self-attested");
+  }
+
+  const segmentKey = normalizeCertIndustrySegmentInput(String(p.buyerIndustrySegment ?? ""));
+  const relevantFrameworks = getRelevantCertificationFrameworkSet(segmentKey);
+
+  const allRows = breakdown;
+  const allDetectedBreakdown = allRows.map((row) => ({ ...row }));
+  const contributing = allRows.filter((row) => relevantFrameworks.has(String(row.framework)));
+  const excludedBySegment = allRows.filter((row) => !relevantFrameworks.has(String(row.framework)));
+
+  const rawSumAll = allRows.reduce((acc, row) => acc + (row.points as number), 0);
+  const rawSum = contributing.reduce((acc, row) => acc + (row.points as number), 0);
+  const value = Math.min(CERTIFICATIONS_SCORE_CAP, rawSum);
+
+  const soc2Contrib = contributing.find((r) => r.framework === "SOC 2 Type 2")
+    ? 15
+    : contributing.some((r) => r.framework === "SOC 2 Type 1")
+      ? 8
+      : 0;
+  const hipaaContrib = contributing.some((r) => r.framework === "HIPAA BAA + HITRUST")
+    ? 15
+    : contributing.some((r) => r.framework === "HIPAA BAA only")
+      ? 10
+      : 0;
+  const iso27001Contrib = Number(contributing.find((r) => r.framework === "ISO 27001:2022")?.points ?? 0);
+  const iso42001Contrib = Number(contributing.find((r) => r.framework === "ISO 42001")?.points ?? 0);
 
   return {
-    soc2_points: soc2Points,
-    iso_points: isoPoints,
-    hipaa_points: hipaaPoints,
-    value: soc2Points + isoPoints + hipaaPoints,
+    buyer_industry_segment: segmentKey,
+    relevant_framework_keys: [...relevantFrameworks].sort(),
+    all_detected_breakdown: allDetectedBreakdown,
+    framework_breakdown: contributing,
+    excluded_not_relevant_to_buyer_segment: excludedBySegment,
+    raw_certifications_sum_all_detected: rawSumAll,
+    raw_certifications_sum: rawSum,
+    certifications_cap: CERTIFICATIONS_SCORE_CAP,
+    soc2_points: soc2Contrib,
+    hipaa_points: hipaaContrib,
+    iso_points: Number(iso27001Contrib) + Number(iso42001Contrib),
+    iso_27001_points: iso27001Contrib,
+    iso_42001_points: iso42001Contrib,
+    value,
   };
 }
 
@@ -1596,11 +1791,12 @@ function calculateOperationalRisk(p: LooseInput) {
 }
 
 function interpretTrustScore(vts: number) {
-  if (vts >= 90) return { classification: 'Exceptional Vendor', recommended_action: 'Fast-track procurement; minimal additional due diligence' };
-  if (vts >= 76) return { classification: 'Trusted Vendor',     recommended_action: 'Standard procurement process; focus on use-case fit' };
-  if (vts >= 51) return { classification: 'Acceptable Vendor',  recommended_action: 'Enhanced due diligence; require mitigation roadmap' };
-  if (vts >= 26) return { classification: 'Caution Required',   recommended_action: 'Extensive validation; consider alternatives; pilot only' };
-  return              { classification: 'Untrustworthy Vendor', recommended_action: 'Reject; only consider for low-stakes non-production use' };
+  const s = Math.max(0, Math.min(100, Math.round(Number(vts))));
+  if (s >= 90) return { grade:"A",classification: 'Exceptional Vendor', recommended_action: 'Fast-track procurement; minimal additional due diligence',vendor_profile:'Market leader; comprehensive controls; proven track record' };
+  if (s >= 80) return { grade:"B",classification: 'Trusted Vendor',     recommended_action: 'Standard procurement process; focus on use-case fit', vendor_profile:'Strong capabilities; mature governance; reliable operations' };
+  if (s >= 70) return { grade:"C",classification: 'Acceptable Vendor',  recommended_action: 'Enhanced due diligence; require mitigation roadmap', vendor_profile:'Moderate capabilities; some gaps; growing operations' };
+  if (s >= 60) return { grade:"D",classification: 'Review Recommended',   recommended_action: 'Extensive validation; consider alternatives; pilot only',vendor_profile:'Significant gaps; immature processes; limited track record' };
+  return              { grade:"E",classification: 'Review Required', recommended_action: 'Reject; only consider for low-stakes non-production use',vendor_profile:'Critical deficiencies; unproven capabilities; high risk ' };
 }
 
 function calculateVendorTrustScore(userInput: LooseInput) {
@@ -1634,7 +1830,6 @@ function calculateVendorTrustScore(userInput: LooseInput) {
   // ── Final VTS ─────────────────────────────────────────────────────────────
   const weightedRisk = (PR_result.value * 0.40) + (GR_result.value * 0.30) + (OR_result.value * 0.30);
   const vts = parseFloat(Math.max(0, 100 - weightedRisk).toFixed(2));
-  console.log("vts",vts)
   const interpretation = interpretTrustScore(vts);
 
   // ── DB-ready result ───────────────────────────────────────────────────────\
@@ -1645,6 +1840,7 @@ function calculateVendorTrustScore(userInput: LooseInput) {
     governance_risk:      GR_result.value,
     operational_risk:     OR_result.value,
     weighted_risk:        parseFloat(weightedRisk.toFixed(4)),
+    grade:                interpretation.grade,
     classification:       interpretation.classification,
     recommended_action:   interpretation.recommended_action,
 

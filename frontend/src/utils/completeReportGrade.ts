@@ -13,3 +13,59 @@ export function gradeFromOverallRiskScore(score: number): CompleteReportLetterGr
   if (s <= 83) return "E";
   return "F";
 }
+
+/**
+ * Reads overall risk score (0–100, higher = more risk) from stored customer risk report JSON.
+ * Matches ReportDetail / generatedAnalysis.overallRiskScore.
+ */
+export function overallRiskScoreFromReportJson(report: unknown): number | null {
+  if (report == null || typeof report !== "object") return null;
+  const r = report as Record<string, unknown>;
+  const gen = r.generatedAnalysis;
+  if (gen == null || typeof gen !== "object") return null;
+  const g = gen as Record<string, unknown>;
+  const raw = g.overallRiskScore;
+  if (raw == null || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, n));
+}
+
+/** Risk level label from stored report JSON (e.g. generatedAnalysis.riskLevel). */
+export function riskLevelFromReportJson(report: unknown): string | null {
+  if (report == null || typeof report !== "object") return null;
+  const r = report as Record<string, unknown>;
+  const gen = r.generatedAnalysis;
+  if (gen == null || typeof gen !== "object") return null;
+  const g = gen as Record<string, unknown>;
+  const raw = g.riskLevel;
+  if (raw == null || raw === "") return null;
+  const s = String(raw).trim();
+  return s.length > 0 ? s : null;
+}
+
+/**
+ * Same headline as the complete report approval banner (ReportDetail).
+ * overallRiskScore is 0–100 risk (higher = worse).
+ */
+export function customerRiskReportApprovalHeading(
+  riskScore: number,
+  riskLevel: string,
+): string {
+  const L = String(riskLevel ?? "").trim().toLowerCase();
+  if (L.includes("high") || L.includes("critical") || L.includes("severe")) {
+    return "Further Review Required";
+  }
+  if (L.includes("low") || L.includes("minimal")) {
+    return "Recommended for Approval";
+  }
+  const s = Math.max(0, Math.min(100, Number(riskScore) || 0));
+  if (s <= 33) return "Recommended for Approval";
+  if (s >= 67) return "Further Review Required";
+  return "Conditional Approval";
+}
+
+/** Readiness / alignment score shown on the complete report (100 − risk). */
+export function alignmentScoreFromRiskScore(riskScore: number): number {
+  return Math.round(Math.max(0, Math.min(100, 100 - riskScore)));
+}

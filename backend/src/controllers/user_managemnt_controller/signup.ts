@@ -6,6 +6,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import emailConfig from "../../functions/emailconfig.js";
 import { ONBOARDING_LINK_EXPIRY_JWT } from "../../constants/tokenExpiry.js";
+import {
+  buildOnboardingEmailHtml,
+  ONBOARDING_MAIL_PLATFORM_NAME,
+} from "../../email/onboardingEmailHtml.js";
 
 const userSignup = async (req: Request, res: Response) => {
   const userData = req.body ?? {};
@@ -20,50 +24,6 @@ const userSignup = async (req: Request, res: Response) => {
   function capitalizeFirstLetter(str: string): string {
     if (!str || typeof str !== "string") return str;
     return str.trim().split(/\s+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
-  }
-
-  function userEmailTemplate(
-    name: string,
-    role: string,
-    onboardingLink: string,
-    organization: string,
-  ) {
-    return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to AI Eval!</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333; }
-  .container { max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333; }
-  h1 { color: #2463eb; }
-  p { font-size:16px; line-height:1.5; color:#333333; }
-  .button-container { margin:20px 0; }
-  .login-button { background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; }
-  .footer { font-size:12px; color:#666666; margin-top:20px; text-align:center; }
-</style>
-</head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div class="container" style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333;">
-  <h1 style="color: #2463eb;">Welcome to AI Eval, ${name}!</h1>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">We're excited to have you join <strong>${organization}</strong> as a <strong>${role}</strong>.</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Your account has been successfully activated, and you can now access all the features of AI Eval.</p>
-  <div class="button-container" style="margin:20px 0;">
-    <a href="${onboardingLink}" class="login-button" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold;">Go to Onboarding</a>
-  </div>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Here are a few things you can do next:</p>
-  <ul style="font-size:16px; line-height:1.5; color:#333333;">
-    <li>Set up your profile and preferences.</li>
-    <li>Explore AI Eval features tailored for your role.</li>
-    <li>Invite teammates to collaborate and evaluate efficiently.</li>
-  </ul>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">If you have any questions, feel free to reply to this email—we’re here to help!</p>
-  <p style="font-size:16px; line-height:1.5; color:#333333;">Cheers,<br>The AI Eval Team</p>
-  <div class="footer" style="font-size:12px; color:#666666; margin-top:20px; text-align:center;">&copy; 2026 AI Eval. All rights reserved.</div>
-</div>
-</body>
-</html>`;
   }
 
   try {
@@ -224,12 +184,12 @@ const userSignup = async (req: Request, res: Response) => {
 
         await transporter.sendMail({
           from: {
-            name: "AI_Eval",
+            name: ONBOARDING_MAIL_PLATFORM_NAME,
             address: process.env.SENDER_EMAIL_ID!,
           },
           to: email,
-          subject: "Onboarding in AI Eval",
-          html: userEmailTemplate(
+          subject: `Welcome to ${ONBOARDING_MAIL_PLATFORM_NAME}`,
+          html: buildOnboardingEmailHtml(
             dbUser.user_name ?? "User",
             capitalizeFirstLetter(String(dbUser.role ?? "")),
             onboardingLink,

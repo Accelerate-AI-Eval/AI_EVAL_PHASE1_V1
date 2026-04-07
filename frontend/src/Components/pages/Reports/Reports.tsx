@@ -29,7 +29,7 @@ export interface CustomerRiskReportItem {
   attestationExpiryAt?: string | null;
   /** Buyer vendor risk reports use buyer-vendor-risk-report route. */
   source?: "customer" | "buyer_vendor_risk";
-  /** Buyer complete report: IRS from assess-3 formula (lower is safer). */
+  /** Buyer complete report: IRS from assess-3 formula. */
   implementationRiskScore?: number | null;
 }
 

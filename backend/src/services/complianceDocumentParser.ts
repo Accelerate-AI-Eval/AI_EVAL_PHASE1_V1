@@ -14,6 +14,8 @@ const pdfParse = require("pdf-parse-new") as (
 import { db } from "../database/db.js";
 import { vendorSelfAttestations } from "../schema/schema.js";
 import { eq } from "drizzle-orm";
+import { buildFrameworkMappingRowsFromComplianceExpiries } from "./frameworkMappingFromCompliance.js";
+import { loadFrameworkDatasets, type FrameworkControl } from "./frameworkDatasetsLoader.js";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads_vendor_attestations");
 
@@ -21,6 +23,23 @@ export type ComplianceDocExpiryEntry = {
   category: string;
   expiryAt: string | null;
   parsedAt: string;
+  documentClass?: string;
+  frameworkMapping?: {
+    framework: string;
+    version?: string;
+    controls: Array<{
+      controlId: string;
+      title: string;
+      /** Full catalog description for this control (from framework JSON). */
+      description: string;
+      relevanceScore: number;
+    }>;
+  };
+  validation?: {
+    isValid: boolean;
+    reason: string;
+    controlsMapped: number;
+  };
   error?: string;
 };
 
@@ -32,6 +51,114 @@ const MONTHS =
 /** Lines that suggest an expiry / validity end date (compliance certs, SOC reports). */
 const EXPIRY_LINE =
   /valid\s*(?:until|through|to|from)|expir(?:es|y|ation)|certificate\s*(?:is\s*)?valid|period\s*(?:of\s*)?(?:validity|coverage)|report\s*period|audit\s*period|coverage\s*period|effective\s*(?:until|through)|remains\s*valid|due\s*for\s*renewal/i;
+
+function normalizeToken(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function tokenizeText(s: string): Set<string> {
+  return new Set(
+    normalizeToken(s)
+      .split(/\s+/)
+      .filter((t) => t.length >= 3),
+  );
+}
+
+function classifyDocument(category: string, fileName: string, text: string): string {
+  const hay = `${category} ${fileName} ${text.slice(0, 5000)}`.toLowerCase();
+  if (/soc\s*2|soc2/.test(hay)) return "SOC2";
+  if (/iso\s*27001|iso-?27001/.test(hay)) return "ISO27001";
+  if (/nist|800-53|800-171|csf/.test(hay)) return "NIST";
+  if (/hipaa|phi|e-?phi|\bbaa\b|hitrust/.test(hay)) return "HIPAA";
+  if (/gdpr|privacy/.test(hay)) return "GDPR";
+  if (/pci|dss/.test(hay)) return "PCI-DSS";
+  if (/dora/.test(hay)) return "DORA";
+  if (/cmmc/.test(hay)) return "CMMC";
+  if (/certificat|attestation|audit|compliance/.test(hay)) return "COMPLIANCE_EVIDENCE";
+  return "GENERAL_COMPLIANCE_DOCUMENT";
+}
+
+function frameworkFitsClass(name: string, docClass: string): boolean {
+  const n = name.toLowerCase();
+  if (docClass === "SOC2") return n.includes("soc2");
+  if (docClass === "ISO27001") return n.includes("iso");
+  if (docClass === "NIST") return n.includes("nist");
+  if (docClass === "HIPAA") return n.includes("hipaa");
+  if (docClass === "GDPR") return n.includes("gdpr");
+  if (docClass === "PCI-DSS") return n.includes("pci");
+  if (docClass === "DORA") return n.includes("dora");
+  if (docClass === "CMMC") return n.includes("cmmc");
+  return true;
+}
+
+const MAX_STORED_CONTROL_DESCRIPTION_LEN = 4000;
+
+function mapToFrameworkControls(
+  text: string,
+  docClass: string,
+): {
+  framework: string;
+  version?: string;
+  controls: Array<{
+    controlId: string;
+    title: string;
+    description: string;
+    relevanceScore: number;
+  }>;
+} | null {
+  const frameworks = loadFrameworkDatasets();
+  if (frameworks.length === 0) return null;
+  const textTokens = tokenizeText(text.slice(0, 20000));
+  let best:
+    | {
+        framework: string;
+        version?: string;
+        controls: Array<{
+          controlId: string;
+          title: string;
+          description: string;
+          relevanceScore: number;
+        }>;
+      }
+    | null = null;
+  for (const ds of frameworks) {
+    const fName = String(ds.framework?.name ?? "").trim() || "Unknown Framework";
+    if (!frameworkFitsClass(fName, docClass)) continue;
+    const scored = ds.controls
+      .map((c: FrameworkControl) => {
+        const tokens = tokenizeText(
+          `${c.title ?? ""} ${c.description ?? ""} ${c.implementationGuidance ?? ""}`,
+        );
+        let overlap = 0;
+        for (const t of tokens) if (textTokens.has(t)) overlap++;
+        const descRaw = String(c.description ?? c.implementationGuidance ?? "").trim();
+        const description =
+          descRaw.length > MAX_STORED_CONTROL_DESCRIPTION_LEN
+            ? `${descRaw.slice(0, MAX_STORED_CONTROL_DESCRIPTION_LEN)}…`
+            : descRaw;
+        return {
+          controlId: String(c.controlId ?? "").trim(),
+          title: String(c.title ?? "").trim(),
+          description,
+          relevanceScore: overlap,
+        };
+      })
+      .filter((c) => c.controlId && c.relevanceScore > 0)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 6);
+    if (scored.length === 0) continue;
+    const total = scored.reduce((sum, c) => sum + c.relevanceScore, 0);
+    const bestTotal = best ? best.controls.reduce((sum, c) => sum + c.relevanceScore, 0) : -1;
+    if (total > bestTotal) {
+      best = {
+        framework: fName,
+        version: ds.framework?.version,
+        controls: scored,
+      };
+    }
+  }
+  return best;
+}
 
 function padY(y: number): number {
   if (y >= 0 && y < 100) return y >= 50 ? 1900 + y : 2000 + y;
@@ -255,10 +382,30 @@ export async function parseAndStoreComplianceDocumentExpiries(
         continue;
       }
       const expiry = extractExpiryFromText(text);
+      const documentClass = classifyDocument(category, safe, text);
+      const frameworkMapping = mapToFrameworkControls(text, documentClass);
+      const validation =
+        frameworkMapping != null
+          ? {
+              isValid: frameworkMapping.controls.length > 0,
+              reason:
+                frameworkMapping.controls.length > 0
+                  ? "Document classified and mapped to framework controls"
+                  : "Framework detected but no controls matched document content",
+              controlsMapped: frameworkMapping.controls.length,
+            }
+          : {
+              isValid: false,
+              reason: "No framework mapping found from backend data folder",
+              controlsMapped: 0,
+            };
       result[safe] = {
         category,
         expiryAt: expiry ? toDateOnlyLocal(expiry) : null,
         parsedAt: nowIso,
+        documentClass,
+        frameworkMapping: frameworkMapping ?? undefined,
+        validation,
         ...(expiry ? {} : { error: "No expiry date pattern detected" }),
       };
     } catch (err) {
@@ -271,11 +418,14 @@ export async function parseAndStoreComplianceDocumentExpiries(
     }
   }
 
+  const frameworkMappingRows = buildFrameworkMappingRowsFromComplianceExpiries(result);
+
   try {
     await db
       .update(vendorSelfAttestations)
       .set({
         compliance_document_expiries: result as unknown as Record<string, unknown>,
+        framework_mapping_rows: frameworkMappingRows,
         updated_at: new Date(),
       })
       .where(eq(vendorSelfAttestations.id, attestationId));

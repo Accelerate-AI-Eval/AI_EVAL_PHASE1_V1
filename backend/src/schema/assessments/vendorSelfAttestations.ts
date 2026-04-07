@@ -60,6 +60,8 @@ export const vendorSelfAttestations = pgTable("vendor_self_attestations", {
   document_uploads: jsonb("document_uploads"),
   /** Parsed expiry per compliance upload file (fileName -> { category, expiryAt, parsedAt, error? }). */
   compliance_document_expiries: jsonb("compliance_document_expiries"),
+  /** Aggregated framework mapping rows for reports (from compliance PDF parse). */
+  framework_mapping_rows: jsonb("framework_mapping_rows"),
   status: varchar("status", { length: 20 }).default("DRAFT"),
   visible_to_buyer: boolean("visible_to_buyer").default(false),
   visible_ai_governance: boolean("visible_ai_governance").default(false),

@@ -5,6 +5,10 @@ import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsVendorAssessments } from "../../schema/assessments/cotsVendorAssessments.js";
 import { vendorSelfAttestations } from "../../schema/assessments/vendorSelfAttestations.js";
 import { eq, and, or } from "drizzle-orm";
+import {
+  buildVendorCotsOrganizationalPortalInsights,
+  deriveBuyerIndustrySegmentForVendorCots,
+} from "../../services/orgPortalComplianceInsights.js";
 
 /** GET /vendorCotsAssessment/:id - return one vendor COTS assessment for view/edit. User must belong to same org. */
 const getVendorCotsById = async (req: Request, res: Response) => {
@@ -65,6 +69,11 @@ const getVendorCotsById = async (req: Request, res: Response) => {
         risk_domain_scores: cotsVendorAssessments.risk_domain_scores,
         contextual_multipliers: cotsVendorAssessments.contextual_multipliers,
         risk_mitigation: cotsVendorAssessments.risk_mitigation,
+        attestation_security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+        attestation_document_uploads: vendorSelfAttestations.document_uploads,
+        attestation_regulatorycompliance_cert_material: vendorSelfAttestations.regulatorycompliance_cert_material,
+        attestation_framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
+        attestation_compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
       })
       .from(assessments)
       .leftJoin(cotsVendorAssessments, eq(assessments.id, cotsVendorAssessments.assessment_id))
@@ -132,6 +141,31 @@ const getVendorCotsById = async (req: Request, res: Response) => {
       contextualMultipliers: r.contextual_multipliers ?? "",
       riskMitigation: r.risk_mitigation ?? "",
     };
+
+    const rx = r as typeof r & {
+      attestation_security_compliance_certificates?: unknown;
+      attestation_document_uploads?: unknown;
+      attestation_regulatorycompliance_cert_material?: unknown;
+      attestation_framework_mapping_rows?: unknown;
+      attestation_compliance_document_expiries?: unknown;
+    };
+    const q = req.query as { buyerIndustrySegment?: string };
+    const segmentForInsights = deriveBuyerIndustrySegmentForVendorCots(
+      data.customerSector,
+      typeof q?.buyerIndustrySegment === "string" ? q.buyerIndustrySegment : undefined,
+    );
+    const hasAttestation = rx.vendor_attestation_id != null && String(rx.vendor_attestation_id).trim() !== "";
+    const attestationRow = hasAttestation
+      ? {
+          security_compliance_certificates: rx.attestation_security_compliance_certificates,
+          document_uploads: rx.attestation_document_uploads,
+          regulatorycompliance_cert_material: rx.attestation_regulatorycompliance_cert_material,
+          framework_mapping_rows: rx.attestation_framework_mapping_rows,
+          compliance_document_expiries: rx.attestation_compliance_document_expiries,
+        }
+      : null;
+    data.organizationalPortal = buildVendorCotsOrganizationalPortalInsights(data, attestationRow, segmentForInsights);
+
     return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("getVendorCotsById:", error instanceof Error ? error.message : String(error));

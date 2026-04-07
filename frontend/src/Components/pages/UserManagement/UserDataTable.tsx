@@ -1,4 +1,20 @@
-import { Eye, SquarePen, CircleX, Shield, Ban, Send, RefreshCw, Mail, CheckCircle, User, Landmark, UserStar, UserCheck, ClipboardCheck } from "lucide-react";
+import {
+  Eye,
+  SquarePen,
+  CircleX,
+  Shield,
+  Ban,
+  Send,
+  RefreshCw,
+  Mail,
+  CheckCircle,
+  User,
+  Landmark,
+  UserStar,
+  UserCheck,
+  ClipboardCheck,
+  Search,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { useDispatch, useSelector } from "react-redux";
@@ -463,17 +479,20 @@ const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: numb
   return (
     <>
     <div className="orgDataTable">
-      <div className="filterOption">
-        <label htmlFor="user-search">Search</label>
-        <input
-          className="filterInput"
-          type="text"
-          id="user-search"
-          placeholder="Filter by fields"
-          aria-label="Search users"
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
-        />
+      <div className="user_management_search_row">
+        <div className="user_management_search_wrap">
+          <Search size={18} className="user_management_search_icon" aria-hidden />
+          <input
+            className="user_management_search_input"
+            type="search"
+            id="user-search"
+            placeholder="Filter by name, email, organization, role…"
+            aria-label="Search users"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            autoComplete="off"
+          />
+        </div>
       </div>
       {loading ? (
         <LoadingMessage message="Loading users…" />

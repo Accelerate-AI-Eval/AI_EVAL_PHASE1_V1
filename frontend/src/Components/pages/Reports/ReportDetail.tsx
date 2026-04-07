@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { CircleChevronLeft, CheckCircle2, AlertTriangle, XCircle, Download, FileText, Building2, TrendingUp, Shield, BarChart3, Eye, List } from "lucide-react"
+import { CircleChevronLeft, CheckCircle2, AlertTriangle, XCircle, Download, FileText, Building2, TrendingUp, Shield, BarChart3, Eye, List, Layers, AlertCircle, Info } from "lucide-react"
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js"
-import { gradeFromOverallRiskScore } from "../../../utils/completeReportGrade"
+import {
+  customerRiskReportApprovalHeading,
+  alignmentScoreFromRiskScore,
+  gradeFromOverallRiskScore,
+} from "../../../utils/completeReportGrade"
 import {
   riskScopeFromRow,
   groupRisksByDomain,
   type ReportRiskScope,
 } from "../../../utils/reportRiskScope"
+import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay"
 import { riskRowsToSummaryPoints, stringsToSummaryPoints } from "../../../utils/summarizeRiskPoints"
 import LoadingMessage from "../../UI/LoadingMessage"
 import "../UserManagement/user_management.css"
@@ -192,6 +197,111 @@ function stripMarkdownBold(s: string): string {
   return String(s).replace(/\*\*/g, "")
 }
 
+function frameworkDisplayKey(framework: string): string {
+  return String(framework ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+}
+
+const SKIPPABLE_FRAMEWORK_KEY = new Set([
+  "",
+  "—",
+  "-",
+  "n/a",
+  "not specified",
+  "none",
+  "tbd",
+  "unknown",
+])
+
+function coerceFrameworkRow(raw: unknown): FrameworkRow | null {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null
+  const o = raw as Record<string, unknown>
+  const fw =
+    o.framework ??
+    o.Framework ??
+    o.framework_name ??
+    o.frameworkName
+  const framework = fw != null ? String(fw).trim() : ""
+  if (!framework) return null
+  const cov = o.coverage ?? o.Coverage
+  const ctrl = o.controls ?? o.Controls
+  const n = o.notes ?? o.Notes
+  return {
+    framework,
+    coverage: cov != null ? String(cov) : "—",
+    controls: ctrl != null ? String(ctrl) : "—",
+    notes: n != null ? String(n) : "—",
+  }
+}
+
+function shouldShowFrameworkRow(r: FrameworkRow): boolean {
+  const k = frameworkDisplayKey(r.framework)
+  return k.length >= 2 && !SKIPPABLE_FRAMEWORK_KEY.has(k)
+}
+
+/**
+ * Collect framework mapping rows from all common report JSON shapes (camelCase / snake_case, nested or root).
+ * Order: generatedAnalysis.fullReport first, then root frameworkMappingRows — dedupe by framework name.
+ */
+function collectFrameworkRowsFromReportPayload(data: Record<string, unknown>): FrameworkRow[] {
+  const ordered: FrameworkRow[] = []
+  const pushFromArray = (arr: unknown) => {
+    if (!Array.isArray(arr)) return
+    for (const x of arr) {
+      const c = coerceFrameworkRow(x)
+      if (c && shouldShowFrameworkRow(c)) ordered.push(c)
+    }
+  }
+  const genRaw = data.generatedAnalysis ?? data.generated_analysis
+  if (genRaw && typeof genRaw === "object" && !Array.isArray(genRaw)) {
+    const gen = genRaw as Record<string, unknown>
+    const fr = gen.fullReport ?? gen.full_report
+    if (fr && typeof fr === "object" && !Array.isArray(fr)) {
+      const frObj = fr as Record<string, unknown>
+      const fm = frObj.frameworkMapping ?? frObj.framework_mapping
+      if (fm && typeof fm === "object" && !Array.isArray(fm)) {
+        pushFromArray((fm as Record<string, unknown>).rows)
+      }
+    }
+  }
+  pushFromArray(data.frameworkMappingRows ?? data.framework_mapping_rows)
+
+  const seen = new Set<string>()
+  const out: FrameworkRow[] = []
+  for (const r of ordered) {
+    const k = frameworkDisplayKey(r.framework)
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(r)
+  }
+  return out
+}
+
+function frameworkAttestationBanner(
+  status: unknown,
+): { text: string; variant: "warn" | "info" } | null {
+  const s = String(status ?? "").trim().toLowerCase()
+  if (s === "missing") {
+    return {
+      text: "No product attestation is linked or the record was not found. Rows below (if any) are from this assessment only—not from uploaded compliance documents.",
+      variant: "warn",
+    }
+  }
+  if (s === "incomplete") {
+    return {
+      text: "The linked product attestation has no framework mappings yet. Add or process compliance documents on the product profile to show evidence-based rows here.",
+      variant: "warn",
+    }
+  }
+  if (s === "available") return null
+  return {
+    text: "This report may predate attestation status labels. Confirm framework coverage against the current product attestation if needed.",
+    variant: "info",
+  }
+}
+
 function riskLevelClass(level: string): string {
   const l = String(level).toLowerCase()
   if (l.includes("low") || l.includes("very")) return "risk_low"
@@ -204,6 +314,11 @@ function isSystemUserRole(): boolean {
   return role === "system admin" || role === "system manager" || role === "system viewer"
 }
 
+function isVendorViewer(): boolean {
+  const role = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim().replace(/_/g, " ")
+  return role === "vendor"
+}
+
 function tabReportTitle(raw: string): string {
   const t = String(raw ?? "").trim()
   if (!t) return ""
@@ -214,8 +329,12 @@ export default function ReportDetail() {
   const { reportId } = useParams<{ reportId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const reportTitleFromNavState =
-    ((location.state as { reportTitle?: string } | null)?.reportTitle ?? "").trim()
+  const reportNavState = location.state as {
+    reportTitle?: string
+    hideFrameworkMapping?: boolean
+  } | null
+  const reportTitleFromNavState = (reportNavState?.reportTitle ?? "").trim()
+  const hideFrameworkMapping = reportNavState?.hideFrameworkMapping === true
   const cachedTitleKey = reportId ? `completeReportTitle:${reportId}` : ""
   const cachedReportTitle = cachedTitleKey ? (sessionStorage.getItem(cachedTitleKey) ?? "").trim() : ""
   const showExportPdf = !isSystemUserRole()
@@ -379,7 +498,12 @@ export default function ReportDetail() {
   const deployment = data.deploymentOverview as DeploymentOverview | undefined
   const overallScore = generated?.overallRiskScore ?? 0
   const overallLevel = generated?.riskLevel ?? "Low"
-  const grade = gradeFromOverallRiskScore(overallScore)
+  const alignmentScoreDisplay = alignmentScoreFromRiskScore(overallScore)
+  const contextSummaryPreview = (() => {
+    const raw = generated?.executiveSummary ?? generated?.summary
+    if (raw == null || String(raw).trim() === "") return ""
+    return stripMarkdownBold(String(raw)).replace(/\s*---+\s*/g, " ").replace(/\s+/g, " ").trim()
+  })()
 
   const RISK_SCOPE_SECTIONS: {
     scope: ReportRiskScope
@@ -470,6 +594,11 @@ export default function ReportDetail() {
 
   const recsWithPriority = generated?.recommendationsWithPriority ?? []
   const recsSimple = generated?.recommendations ?? []
+  const frameworkRows = collectFrameworkRowsFromReportPayload(data)
+  const frameworkMappingAttestationStatus =
+    data.frameworkMappingAttestationStatus ?? data.framework_mapping_attestation_status
+  const frameworkAttestationBannerContent =
+    frameworkAttestationBanner(frameworkMappingAttestationStatus)
 
   return (
     <div className="sec_user_page org_settings_page reports_page report_detail_page report_assessment_layout">
@@ -489,47 +618,75 @@ export default function ReportDetail() {
         <p className="report_assessment_subtitle">Analysis Report • {assessmentDate} • AI Generated</p>
       </header>
 
-      {/* Vendor-Side Assessment Context Panel */}
-      <section className="report_context_panel">
+      {/* Vendor-Side Assessment Context Panel — vendors: score box + short context line (full narrative in Executive Summary only); buyers: preview + approval banner below */}
+      <section
+        className={`report_context_panel${isVendorViewer() ? " report_context_panel_vendor_portal" : ""}`}
+      >
         <span className="report_context_pill">Customer-Specific Risk Assessment (Vendor-Side)</span>
         <div className="report_context_inner">
           <div className="report_context_left">
             <h2 className="report_context_entity">{orgName !== "—" ? orgName : "Customer"}</h2>
-            <p className="report_context_meta">{sector !== "—" ? sector : ""} {sector !== "—" && orgName !== "—" ? "•" : ""} {formatReportValue(data.customerSector)}</p>
+            {sector !== "—" ? <p className="report_context_meta">{sector}</p> : null}
             <p className="report_context_desc">
-              {formatReportValue(generated?.summary || generated?.executiveSummary) !== "—" ? formatReportValue(generated?.summary || generated?.executiveSummary) : "Assessment context and risk evaluation for this customer engagement."}
+              {isVendorViewer()
+                ? "Assessment context and risk evaluation for this customer engagement."
+                : contextSummaryPreview.length > 0
+                  ? contextSummaryPreview
+                  : "Assessment context and risk evaluation for this customer engagement."}
             </p>
           </div>
           <div className="report_context_right">
-            <p className="report_context_vendor">Vendor: {title.includes(" - ") ? title.split(" - ")[1]?.trim() || "—" : "—"}</p>
-            <div className="report_context_rating">
-              <span className="report_context_grade">{grade}</span>
-              <span className="report_context_score">({100 - overallScore}/100)</span>
-            </div>
+            <p className="report_context_vendor">
+              Vendor: {title.includes(" - ") ? title.split(" - ")[1]?.trim() || "—" : "—"}
+            </p>
+            {isVendorViewer() ? (
+              <div className="report_context_rating" aria-label="Overall assessment grade and alignment score">
+                <span className="report_context_grade">{gradeFromOverallRiskScore(overallScore)}</span>
+                <span className="report_context_score">({alignmentScoreDisplay}/100)</span>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
 
-      {/* Executive Summary */}
+      {!isVendorViewer() && (
+        <section
+          className="report_approval_summary_banner"
+          aria-labelledby="report-approval-summary-heading"
+        >
+          <h2 id="report-approval-summary-heading" className="report_approval_summary_title">
+            {customerRiskReportApprovalHeading(overallScore, overallLevel)}
+          </h2>
+          <p className="report_approval_summary_sub">
+            Overall alignment score: {alignmentScoreDisplay}
+            /100 (higher indicates stronger alignment / lower residual risk)
+          </p>
+        </section>
+      )}
+
       <section className="report_section_card">
         <h2 className="report_section_heading">
           <FileText size={20} aria-hidden /> Executive Summary
         </h2>
         <div className="report_summary_body report_exec_summary">
-          {generated?.executiveSummary
-            ? (() => {
-                const text = stripMarkdownBold(generated.executiveSummary)
-                  .replace(/\s*---+\s*/g, " ")
-                  .trim();
-                return text
-                  ? text
-                      .split(/\n\n/)
-                      .map((p) => stripMarkdownBold(p).replace(/\s*---+\s*/g, " ").trim())
-                      .filter((p) => p.length > 0 && !/^\s*-{2,}\s*$/.test(p))
-                      .map((p, i) => <p key={i}>{p}</p>)
-                  : <p>No executive summary generated.</p>;
-              })()
-            : (generated?.summary ? <p>{stripMarkdownBold(String(generated.summary)).replace(/\s*---+\s*/g, " ").trim()}</p> : <p>No executive summary generated.</p>)}
+          {generated?.executiveSummary ? (
+            (() => {
+              const text = stripMarkdownBold(generated.executiveSummary)
+                .replace(/\s*---+\s*/g, " ")
+                .trim();
+              return text
+                ? text
+                    .split(/\n\n/)
+                    .map((p) => stripMarkdownBold(p).replace(/\s*---+\s*/g, " ").trim())
+                    .filter((p) => p.length > 0 && !/^\s*-{2,}\s*$/.test(p))
+                    .map((p, i) => <p key={i}>{p}</p>)
+                : <p>No executive summary generated.</p>;
+            })()
+          ) : generated?.summary ? (
+            <p>{stripMarkdownBold(String(generated.summary)).replace(/\s*---+\s*/g, " ").trim()}</p>
+          ) : (
+            <p>No executive summary generated.</p>
+          )}
         </div>
       </section>
 
@@ -685,22 +842,82 @@ export default function ReportDetail() {
         </div>
       </section>
 
-      {/* Framework Mapping */}
-      <section className="report_section_card">
-        <h2 className="report_section_heading">Framework Mapping</h2>
-        <div className="report_table_wrap">
-          <table className="report_table">
-            <thead><tr><th>Framework</th><th>Coverage</th><th>Controls</th><th>Notes</th></tr></thead>
-            <tbody>
-              {fullReport?.frameworkMapping?.rows && fullReport.frameworkMapping.rows.length > 0
-                ? fullReport.frameworkMapping.rows.map((row, i) => (
-                    <tr key={i}><td>{formatReportValue(row.framework)}</td><td>{formatReportValue(row.coverage)}</td><td>{formatReportValue(row.controls)}</td><td>{formatReportValue(row.notes)}</td></tr>
-                  ))
-                : <tr><td colSpan={4} className="report_table_empty">—</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {!hideFrameworkMapping && (
+        <section className="report_section_card report_framework_section">
+          <h2 className="report_section_heading">
+            <Layers size={20} aria-hidden />
+            Framework mapping
+          </h2>
+          <p className="report_framework_lead">
+            Frameworks and control themes for this engagement. Product attestation evidence is shown when linked and parsed.
+          </p>
+          {frameworkAttestationBannerContent ? (
+            <div
+              className={
+                frameworkAttestationBannerContent.variant === "warn"
+                  ? "report_framework_notice report_framework_notice_warn"
+                  : "report_framework_notice report_framework_notice_info"
+              }
+              role="status"
+            >
+              {frameworkAttestationBannerContent.variant === "warn" ? (
+                <AlertCircle size={18} className="report_framework_notice_icon" aria-hidden />
+              ) : (
+                <Info size={18} className="report_framework_notice_icon" aria-hidden />
+              )}
+              <p className="report_framework_notice_text">{frameworkAttestationBannerContent.text}</p>
+            </div>
+          ) : null}
+          {frameworkRows.length > 0 ? (
+            <div className="report_framework_table_shell">
+              <div className="report_table_wrap report_framework_table_wrap">
+                <table className="report_table report_framework_table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Framework</th>
+                      <th scope="col">Coverage</th>
+                      <th scope="col">Controls</th>
+                      <th scope="col">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {frameworkRows.map((row, i) => (
+                      <tr key={i}>
+                        <td className="report_framework_td_name">{formatReportValue(row.framework)}</td>
+                        <td className="report_framework_td_coverage">{formatReportValue(row.coverage)}</td>
+                        <td className="report_framework_td_controls">
+                          {(() => {
+                            const lines = frameworkControlsDisplayLines(row.controls)
+                            if (lines.length === 0) return formatReportValue(row.controls)
+                            return (
+                              <div className="report_framework_controls_stack">
+                                {lines.map((line, li) => (
+                                  <div key={li} className="report_framework_control_line">
+                                    {stripMarkdownBold(line)}
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          })()}
+                        </td>
+                        <td className="report_framework_td_notes">{formatReportValue(row.notes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="report_framework_empty_state">
+              <Layers size={28} className="report_framework_empty_icon" aria-hidden />
+              <p className="report_framework_empty_title">No framework rows</p>
+              <p className="report_framework_empty_desc">
+                There is no framework mapping data to display for this report.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Implementation Plan */}
       <section className="report_section_card">

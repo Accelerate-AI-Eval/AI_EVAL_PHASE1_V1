@@ -2,6 +2,12 @@ import { ChevronRight, Download, FileText } from "lucide-react";
 import React from "react";
 import ClickTooltip from "../../UI/ClickTooltip";
 import type { CustomerRiskReportItem } from "./Reports";
+import {
+  overallRiskScoreFromReportJson,
+  riskLevelFromReportJson,
+  customerRiskReportApprovalHeading,
+  alignmentScoreFromRiskScore,
+} from "../../../utils/completeReportGrade";
 import "../VendorDirectory/VendorDirectory.css";
 import "./general_reports.css";
 
@@ -30,6 +36,17 @@ function CompleteReportsCards({
 }: CompleteReportsCardsProps) {
   const cards = reports.map((report) => {
         const archived = isArchived(report);
+        const vendorRiskScore = overallRiskScoreFromReportJson(report.report);
+        const vendorRiskLevel =
+          riskLevelFromReportJson(report.report) ?? "Low";
+        const approvalTitle =
+          vendorRiskScore != null
+            ? customerRiskReportApprovalHeading(vendorRiskScore, vendorRiskLevel)
+            : null;
+        const alignmentScore =
+          vendorRiskScore != null
+            ? alignmentScoreFromRiskScore(vendorRiskScore)
+            : null;
         return (
           <article
             key={report.id}
@@ -74,14 +91,15 @@ function CompleteReportsCards({
                 </ClickTooltip>
               </div>
             </div>
-            {report.source === "buyer_vendor_risk" &&
-            report.implementationRiskScore != null &&
-            Number.isFinite(Number(report.implementationRiskScore)) ? (
-              <p className="general_rpr_irs">
-                Implementation risk score:{" "}
-                <strong>{Math.round(Number(report.implementationRiskScore))}</strong>/100 (lower is safer)
-              </p>
-            ) : null}
+            {/* {approvalTitle != null && alignmentScore != null ? (
+              <div className="general_rpr_approval_banner">
+                <h3 className="general_rpr_approval_banner_title">{approvalTitle}</h3>
+                <p className="general_rpr_approval_banner_sub">
+                  Overall alignment score: {alignmentScore}/100 (higher indicates stronger
+                  alignment / lower residual risk)
+                </p>
+              </div>
+            ) : null} */}
             <div className="general_rpr_card_footer">
               <div className="general_rpr_card_dates">
                 <div className="general_rpr_card_date_row">

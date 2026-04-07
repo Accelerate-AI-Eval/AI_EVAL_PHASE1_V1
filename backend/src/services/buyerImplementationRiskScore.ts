@@ -7,8 +7,15 @@ type Breakdown = {
 
 export type BuyerImplementationRiskScore = {
   implementationRiskScore: number;
-  classification: "Low-Medium Risk" | "High Risk" | "Critical Risk";
+  grade: "A" | "B" | "C" | "D";
+  classification:
+    | "High Readiness"
+    | "Moderate Readiness"
+    | "Low Readiness"
+    | "Readiness Review Required";
   decision: "PROCEED" | "PROCEED WITH CAUTION" | "DO NOT PROCEED";
+  /** Readiness narrative from interpret(); optional for legacy callers. */
+  readiness_profile?: string;
   recommendedAction: string;
   formula: string;
   breakdown: Breakdown;
@@ -109,26 +116,53 @@ function calculateIntegrationRisk(buyerPayload: Record<string, unknown>): number
   return clamp01(risk);
 }
 
-function interpret(score: number): Pick<BuyerImplementationRiskScore, "classification" | "decision" | "recommendedAction"> {
-  if (score < 50) {
+function interpret(
+  score: number,
+): Pick<
+  BuyerImplementationRiskScore,
+  "grade" | "classification" | "decision" | "recommendedAction" | "readiness_profile"
+> {
+  const s = Math.max(0, Math.min(100, Math.round(Number(score))));
+  if (s >= 76) {
     return {
-      classification: "Low-Medium Risk",
+      grade: "A",
+      classification: "High Readiness",
       decision: "PROCEED",
+      readiness_profile:
+        "Organization ready; vendor capable; integration straightforward ",
       recommendedAction: "Proceed with standard implementation timeline.",
     };
   }
-  if (score < 75) {
+  if (s >= 51) {
     return {
-      classification: "High Risk",
+      grade: "B",
+      classification: "Moderate Readiness",
       decision: "PROCEED WITH CAUTION",
-      recommendedAction: "Proceed with a mitigation plan and pilot-first rollout.",
+      readiness_profile: "Some gaps exist; manageable with planning",
+      recommendedAction: "Proceed with gap mitigation plan; extend timeline 20-30%.",
+    };
+  }
+  if (s >= 26) {
+    return {
+      grade: "C",
+      classification: "Low Readiness",
+      decision: "PROCEED WITH CAUTION",
+      readiness_profile: "Significant gaps; risk of failure if not addressed.",
+      recommendedAction: "Proceed with caution; extend timeline 50-100%; pilot first.",
     };
   }
   return {
-    classification: "Critical Risk",
+    grade: "D",
+    classification: "Readiness Review Required",
     decision: "DO NOT PROCEED",
-    recommendedAction: "Do not proceed until critical gaps are remediated.",
+    readiness_profile: "Major gaps across dimensions; additional preparation needed",
+    recommendedAction: "Do not proceed until critical gaps are resolved; reassess after remediation.",
   };
+}
+
+/** Letter grade for a stored IRS (0–100); uses integer rounding (e.g. 45.5 → 46). */
+export function buyerImplementationReadinessGradeFromScore(rawScore: number): "A" | "B" | "C" | "D" {
+  return interpret(rawScore).grade;
 }
 
 export function calculateBuyerImplementationRiskScore(
@@ -141,18 +175,14 @@ export function calculateBuyerImplementationRiskScore(
   const vendorRisk = clamp01(100 - vendorTrustScore);
   const organizationalReadinessGap = calculateOrgReadinessGap(buyerPayload);
   const integrationRisk = calculateIntegrationRisk(buyerPayload);
-  const weighted = vendorRisk * 0.35 + organizationalReadinessGap * 0.35 + integrationRisk * 0.3;
-  const implementationRiskScore = Number(clamp01(weighted).toFixed(2));
+  const weighted = 100 - (vendorRisk * 0.35 + organizationalReadinessGap * 0.35 + integrationRisk * 0.3);
+  const implementationRiskScore = Math.round(clamp01(weighted));
   const interpreted = interpret(implementationRiskScore);
-
-console.log("weighted",weighted)
-console.log("implementationRiskScore",implementationRiskScore)
-console.log("interpreted",interpreted)
 
   return {
     implementationRiskScore,
     ...interpreted,
-    formula: "IRS = (Vendor_Risk × 0.35) + (Organizational_Readiness_Gap × 0.35) + (Integration_Risk × 0.30)",
+    formula: "IRS = 100 - ((Vendor_Risk × 0.35) + (Organizational_Readiness_Gap × 0.35) + (Integration_Risk × 0.30))",
     breakdown: {
       vendorRisk,
       organizationalReadinessGap,

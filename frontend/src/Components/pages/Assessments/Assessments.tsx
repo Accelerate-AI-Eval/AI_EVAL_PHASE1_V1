@@ -399,6 +399,9 @@ const Assessments = () => {
   const [vendorCotsPreviewDetail, setVendorCotsPreviewDetail] = useState(null);
   const [vendorCotsPreviewLoading, setVendorCotsPreviewLoading] =
     useState(false);
+  const [buyerCotsPreviewDetail, setBuyerCotsPreviewDetail] = useState(null);
+  const [buyerCotsPreviewLoading, setBuyerCotsPreviewLoading] =
+    useState(false);
   const [assessmentSearch, setAssessmentSearch] = useState("");
   const [showArchivedBuyer, setShowArchivedBuyer] = useState(false);
   const [showArchivedVendor, setShowArchivedVendor] = useState(false);
@@ -538,6 +541,40 @@ const Assessments = () => {
       })
       .catch(() => {})
       .finally(() => setVendorCotsPreviewLoading(false));
+  }, [previewRow?.assessmentId, previewRow?.type]);
+
+  // Buyer COTS: fetch by ID so formula grade / IRS appear in assessment preview after submit.
+  useEffect(() => {
+    if (
+      !previewRow ||
+      previewRow.type !== "cots_buyer" ||
+      !previewRow.assessmentId
+    ) {
+      setBuyerCotsPreviewDetail(null);
+      setBuyerCotsPreviewLoading(false);
+      return;
+    }
+    setBuyerCotsPreviewDetail(null);
+    setBuyerCotsPreviewLoading(true);
+    const token = sessionStorage.getItem("bearerToken");
+    if (!token) {
+      setBuyerCotsPreviewLoading(false);
+      return;
+    }
+    fetch(`${BASE_URL}/buyerCotsAssessment/${previewRow.assessmentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result?.success && result?.data)
+          setBuyerCotsPreviewDetail(result.data);
+      })
+      .catch(() => {})
+      .finally(() => setBuyerCotsPreviewLoading(false));
   }, [previewRow?.assessmentId, previewRow?.type]);
 
   const handleDeleteDraft = (assessmentId: string | number) => {
@@ -1118,6 +1155,7 @@ const Assessments = () => {
       {isBuyer && (
         <div className="ai_assessments_page">
           <div className="ai_assessments_section">
+            <div className="ai_assessments_section_first">
             <h2>Buy AI Product (COTS)</h2>
             <p className="section_desc">
               Assess a third-party vendor tool for your organization.
@@ -1137,20 +1175,12 @@ const Assessments = () => {
                 <CircleCheck size={16} /> Risk mitigation recommendations
               </li>
             </ul>
-            <div className="assessment_list_header_row">
+            </div>
+          
+            <div className="assessment_list_header_stack">
               <p className="your_assessments_title">YOUR ASSESSMENTS</p>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div
-                  className="page_tabs"
-                  style={{ marginBottom: 0, border: "none", gap: "0.25rem" }}
-                >
+              <div className="assessment_tabs_search_toolbar">
+                <div className="page_tabs assessment_page_tabs_inline">
                   <button
                     type="button"
                     className={`page_tab ${!showArchivedBuyer ? "page_tab_active" : ""}`}
@@ -1498,7 +1528,7 @@ const Assessments = () => {
 
       {(isVendor || isSystemUser) && (
         <div className="ai_assessments_page">
-          <div className="ai_assessments_section">
+          <div className="ai_assessments_section_cots_vendor">
             <div className="header_cots">
               <div>
                 <span>
@@ -1537,21 +1567,10 @@ const Assessments = () => {
               </li>
             </ul>
           </div>
-          <div className="ai_assessments_section">
-            <div className="assessment_list_header_row">
+            <div className="assessment_list_header_stack">
               <p className="your_assessments_title">YOUR ASSESSMENTS</p>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div
-                  className="page_tabs"
-                  style={{ marginBottom: 0, border: "none", gap: "0.25rem" }}
-                >
+              <div className="assessment_tabs_search_toolbar">
+                <div className="page_tabs assessment_page_tabs_inline">
                   <button
                     type="button"
                     className={`page_tab ${!showArchivedVendor ? "page_tab_active" : ""}`}
@@ -1584,6 +1603,8 @@ const Assessments = () => {
                 </div>
               </div>
             </div>
+          <div className="ai_assessments_section">
+          
             {loading && <LoadingMessage message="Loading assessments…" />}
             {fetchError && (
               <p style={{ color: "#dc2626", fontSize: "0.875rem" }}>
@@ -1930,6 +1951,7 @@ const Assessments = () => {
           onClick={() => {
             setPreviewRow(null);
             setVendorCotsPreviewDetail(null);
+            setBuyerCotsPreviewDetail(null);
           }}
           role="dialog"
           aria-modal="true"
@@ -1947,6 +1969,7 @@ const Assessments = () => {
                 onClick={() => {
                   setPreviewRow(null);
                   setVendorCotsPreviewDetail(null);
+                  setBuyerCotsPreviewDetail(null);
                 }}
                 aria-label="Close"
               >
@@ -1958,6 +1981,8 @@ const Assessments = () => {
                 previewRow={previewRow}
                 vendorDetail={vendorCotsPreviewDetail}
                 vendorLoading={vendorCotsPreviewLoading}
+                buyerDetail={buyerCotsPreviewDetail}
+                buyerLoading={buyerCotsPreviewLoading}
               />
             </div>
           </div>

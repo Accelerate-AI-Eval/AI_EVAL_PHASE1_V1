@@ -20,6 +20,7 @@ import LoadingMessage from "../../UI/LoadingMessage";
 import ClickTooltip from "../../UI/ClickTooltip";
 import StepVendorSelfAttestationPrev, {
   type ComplianceDocumentExpiryMeta,
+  type FrameworkMappingPreviewRow,
 } from "../VendorAttestations/StepVendorSelfAttestationPrev";
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import type {
@@ -159,6 +160,9 @@ const VendorAttestationDetails = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewComplianceExpiries, setPreviewComplianceExpiries] = useState<
     Record<string, ComplianceDocumentExpiryMeta> | null
+  >(null);
+  const [previewFrameworkMappingRows, setPreviewFrameworkMappingRows] = useState<
+    FrameworkMappingPreviewRow[] | null
   >(null);
 
   const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim();
@@ -385,6 +389,7 @@ const VendorAttestationDetails = () => {
       setPreviewLoading(true);
       setPreviewFormState(null);
       setPreviewComplianceExpiries(null);
+      setPreviewFrameworkMappingRows(null);
       try {
         const organizationId = sessionStorage.getItem("organizationId") ?? "";
         const params = new URLSearchParams();
@@ -423,6 +428,10 @@ const VendorAttestationDetails = () => {
             rawExp != null && typeof rawExp === "object" && !Array.isArray(rawExp)
               ? (rawExp as Record<string, ComplianceDocumentExpiryMeta>)
               : null,
+          );
+          const rawFw = result.attestation?.framework_mapping_rows;
+          setPreviewFrameworkMappingRows(
+            Array.isArray(rawFw) ? (rawFw as FrameworkMappingPreviewRow[]) : null,
           );
           setPreviewFormState(
             buildFormStateFromApi({
@@ -584,12 +593,9 @@ const VendorAttestationDetails = () => {
           </ul>
         </div>
       </div>
-
-      {/* Card 2: YOUR ATTESTATIONS – tabs, search, list */}
-      <div className="ai_assessments_section">
-        <div className="assessment_list_header_row">
+   <div className="assessment_list_header_stack">
           <p className="your_assessments_title">YOUR ATTESTATIONS</p>
-          <div className="attestation_tabs_and_search_row">
+          <div className="assessment_tabs_search_toolbar">
             <div className="page_tabs attestation_page_tabs_inline">
               <button
                 type="button"
@@ -631,6 +637,9 @@ const VendorAttestationDetails = () => {
             </div>
           </div>
         </div>
+      {/* Card 2: YOUR ATTESTATIONS – title row, then tabs (left) + search (right) */}
+      <div className="ai_assessments_section">
+     
 
         {loading && <LoadingMessage message="Loading attestations…" />}
         {error && <div className="vendor_attestation_error">{error}</div>}
@@ -927,6 +936,7 @@ const VendorAttestationDetails = () => {
                   attestationId={previewAttestationId}
                   onOpenDocument={handleOpenDocument}
                   complianceDocumentExpiries={previewComplianceExpiries}
+                  frameworkMappingRows={previewFrameworkMappingRows ?? undefined}
                 />
               )}
             </div>

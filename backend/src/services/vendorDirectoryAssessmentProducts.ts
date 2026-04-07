@@ -11,12 +11,23 @@ import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 const joinOrg = sql`${createOrganization.id} = (${vendors.organizationId})::int`;
 
+function firstNonEmptyText(...vals: (string | null | undefined)[]): string | undefined {
+  for (const v of vals) {
+    const t = typeof v === "string" ? v.trim() : "";
+    if (t) return t;
+  }
+  return undefined;
+}
+
 type ResolvedRow = {
   attestationId: string;
   product_name: string | null;
   status: string | null;
   updated_at: Date | null;
   target_industries: unknown;
+  market_product_material: string | null;
+  unique_solution: string | null;
+  tech_product_specifications: string | null;
   vendorTableId: string;
   vendorUserId: number | null;
   organizationId: string | null;
@@ -29,9 +40,12 @@ type ResolvedRow = {
   sector: unknown;
 };
 
-async function trustScoresForAttestations(attestationIds: string[]): Promise<Record<string, number>> {
-  const out: Record<string, number> = {};
-  if (attestationIds.length === 0) return out;
+async function trustScoresAndSummariesForAttestations(
+  attestationIds: string[],
+): Promise<{ scores: Record<string, number>; summaries: Record<string, string> }> {
+  const scores: Record<string, number> = {};
+  const summaries: Record<string, string> = {};
+  if (attestationIds.length === 0) return { scores, summaries };
   const reportRows = await db
     .select({
       attestation_id: generatedProfileReports.attestation_id,
@@ -43,7 +57,7 @@ async function trustScoresForAttestations(attestationIds: string[]): Promise<Rec
     .orderBy(desc(generatedProfileReports.created_at));
   for (const row of reportRows) {
     const aid = row.attestation_id != null ? String(row.attestation_id) : "";
-    if (!aid || out[aid] !== undefined) continue;
+    if (!aid) continue;
     let report = row.report as Record<string, unknown> | string | null | undefined;
     if (typeof report === "string") {
       try {
@@ -53,15 +67,25 @@ async function trustScoresForAttestations(attestationIds: string[]): Promise<Rec
       }
     }
     const ts = report?.trustScore as Record<string, unknown> | null | undefined;
-    const overallScore = typeof ts?.overallScore === "number" ? ts.overallScore : null;
-    const colScore = row.trust_score != null && Number.isFinite(Number(row.trust_score)) ? Number(row.trust_score) : null;
-    const val = overallScore ?? colScore;
-    if (val != null && Number.isFinite(val)) out[aid] = val;
+    if (scores[aid] === undefined) {
+      const overallScore = typeof ts?.overallScore === "number" ? ts.overallScore : null;
+      const colScore = row.trust_score != null && Number.isFinite(Number(row.trust_score)) ? Number(row.trust_score) : null;
+      const val = overallScore ?? colScore;
+      if (val != null && Number.isFinite(val)) scores[aid] = val;
+    }
+    if (summaries[aid] === undefined) {
+      const summ = typeof ts?.summary === "string" ? ts.summary.trim() : "";
+      if (summ) summaries[aid] = summ;
+    }
   }
-  return out;
+  return { scores, summaries };
 }
 
-function mapRowToApiProduct(row: ResolvedRow, trustScore: number | null | undefined) {
+function mapRowToApiProduct(
+  row: ResolvedRow,
+  trustScore: number | null | undefined,
+  trustSummary: string | undefined,
+) {
   const apiStatus = (row.status ?? "").toUpperCase();
   const status = apiStatus === "COMPLETED" ? "Completed" : apiStatus === "REJECTED" ? "Rejected" : "Draft";
   let sector: Record<string, unknown> | string | null = null;
@@ -92,6 +116,12 @@ function mapRowToApiProduct(row: ResolvedRow, trustScore: number | null | undefi
     vendorMaturity: row.vendorMaturity ?? "",
     sector: row.sector ?? null,
   };
+  const productDescription = firstNonEmptyText(
+    row.market_product_material,
+    row.unique_solution,
+    row.tech_product_specifications,
+    trustSummary,
+  );
   return {
     productId: row.attestationId,
     productName: (row.product_name ?? "").trim() || "Product",
@@ -99,6 +129,8 @@ function mapRowToApiProduct(row: ResolvedRow, trustScore: number | null | undefi
     vendorId: vid,
     vendor,
     trustScore: trustScore != null && Number.isFinite(trustScore) ? trustScore : undefined,
+    summary: trustSummary,
+    productDescription: productDescription ?? undefined,
     updated_at: row.updated_at ?? null,
     sector: sector ?? undefined,
   };
@@ -118,6 +150,9 @@ export async function resolveProductByOrgAndProductName(
       status: vendorSelfAttestations.status,
       updated_at: vendorSelfAttestations.updated_at,
       target_industries: vendorSelfAttestations.target_industries,
+      market_product_material: vendorSelfAttestations.market_product_material,
+      unique_solution: vendorSelfAttestations.unique_solution,
+      tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
       vendorTableId: vendors.id,
       vendorUserId: vendors.userId,
       organizationId: vendors.organizationId,
@@ -158,6 +193,9 @@ export async function resolveProductByAttestationForVendorUser(
       status: vendorSelfAttestations.status,
       updated_at: vendorSelfAttestations.updated_at,
       target_industries: vendorSelfAttestations.target_industries,
+      market_product_material: vendorSelfAttestations.market_product_material,
+      unique_solution: vendorSelfAttestations.unique_solution,
+      tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
       vendorTableId: vendors.id,
       vendorUserId: vendors.userId,
       organizationId: vendors.organizationId,
@@ -232,9 +270,11 @@ export async function listDirectoryProductsFromAssessments(userId: number): Prom
   }
 
   const ids = resolved.map((r) => r.attestationId);
-  const trustByAtt = await trustScoresForAttestations(ids);
+  const { scores: trustByAtt, summaries: summaryByAtt } = await trustScoresAndSummariesForAttestations(ids);
 
-  return resolved.map((r) => mapRowToApiProduct(r, trustByAtt[r.attestationId]));
+  return resolved.map((r) =>
+    mapRowToApiProduct(r, trustByAtt[r.attestationId], summaryByAtt[r.attestationId]),
+  );
 }
 
 export async function canViewDirectoryProductViaAssessment(

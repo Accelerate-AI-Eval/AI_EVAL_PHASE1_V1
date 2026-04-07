@@ -1,3 +1,889 @@
+/* —— Premium “AI Vendor Directory” (design system) —— */
+.vendor_directory_page--premium {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  padding: 1.25rem 1.5rem 2.5rem;
+  max-width: 1320px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  /* One height for main tabs, search field, and industry pills (avoids mismatch / jump) */
+  --vd-chrome-height: 3rem;
+  /* Avoid horizontal shift when vertical overflow toggles the scrollbar (All vs My card counts) */
+  scrollbar-gutter: stable;
+}
+
+/* .vd_premium_view_toggle — commented out (list/grid toggle removed from page)
+.vd_premium_view_toggle {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  background: #e2e8f0;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.vd_premium_toggle_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.vd_premium_toggle_btn:hover {
+  color: #334155;
+}
+
+.vd_premium_toggle_btn--active {
+  background: #fff;
+  color: #000d33;
+  box-shadow: 0 1px 3px rgba(0, 13, 51, 0.08);
+}
+*/
+
+.vd_premium_search_box {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 98%;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  margin-bottom: 1.25rem;
+  box-sizing: border-box;
+}
+
+.vd_premium_search_box_icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.vd_premium_search_box_input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  outline: none;
+  font-family: inherit;
+}
+
+.vd_premium_search_box_input::placeholder {
+  color: #94a3b8;
+}
+
+.vd_premium_tabs_search_row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 0;
+}
+
+.vd_premium_tabs_search_row .page_tabs,
+.vd_premium_tabs_search_row .vendor_directory_tabs {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.vd_premium_tabs_cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vendor_directory_page--premium .vd_premium_tabs_cluster .page_tabs {
+  margin-bottom: 0;
+}
+
+/* Listed / My Products scope note — hidden on All Products tab */
+.vd_premium_all_products_scope {
+  max-width: min(26rem, 100%);
+  padding: 0 0.15rem 0.15rem;
+}
+
+.vd_premium_all_products_scope_label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.3rem;
+}
+
+.vd_premium_all_products_scope_text {
+  margin: 0;
+  font-size: 0.9em;
+  font-weight: 400;
+  /* line-height: 1.45; */
+  color: #6b7280;
+}
+
+/* ..vd_premium_all_products_scope_text */
+
+/* Main tab strip: fixed row + tab height so buyer (2 tabs) vs vendor (3 tabs) doesn’t shift layout */
+.vendor_directory_page--premium .vd_premium_tabs_search_row {
+  min-height: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  /* Edge/Chromium: isolate paint/layout so tab switches don’t nudge siblings (Firefox is more forgiving) */
+  contain: layout;
+  isolation: isolate;
+}
+
+.vendor_directory_page--premium .vd_premium_tabs_search_row .vendor_directory_tabs.page_tabs {
+  display: flex;
+  align-items: stretch;
+  min-height: var(--vd-chrome-height);
+  flex: 0 1 auto;
+  min-width: 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0;
+}
+
+.vendor_directory_page--premium .vd_premium_tabs_search_row .vendor_directory_tabs.page_tabs .page_tab {
+  box-sizing: border-box;
+  height: var(--vd-chrome-height);
+  min-height: var(--vd-chrome-height);
+  max-height: var(--vd-chrome-height);
+  padding: 0 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* border: none; */
+  /* border-bottom: none !important; */
+  margin-bottom: 0;
+  border-radius: 8px;
+  /* Edge: only transition paint-friendly props (avoids subpixel reflow during active switch) */
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.vendor_directory_page--premium .vd_premium_tabs_search_row .vendor_directory_tabs.page_tabs .page_tab_active {
+  /* box-shadow: none; */
+  /* background: rgba(37, 99, 235, 0.1); */
+  /* color: var(--main-auth-button-color, #2563eb); */
+  color: var(--main-auth-button-color, #2563eb);
+  border-bottom-color: var(--main-auth-button-color, #2563eb);
+  background: #fff;
+  box-shadow: 0 1px 0 0 #fff;
+}
+
+.vendor_directory_page--premium .vd_premium_tabs_search_row .vendor_directory_tabs.page_tabs .page_tab:hover:not(.page_tab_active) {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+/* Toolbar variant kept for any legacy use; filter row overrides height below */
+.vd_premium_search_box--toolbar {
+  flex: 1 1 280px;
+  min-width: min(100%, 200px);
+  max-width: 520px;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.65rem 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .vd_premium_tabs_search_row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vd_premium_tabs_search_row .vendor_directory_tabs {
+    width: 100%;
+  }
+}
+
+/** Search input + industry filter pills (`vd_premium_filter_row`) on one row */
+.vd_premium_search_filter_row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* Prevent scroll anchoring / layout jump when filter results height changes */
+  overflow-anchor: none;
+}
+
+/* Portal-style search (aligned with Risk & Controls search: icon + bordered input, no heavy card) */
+.vendor_directory_page--premium .vd_directory_search_wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 320px;
+  min-width: min(100%, 180px);
+  max-width: 440px;
+  width: auto;
+  margin-bottom: 0;
+  box-sizing: border-box;
+}
+
+.vendor_directory_page--premium .vd_directory_search_icon {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #6b7280;
+}
+
+.vendor_directory_page--premium .vd_directory_search_input {
+  flex: 1;
+  min-width: 0;
+  height: var(--vd-chrome-height);
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  border-radius: 5px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-family: inherit;
+}
+
+.vendor_directory_page--premium .vd_directory_search_input::placeholder {
+  color: #9ca3af;
+}
+
+.vendor_directory_page--premium .vd_directory_search_input:hover {
+  border-color: #d1d5db;
+}
+
+.vendor_directory_page--premium .vd_directory_search_input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Match `--vd-chrome-height` (set on `.vendor_directory_page--premium`) */
+.vendor_directory_page--premium .vd_premium_search_filter_row {
+  align-items: flex-start;
+}
+
+.vd_premium_search_filter_row .vd_premium_filter_row--inline {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .vd_premium_search_filter_row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vd_premium_search_filter_row .vd_premium_filter_row--inline {
+    justify-content: flex-start;
+  }
+
+  .vendor_directory_page--premium .vd_premium_search_filter_row .vd_directory_search_wrap {
+    max-width: none;
+  }
+
+  .vendor_directory_page--premium .vd_premium_tabs_search_row .vendor_directory_tabs.page_tabs .page_tab {
+    height: auto;
+    min-height: var(--vd-chrome-height);
+    max-height: none;
+    padding: 0.65rem 1rem;
+  }
+
+  .vendor_directory_page--premium .vd_premium_search_filter_row .vd_directory_search_input {
+    height: auto;
+    min-height: var(--vd-chrome-height);
+    max-height: none;
+  }
+
+  .vendor_directory_page--premium .vd_premium_search_filter_row .vd_premium_filter_pill {
+    min-height: var(--vd-chrome-height);
+    padding: 0.4rem 0.85rem;
+  }
+
+  .vendor_directory_page--premium .vd_premium_search_filter_row .vd_premium_filter_pill--all_vendors {
+    height: auto;
+    max-height: none;
+  }
+}
+
+.vd_premium_filter_row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.vd_premium_filter_pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  min-height: 2.125rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  cursor: pointer;
+  /* Only animate colors — width/height stay stable (no layout “shake”) */
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.vd_premium_filter_pill_row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  line-height: 1.2;
+}
+
+.vd_premium_filter_pill_label {
+  flex-shrink: 0;
+}
+
+.vd_premium_filter_pill_includes {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  line-height: 1.1;
+  margin-top: 0.1rem;
+}
+
+.vd_premium_filter_pill--active .vd_premium_filter_pill_includes {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vd_premium_filter_pill_count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.vd_premium_filter_pill--active .vd_premium_filter_pill_count {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.vd_premium_filter_pill:hover:not(.vd_premium_filter_pill--active) {
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+.vd_premium_filter_pill--active {
+  background: var(--main-auth-button-color, #2463eb);
+  color: #fff;
+  border-color: var(--main-auth-button-color, #2463eb);
+  /* Same 1px border as inactive — no box-size jump */
+  border-width: 1px;
+}
+
+.vd_premium_filter_pill--active:hover {
+  color: #fff;
+  background: var(--main-auth-button-color, #2463eb);
+  border-color: var(--main-auth-button-color, #2463eb);
+}
+
+.vendor_directory_page--premium .vd_premium_search_filter_row .vd_premium_filter_pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  height: auto;
+  min-height: var(--vd-chrome-height);
+  max-height: none;
+  padding: 0.35rem 0.85rem;
+  box-sizing: border-box;
+}
+
+/* “All Vendors” industry pill: label + count only (no “Includes” line) */
+.vendor_directory_page--premium .vd_premium_search_filter_row .vd_premium_filter_pill--all_vendors {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: var(--vd-chrome-height);
+  min-height: var(--vd-chrome-height);
+  max-height: var(--vd-chrome-height);
+  padding: 0 0.85rem;
+}
+
+/* Single shell for All / Listed / My: keeps search + filter row mounted across tab changes (smoother layout). */
+.vd_premium_directory_shell {
+  width: 100%;
+  box-sizing: border-box;
+  contain: layout;
+}
+
+/* Stable height when switching tabs: empty / loading vs card grid (avoids layout jump) */
+.vd_premium_directory_body {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-anchor: none;
+}
+
+.vd_premium_directory_body--reserve {
+  min-height: clamp(17.5rem, 46vh, 36rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.vd_premium_directory_body_loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14rem;
+}
+
+.vd_premium_directory_empty_fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 12rem;
+  max-width: 36rem;
+  width: 100%;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.vendor_directory_grid--premium {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.vendor_directory_grid--premium.vd_premium_grid--grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vendor_directory_grid--premium.vd_premium_grid--list {
+  grid-template-columns: 1fr;
+  max-width: 800px;
+}
+
+@media (max-width: 1100px) {
+  .vendor_directory_grid--premium.vd_premium_grid--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .vendor_directory_grid--premium.vd_premium_grid--grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vd_premium_card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 18.5rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+#vendor-directory-panel-all {
+  padding-right: 20px;
+}
+
+.vd_premium_card:hover {
+  border-color: #dbeafe;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
+}
+
+.vd_premium_card_top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.vd_premium_card_main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem 0.25rem;
+  min-height: 0;
+}
+
+.vd_premium_grade {
+  display: flex;
+  align-items: flex-start;
+}
+
+.vd_premium_grade_label {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.vd_premium_grade_col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.vd_premium_grade_row {
+  display: flex;
+  /* align-items: baseline; */
+  gap: 0.42rem;
+}
+
+.vd_premium_grade_letter {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.vd_premium_grade_num {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: inherit;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.vd_premium_grade_a .vd_premium_grade_letter {
+  color: #16a34a;
+}
+
+.vd_premium_grade_b .vd_premium_grade_letter {
+  color: #ea580c;
+}
+
+.vd_premium_grade_c .vd_premium_grade_letter {
+  color: #dc2626;
+}
+
+.vd_premium_grade_na .vd_premium_grade_letter,
+.vd_premium_grade_na .vd_premium_grade_num {
+  color: #94a3b8;
+}
+
+.vd_premium_cat_tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #334155;
+  background: #fff;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  max-width: 11rem;
+  text-align: right;
+  line-height: 1.3;
+  cursor: default;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.vd_premium_card .click_tooltip_trigger {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: right;
+}
+
+.vd_premium_card .click_tooltip_wrapper {
+  margin-left: 0;
+}
+
+.vd_premium_card
+  .click_tooltip_wrapper:has(.vd_premium_card_title--sector)
+  .click_tooltip_trigger {
+  text-align: start;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.vd_premium_card_title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.vd_premium_card_title--sector {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+  background: linear-gradient(145deg, #eff6ff 0%, #e0f2fe 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  margin-top: 0;
+}
+
+.vd_premium_card_product {
+  font-size: 1.0625rem;
+  color: #0f172a;
+  margin: 0.15rem 0 0;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.vd_premium_card_desc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  max-height: calc(1.5em * 5);
+  overflow: hidden;
+}
+
+.vd_premium_card_footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding: 1rem 1.25rem 1.15rem;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+}
+
+.vd_premium_compliance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.vd_premium_compliance_icon {
+  color: var(--main-auth-button-color, #2463eb);
+  flex-shrink: 0;
+}
+
+.vd_premium_cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: none;
+  padding: 0.35rem 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--main-auth-button-color, #2463eb);
+  cursor: pointer;
+  white-space: nowrap;
+  /* text-decoration: underline; */
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, filter 0.15s ease;
+}
+
+@media (max-width: 900px) {
+  .vd_premium_card {
+    min-height: 19.5rem;
+  }
+
+  .vd_premium_card_desc {
+    -webkit-line-clamp: 5;
+    max-height: calc(1.5em * 5);
+  }
+}
+
+.vd_premium_cta:hover {
+  color: #1d4ed8;
+  filter: brightness(0.95);
+}
+
+.vendor_directory_page--premium > .vd_premium_cta {
+  margin-bottom: 1rem;
+}
+
+.vendor_intel_back_link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--main-auth-button-color, #2463eb);
+  background: none;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  /* text-decoration: underline; */
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.vendor_intel_back_link:hover {
+  color: #1d4ed8;
+}
+
+.vendor_intel_back_link:focus-visible {
+  outline: 2px solid var(--main-auth-button-color, #2463eb);
+  outline-offset: 2px;
+}
+
+.vendor_intel_hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 1.25rem;
+}
+
+.vendor_intel_hero_identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.vendor_intel_hero_logo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vendor_intel_hero_vendor {
+  margin: 0 0 0.15rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #059669;
+  font-weight: 700;
+}
+
+.vendor_intel_hero_product {
+  margin: 0;
+  font-size: 2.2rem;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.vendor_intel_hero_score {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.vendor_intel_hero_score_label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.vendor_intel_hero_score_value_wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.vendor_intel_hero_score_value {
+  font-size: 3.25rem;
+  line-height: 1;
+  font-weight: 800;
+  color: #020617;
+}
+
+.vendor_intel_hero_score_scale {
+  font-size: 1.5rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+@media (max-width: 780px) {
+  .vendor_intel_hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vendor_intel_hero_score {
+    text-align: left;
+  }
+}
+
+.vd_premium_index_footer {
+  text-align: center;
+  margin-top: 2.25rem;
+  padding-bottom: 1rem;
+}
+
 /* Page and header spacing match User Management (org_settings_page, org_settings_header.page_header_align) */
 .vendor_directory_page {
   padding: 1.5em 1em 0 0;
@@ -5,16 +891,38 @@
   box-sizing: border-box;
 }
 
+.vendor_directory_page--premium.vendor_directory_page {
+  padding: 1.25rem 0 2.5rem;
+  padding-right: 20px;
+}
+
 .vendor_directory_header.page_header_align {
   margin: 0.9em 0 1.5rem 0;
 }
 
-/* Tabs: All Vendors | My Vendors (buyer in vendor portal) */
+/* AI Vendor Directory only: readable multi-line subtitle (line length + leading) */
+.vendor_directory_page--premium .page_header_title_block {
+  gap: 0.375rem;
+}
+
+.vendor_directory_page--premium .page_header_title_block .page_header_subtitle {
+  line-height: 1.6;
+  max-width: min(54rem, 100%);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+
+/* Tabs: legacy block (premium page overrides borders / active state above) */
 .vendor_directory_tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid #e2e8f0;
   margin-bottom: 1.5rem;
+}
+
+.vendor_directory_page--premium .vendor_directory_tabs {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .vendor_directory_tab {
@@ -32,8 +940,8 @@
   cursor: pointer;
 }
 
-.vendor_directory_tab:hover {
-  color: #334155;
+.vendor_directory_tab:hover:not(.vendor_directory_tab_active) {
+  color: #64748b;
 }
 
 .vendor_directory_tab_active {
@@ -177,6 +1085,7 @@
   display: block;
   min-width: 0;
   margin: 0;
+  margin-left: 0;
   align-self: flex-end;
 }
 
@@ -469,4 +1378,51 @@
 .vendor_directory_product_card_arrow {
   color: #9ca3af;
   flex-shrink: 0;
+}
+
+/* Product Intelligence — framework mapping from attestation */
+.vendor_intel_framework_section {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 13, 51, 0.06);
+}
+
+.vendor_intel_framework_heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vendor_intel_framework_table_wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.vendor_intel_framework_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.vendor_intel_framework_table th,
+.vendor_intel_framework_table td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vendor_intel_framework_table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.vendor_intel_framework_table tbody tr:last-child td {
+  border-bottom: none;
 }

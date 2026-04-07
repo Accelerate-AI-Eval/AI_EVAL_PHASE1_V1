@@ -1,0 +1,1747 @@
+{
+  "framework": {
+    "name": "NIST CSF v2.0",
+    "version": "2.0",
+    "description": "National Institute of Standards and Technology - Cybersecurity Framework (CSF 2.0)",
+    "sourceDocument": "NIST-CSF-2.0",
+    "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+    "lastVerified": "2025-07-09",
+    "mandatory": false
+  },
+  "controls": [
+    {
+      "controlId": "GV.OC-01",
+      "title": "The organizational mission is understood and informs cybersecurity risk management",
+      "description": "The organizational mission is understood and informs cybersecurity risk management",
+      "implementationGuidance": "The organizational mission is understood and informs cybersecurity risk management",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OC-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OC-02",
+      "title": "Internal and external stakeholders are understood, and their needs and expectations regarding cybers",
+      "description": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+      "implementationGuidance": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OC-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OC-03",
+      "title": "Legal, regulatory, and contractual requirements regarding cybersecurity - including privacy and civi",
+      "description": "Legal, regulatory, and contractual requirements regarding cybersecurity - including privacy and civil liberties obligations - are understood and managed",
+      "implementationGuidance": "Legal, regulatory, and contractual requirements regarding cybersecurity - including privacy and civil liberties obligations - are understood and managed",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OC-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OC-04",
+      "title": "Critical objectives, capabilities, and services that stakeholders depend on or expect from the organ",
+      "description": "Critical objectives, capabilities, and services that stakeholders depend on or expect from the organization are understood and communicated",
+      "implementationGuidance": "Critical objectives, capabilities, and services that stakeholders depend on or expect from the organization are understood and communicated",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OC-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.OC-05",
+      "title": "Outcomes, capabilities, and services that the organization depends on are understood and communicate",
+      "description": "Outcomes, capabilities, and services that the organization depends on are understood and communicated",
+      "implementationGuidance": "Outcomes, capabilities, and services that the organization depends on are understood and communicated",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OC-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.RM-01",
+      "title": "Risk management objectives are established and agreed to by organizational stakeholders",
+      "description": "Risk management objectives are established and agreed to by organizational stakeholders",
+      "implementationGuidance": "Risk management objectives are established and agreed to by organizational stakeholders",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.RM-02",
+      "title": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+      "description": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+      "implementationGuidance": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.RM-03",
+      "title": "Cybersecurity risk management activities and outcomes are included in enterprise risk management pro",
+      "description": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+      "implementationGuidance": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RM-04",
+      "title": "Strategic direction that describes appropriate risk response options is established and communicated",
+      "description": "Strategic direction that describes appropriate risk response options is established and communicated",
+      "implementationGuidance": "Strategic direction that describes appropriate risk response options is established and communicated",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.RM-05",
+      "title": "Lines of communication across the organization are established for cybersecurity risks, including ri",
+      "description": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+      "implementationGuidance": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RM-06",
+      "title": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity ris",
+      "description": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated",
+      "implementationGuidance": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RM-07",
+      "title": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational ",
+      "description": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions",
+      "implementationGuidance": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RM-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RR-01",
+      "title": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a cultur",
+      "description": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+      "implementationGuidance": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RR-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RR-02",
+      "title": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, c",
+      "description": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+      "implementationGuidance": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RR-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RR-03",
+      "title": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsib",
+      "description": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+      "implementationGuidance": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RR-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.RR-04",
+      "title": "Cybersecurity is included in human resources practices",
+      "description": "Cybersecurity is included in human resources practices",
+      "implementationGuidance": "Cybersecurity is included in human resources practices",
+      "category": "Requirement",
+      "officialControlNumber": "GV.RR-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.PO-01",
+      "title": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurit",
+      "description": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+      "implementationGuidance": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+      "category": "Requirement",
+      "officialControlNumber": "GV.PO-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.PO-02",
+      "title": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect ",
+      "description": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission",
+      "implementationGuidance": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission",
+      "category": "Requirement",
+      "officialControlNumber": "GV.PO-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OV-01",
+      "title": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direc",
+      "description": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction",
+      "implementationGuidance": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OV-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OV-02",
+      "title": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizati",
+      "description": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks",
+      "implementationGuidance": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OV-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.OV-03",
+      "title": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments n",
+      "description": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed",
+      "implementationGuidance": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed",
+      "category": "Requirement",
+      "officialControlNumber": "GV.OV-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-01",
+      "title": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes ",
+      "description": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+      "implementationGuidance": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-02",
+      "title": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, com",
+      "description": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+      "implementationGuidance": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-03",
+      "title": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk mana",
+      "description": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+      "implementationGuidance": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-04",
+      "title": "Suppliers are known and prioritized by criticality",
+      "description": "Suppliers are known and prioritized by criticality",
+      "implementationGuidance": "Suppliers are known and prioritized by criticality",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.SC-05",
+      "title": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integ",
+      "description": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties",
+      "implementationGuidance": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-06",
+      "title": "Planning and due diligence are performed to reduce risks before entering into formal supplier or oth",
+      "description": "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships",
+      "implementationGuidance": "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.SC-07",
+      "title": "The risks posed by a supplier, their products and services, and other third parties are understood, ",
+      "description": "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship",
+      "implementationGuidance": "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.SC-08",
+      "title": "Relevant suppliers and other third parties are included in incident planning, response, and recovery",
+      "description": "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities",
+      "implementationGuidance": "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-08",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GV.SC-09",
+      "title": "Supply chain security practices are integrated into cybersecurity and enterprise risk management pro",
+      "description": "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle",
+      "implementationGuidance": "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-09",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "GV.SC-10",
+      "title": "Cybersecurity supply chain risk management plans include provisions for activities that occur after ",
+      "description": "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement",
+      "implementationGuidance": "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement",
+      "category": "Requirement",
+      "officialControlNumber": "GV.SC-10",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.AM-01",
+      "title": "Inventories of hardware managed by the organization are maintained",
+      "description": "Inventories of hardware managed by the organization are maintained",
+      "implementationGuidance": "Inventories of hardware managed by the organization are maintained",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-02",
+      "title": "Inventories of software, services, and systems managed by the organization are maintained",
+      "description": "Inventories of software, services, and systems managed by the organization are maintained",
+      "implementationGuidance": "Inventories of software, services, and systems managed by the organization are maintained",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-03",
+      "title": "Representations of the organization's authorized network communication and internal and external net",
+      "description": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+      "implementationGuidance": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-04",
+      "title": "Inventories of services provided by suppliers are maintained",
+      "description": "Inventories of services provided by suppliers are maintained",
+      "implementationGuidance": "Inventories of services provided by suppliers are maintained",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-05",
+      "title": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+      "description": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+      "implementationGuidance": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-07",
+      "title": "Inventories of data and corresponding metadata for designated data types are maintained",
+      "description": "Inventories of data and corresponding metadata for designated data types are maintained",
+      "implementationGuidance": "Inventories of data and corresponding metadata for designated data types are maintained",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.AM-08",
+      "title": "Systems, hardware, software, services, and data are managed throughout their life cycles",
+      "description": "Systems, hardware, software, services, and data are managed throughout their life cycles",
+      "implementationGuidance": "Systems, hardware, software, services, and data are managed throughout their life cycles",
+      "category": "Requirement",
+      "officialControlNumber": "ID.AM-08",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.RA-01",
+      "title": "Vulnerabilities in assets are identified, validated, and recorded",
+      "description": "Vulnerabilities in assets are identified, validated, and recorded",
+      "implementationGuidance": "Vulnerabilities in assets are identified, validated, and recorded",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.RA-02",
+      "title": "Cyber threat intelligence is received from information sharing forums and sources",
+      "description": "Cyber threat intelligence is received from information sharing forums and sources",
+      "implementationGuidance": "Cyber threat intelligence is received from information sharing forums and sources",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.RA-03",
+      "title": "Internal and external threats to the organization are identified and recorded",
+      "description": "Internal and external threats to the organization are identified and recorded",
+      "implementationGuidance": "Internal and external threats to the organization are identified and recorded",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.RA-04",
+      "title": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+      "description": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+      "implementationGuidance": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.RA-05",
+      "title": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform r",
+      "description": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+      "implementationGuidance": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.RA-06",
+      "title": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+      "description": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+      "implementationGuidance": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.RA-07",
+      "title": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+      "description": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+      "implementationGuidance": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.RA-08",
+      "title": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+      "description": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+      "implementationGuidance": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-08",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "ID.RA-09",
+      "title": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+      "description": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+      "implementationGuidance": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-09",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.RA-10",
+      "title": "Critical suppliers are assessed prior to acquisition",
+      "description": "Critical suppliers are assessed prior to acquisition",
+      "implementationGuidance": "Critical suppliers are assessed prior to acquisition",
+      "category": "Requirement",
+      "officialControlNumber": "ID.RA-10",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.IM-01",
+      "title": "Improvements are identified from evaluations",
+      "description": "Improvements are identified from evaluations",
+      "implementationGuidance": "Improvements are identified from evaluations",
+      "category": "Requirement",
+      "officialControlNumber": "ID.IM-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.IM-02",
+      "title": "Improvements are identified from security tests and exercises, including those done in coordination ",
+      "description": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+      "implementationGuidance": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+      "category": "Requirement",
+      "officialControlNumber": "ID.IM-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.IM-03",
+      "title": "Improvements are identified from execution of operational processes, procedures, and activities",
+      "description": "Improvements are identified from execution of operational processes, procedures, and activities",
+      "implementationGuidance": "Improvements are identified from execution of operational processes, procedures, and activities",
+      "category": "Requirement",
+      "officialControlNumber": "ID.IM-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "ID.IM-04",
+      "title": "Incident response plans and other cybersecurity plans that affect operations are established, commun",
+      "description": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved",
+      "implementationGuidance": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved",
+      "category": "Requirement",
+      "officialControlNumber": "ID.IM-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PR.AA-01",
+      "title": "Identities and credentials for authorized users, services, and hardware are managed by the organizat",
+      "description": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+      "implementationGuidance": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "PR.AA-02",
+      "title": "Identities are proofed and bound to credentials based on the context of interactions",
+      "description": "Identities are proofed and bound to credentials based on the context of interactions",
+      "implementationGuidance": "Identities are proofed and bound to credentials based on the context of interactions",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "PR.AA-03",
+      "title": "Users, services, and hardware are authenticated",
+      "description": "Users, services, and hardware are authenticated",
+      "implementationGuidance": "Users, services, and hardware are authenticated",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "PR.AA-04",
+      "title": "Identity assertions are protected, conveyed, and verified",
+      "description": "Identity assertions are protected, conveyed, and verified",
+      "implementationGuidance": "Identity assertions are protected, conveyed, and verified",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.AA-05",
+      "title": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and",
+      "description": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+      "implementationGuidance": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.AA-06",
+      "title": "Physical access to assets is managed, monitored, and enforced commensurate with risk",
+      "description": "Physical access to assets is managed, monitored, and enforced commensurate with risk",
+      "implementationGuidance": "Physical access to assets is managed, monitored, and enforced commensurate with risk",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AA-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.AT-01",
+      "title": "Personnel are provided with awareness and training so that they possess the knowledge and skills to ",
+      "description": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+      "implementationGuidance": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AT-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PR.AT-02",
+      "title": "Individuals in specialized roles are provided with awareness and training so that they possess the k",
+      "description": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind",
+      "implementationGuidance": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind",
+      "category": "Requirement",
+      "officialControlNumber": "PR.AT-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "PR.DS-01",
+      "title": "The confidentiality, integrity, and availability of data-at-rest are protected",
+      "description": "The confidentiality, integrity, and availability of data-at-rest are protected",
+      "implementationGuidance": "The confidentiality, integrity, and availability of data-at-rest are protected",
+      "category": "Requirement",
+      "officialControlNumber": "PR.DS-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.DS-02",
+      "title": "The confidentiality, integrity, and availability of data-in-transit are protected",
+      "description": "The confidentiality, integrity, and availability of data-in-transit are protected",
+      "implementationGuidance": "The confidentiality, integrity, and availability of data-in-transit are protected",
+      "category": "Requirement",
+      "officialControlNumber": "PR.DS-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.DS-10",
+      "title": "The confidentiality, integrity, and availability of data-in-use are protected",
+      "description": "The confidentiality, integrity, and availability of data-in-use are protected",
+      "implementationGuidance": "The confidentiality, integrity, and availability of data-in-use are protected",
+      "category": "Requirement",
+      "officialControlNumber": "PR.DS-10",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.DS-11",
+      "title": "Backups of data are created, protected, maintained, and tested",
+      "description": "Backups of data are created, protected, maintained, and tested",
+      "implementationGuidance": "Backups of data are created, protected, maintained, and tested",
+      "category": "Requirement",
+      "officialControlNumber": "PR.DS-11",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-01",
+      "title": "Configuration management practices are established and applied",
+      "description": "Configuration management practices are established and applied",
+      "implementationGuidance": "Configuration management practices are established and applied",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-02",
+      "title": "Software is maintained, replaced, and removed commensurate with risk",
+      "description": "Software is maintained, replaced, and removed commensurate with risk",
+      "implementationGuidance": "Software is maintained, replaced, and removed commensurate with risk",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-03",
+      "title": "Hardware is maintained, replaced, and removed commensurate with risk",
+      "description": "Hardware is maintained, replaced, and removed commensurate with risk",
+      "implementationGuidance": "Hardware is maintained, replaced, and removed commensurate with risk",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-04",
+      "title": "Log records are generated and made available for continuous monitoring",
+      "description": "Log records are generated and made available for continuous monitoring",
+      "implementationGuidance": "Log records are generated and made available for continuous monitoring",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-05",
+      "title": "Installation and execution of unauthorized software are prevented",
+      "description": "Installation and execution of unauthorized software are prevented",
+      "implementationGuidance": "Installation and execution of unauthorized software are prevented",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.PS-06",
+      "title": "Secure software development practices are integrated, and their performance is monitored throughout ",
+      "description": "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle",
+      "implementationGuidance": "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle",
+      "category": "Requirement",
+      "officialControlNumber": "PR.PS-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.IR-01",
+      "title": "Networks and environments are protected from unauthorized logical access and usage",
+      "description": "Networks and environments are protected from unauthorized logical access and usage",
+      "implementationGuidance": "Networks and environments are protected from unauthorized logical access and usage",
+      "category": "Requirement",
+      "officialControlNumber": "PR.IR-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.IR-02",
+      "title": "The organization's technology assets are protected from environmental threats",
+      "description": "The organization's technology assets are protected from environmental threats",
+      "implementationGuidance": "The organization's technology assets are protected from environmental threats",
+      "category": "Requirement",
+      "officialControlNumber": "PR.IR-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse",
+        "Socioeconomic and Environmental"
+      ]
+    },
+    {
+      "controlId": "PR.IR-03",
+      "title": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+      "description": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+      "implementationGuidance": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+      "category": "Requirement",
+      "officialControlNumber": "PR.IR-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "PR.IR-04",
+      "title": "Adequate resource capacity to ensure availability is maintained",
+      "description": "Adequate resource capacity to ensure availability is maintained",
+      "implementationGuidance": "Adequate resource capacity to ensure availability is maintained",
+      "category": "Requirement",
+      "officialControlNumber": "PR.IR-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.CM-01",
+      "title": "Networks and network services are monitored to find potentially adverse events",
+      "description": "Networks and network services are monitored to find potentially adverse events",
+      "implementationGuidance": "Networks and network services are monitored to find potentially adverse events",
+      "category": "Requirement",
+      "officialControlNumber": "DE.CM-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.CM-02",
+      "title": "The physical environment is monitored to find potentially adverse events",
+      "description": "The physical environment is monitored to find potentially adverse events",
+      "implementationGuidance": "The physical environment is monitored to find potentially adverse events",
+      "category": "Requirement",
+      "officialControlNumber": "DE.CM-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.CM-03",
+      "title": "Personnel activity and technology usage are monitored to find potentially adverse events",
+      "description": "Personnel activity and technology usage are monitored to find potentially adverse events",
+      "implementationGuidance": "Personnel activity and technology usage are monitored to find potentially adverse events",
+      "category": "Requirement",
+      "officialControlNumber": "DE.CM-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.CM-06",
+      "title": "External service provider activities and services are monitored to find potentially adverse events",
+      "description": "External service provider activities and services are monitored to find potentially adverse events",
+      "implementationGuidance": "External service provider activities and services are monitored to find potentially adverse events",
+      "category": "Requirement",
+      "officialControlNumber": "DE.CM-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.CM-09",
+      "title": "Computing hardware and software, runtime environments, and their data are monitored to find potentia",
+      "description": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events",
+      "implementationGuidance": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events",
+      "category": "Requirement",
+      "officialControlNumber": "DE.CM-09",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.AE-02",
+      "title": "Potentially adverse events are analyzed to better understand associated activities",
+      "description": "Potentially adverse events are analyzed to better understand associated activities",
+      "implementationGuidance": "Potentially adverse events are analyzed to better understand associated activities",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.AE-03",
+      "title": "Information is correlated from multiple sources",
+      "description": "Information is correlated from multiple sources",
+      "implementationGuidance": "Information is correlated from multiple sources",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.AE-04",
+      "title": "The estimated impact and scope of adverse events are understood",
+      "description": "The estimated impact and scope of adverse events are understood",
+      "implementationGuidance": "The estimated impact and scope of adverse events are understood",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.AE-06",
+      "title": "Information on adverse events is provided to authorized staff and tools",
+      "description": "Information on adverse events is provided to authorized staff and tools",
+      "implementationGuidance": "Information on adverse events is provided to authorized staff and tools",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "DE.AE-07",
+      "title": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+      "description": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+      "implementationGuidance": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "DE.AE-08",
+      "title": "Incidents are declared when adverse events meet the defined incident criteria",
+      "description": "Incidents are declared when adverse events meet the defined incident criteria",
+      "implementationGuidance": "Incidents are declared when adverse events meet the defined incident criteria",
+      "category": "Requirement",
+      "officialControlNumber": "DE.AE-08",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MA-01",
+      "title": "The incident response plan is executed in coordination with relevant third parties once an incident ",
+      "description": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+      "implementationGuidance": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MA-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MA-02",
+      "title": "Incident reports are triaged and validated",
+      "description": "Incident reports are triaged and validated",
+      "implementationGuidance": "Incident reports are triaged and validated",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MA-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MA-03",
+      "title": "Incidents are categorized and prioritized",
+      "description": "Incidents are categorized and prioritized",
+      "implementationGuidance": "Incidents are categorized and prioritized",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MA-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MA-04",
+      "title": "Incidents are escalated or elevated as needed",
+      "description": "Incidents are escalated or elevated as needed",
+      "implementationGuidance": "Incidents are escalated or elevated as needed",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MA-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MA-05",
+      "title": "The criteria for initiating incident recovery are applied",
+      "description": "The criteria for initiating incident recovery are applied",
+      "implementationGuidance": "The criteria for initiating incident recovery are applied",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MA-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.AN-03",
+      "title": "Analysis is performed to establish what has taken place during an incident and the root cause of the",
+      "description": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+      "implementationGuidance": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+      "category": "Requirement",
+      "officialControlNumber": "RS.AN-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.AN-06",
+      "title": "Actions performed during an investigation are recorded, and the records' integrity and provenance ar",
+      "description": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+      "implementationGuidance": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+      "category": "Requirement",
+      "officialControlNumber": "RS.AN-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.AN-07",
+      "title": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+      "description": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+      "implementationGuidance": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+      "category": "Requirement",
+      "officialControlNumber": "RS.AN-07",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.AN-08",
+      "title": "An incident's magnitude is estimated and validated",
+      "description": "An incident's magnitude is estimated and validated",
+      "implementationGuidance": "An incident's magnitude is estimated and validated",
+      "category": "Requirement",
+      "officialControlNumber": "RS.AN-08",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.CO-02",
+      "title": "Internal and external stakeholders are notified of incidents",
+      "description": "Internal and external stakeholders are notified of incidents",
+      "implementationGuidance": "Internal and external stakeholders are notified of incidents",
+      "category": "Requirement",
+      "officialControlNumber": "RS.CO-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.CO-03",
+      "title": "Information is shared with designated internal and external stakeholders",
+      "description": "Information is shared with designated internal and external stakeholders",
+      "implementationGuidance": "Information is shared with designated internal and external stakeholders",
+      "category": "Requirement",
+      "officialControlNumber": "RS.CO-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MI-01",
+      "title": "Incidents are contained",
+      "description": "Incidents are contained",
+      "implementationGuidance": "Incidents are contained",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MI-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RS.MI-02",
+      "title": "Incidents are eradicated",
+      "description": "Incidents are eradicated",
+      "implementationGuidance": "Incidents are eradicated",
+      "category": "Requirement",
+      "officialControlNumber": "RS.MI-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.RP-01",
+      "title": "The recovery portion of the incident response plan is executed once initiated from the incident resp",
+      "description": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+      "implementationGuidance": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-01",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.RP-02",
+      "title": "Recovery actions are selected, scoped, prioritized, and performed",
+      "description": "Recovery actions are selected, scoped, prioritized, and performed",
+      "implementationGuidance": "Recovery actions are selected, scoped, prioritized, and performed",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-02",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.RP-03",
+      "title": "The integrity of backups and other restoration assets is verified before using them for restoration",
+      "description": "The integrity of backups and other restoration assets is verified before using them for restoration",
+      "implementationGuidance": "The integrity of backups and other restoration assets is verified before using them for restoration",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.RP-04",
+      "title": "Critical mission functions and cybersecurity risk management are considered to establish post-incide",
+      "description": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+      "implementationGuidance": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Malicious Actors and Misuse"
+      ]
+    },
+    {
+      "controlId": "RC.RP-05",
+      "title": "The integrity of restored assets is verified, systems and services are restored, and normal operatin",
+      "description": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+      "implementationGuidance": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-05",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.RP-06",
+      "title": "The end of incident recovery is declared based on criteria, and incident-related documentation is co",
+      "description": "The end of incident recovery is declared based on criteria, and incident-related documentation is completed",
+      "implementationGuidance": "The end of incident recovery is declared based on criteria, and incident-related documentation is completed",
+      "category": "Requirement",
+      "officialControlNumber": "RC.RP-06",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.CO-03",
+      "title": "Recovery activities and progress in restoring operational capabilities are communicated to designate",
+      "description": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+      "implementationGuidance": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+      "category": "Requirement",
+      "officialControlNumber": "RC.CO-03",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "RC.CO-04",
+      "title": "Public updates on incident recovery are shared using approved methods and messaging",
+      "description": "Public updates on incident recovery are shared using approved methods and messaging",
+      "implementationGuidance": "Public updates on incident recovery are shared using approved methods and messaging",
+      "category": "Requirement",
+      "officialControlNumber": "RC.CO-04",
+      "sourceDocument": "NIST-CSF-2.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-csf-2.0.yaml",
+      "lastVerified": "2025-07-09",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    }
+  ]
+}

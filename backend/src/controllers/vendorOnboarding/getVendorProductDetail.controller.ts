@@ -43,6 +43,7 @@ function mapAttestationRow(attestRow: Record<string, unknown>): Record<string, u
     audit_logs_available: attestRow.audit_logs ?? undefined,
     testing_results_available: attestRow.test_results ?? undefined,
     document_uploads: attestRow.document_uploads ?? undefined,
+    framework_mapping_rows: attestRow.framework_mapping_rows ?? undefined,
     visible_ai_governance: attestRow.visible_ai_governance === true,
     visible_security_posture: attestRow.visible_security_posture === true,
     visible_data_privacy: attestRow.visible_data_privacy === true,

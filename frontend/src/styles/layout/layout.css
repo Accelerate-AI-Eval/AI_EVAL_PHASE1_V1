@@ -57,6 +57,8 @@
   padding: var(--top-nav-height) 0 0 1em;
   /* background: #f6f9fb; */
   background: #f5f7fa;
+  /* Edge/Chromium: reserve width when scrollbar shows/hides so content doesn’t shift horizontally */
+  scrollbar-gutter: stable;
 }
 
 /* css onboarding layout starts here */

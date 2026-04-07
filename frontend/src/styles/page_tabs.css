@@ -6,6 +6,7 @@
   display: flex;
   gap: 0;
   margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .page_tab {
@@ -26,8 +27,9 @@
   transition: color 0.15s, border-color 0.15s;
 }
 
-.page_tab:hover {
-  color: #374151;
+/* Don’t paint active tabs dark on hover (:hover beats .page_tab_active otherwise) */
+.page_tab:hover:not(.page_tab_active) {
+  color: #64748b;
 }
 
 .page_tab_active {

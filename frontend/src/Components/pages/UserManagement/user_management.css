@@ -65,7 +65,7 @@
 }
 
 .org_settings_card {
-  width: 50em;
+  /* width: 50em; */
   max-width: 100%;
   box-sizing: border-box;
   background: #fff;
@@ -128,6 +128,60 @@
 .org_settings_page .org_invite_btn:hover,
 .team_members_card_header .org_invite_btn:hover {
   opacity: 0.9;
+}
+
+/* Portal-style search (matches Risk & Controls / Vendor Directory: icon + bordered input) */
+.user_management_search_row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.user_management_search_wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 20rem;
+  max-width: 100%;
+  min-width: min(100%, 240px);
+}
+
+.user_management_search_icon {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #6b7280;
+}
+
+.user_management_search_input {
+  flex: 1;
+  min-width: 0;
+  height: 2.5rem;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  border-radius: 5px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-family: inherit;
+}
+
+.user_management_search_input::placeholder {
+  color: #9ca3af;
+}
+
+.user_management_search_input:hover {
+  border-color: #d1d5db;
+}
+
+.user_management_search_input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 /* Table uses 100% of available screen width */

@@ -917,31 +917,15 @@
   background-color: white;
   border: 1px solid var(--main-auth-button-color);}
 
-/* Header row: YOUR ATTESTATIONS + search */
-.attestation_list_header_row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  justify-content: space-between;
-}
+/* Title row + toolbar (tabs left, search right) – layout from assessments.css */
 .attestation_list_header_row .your_assessments_title {
   margin: 0;
-}
-
-/* Tabs and search on same row (like Assessments) */
-.attestation_tabs_and_search_row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
 }
 .attestation_page_tabs_inline.page_tabs {
   margin: 0;
   border: none;
   gap: 0.25rem;
-  border-bottom: none;
+  border-bottom: 1px solid #e5e7eb;
 }
 .attestation_page_tabs_inline .page_tab {
   margin-bottom: 0;
@@ -957,33 +941,33 @@
   border-radius: 0 !important;
 }
 
-/* Match assessment UI: header row + search bar (same as Assessments page) */
-.attestation_section .assessment_list_header_row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
+/* Match assessment UI: stacked header + toolbar (Trust Profile card uses .attestation_section; YOUR ATTESTATIONS block uses .ai_assessments_section on attestation page) */
+.attestation_section .assessment_list_header_stack,
+.attestation_page .ai_assessments_section .assessment_list_header_stack {
   margin-bottom: 1rem;
-  justify-content: space-between;
 }
-.attestation_section .assessment_list_header_row .your_assessments_title {
+.attestation_section .assessment_list_header_stack .your_assessments_title,
+.attestation_page .ai_assessments_section .assessment_list_header_stack .your_assessments_title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
 }
-.attestation_section .assessment_search_wrap {
+.attestation_section .assessment_tabs_search_toolbar .assessment_search_wrap,
+.attestation_page .ai_assessments_section .assessment_tabs_search_toolbar .assessment_search_wrap {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 400px;
+  width: auto;
   max-width: 100%;
 }
-.attestation_section .assessment_search_icon {
+.attestation_section .assessment_search_icon,
+.attestation_page .ai_assessments_section .assessment_search_icon {
   color: #6b7280;
   flex-shrink: 0;
 }
-.attestation_section .assessment_search_input {
+.attestation_section .assessment_search_input,
+.attestation_page .ai_assessments_section .assessment_search_input {
   flex: 1;
   min-width: 0;
   padding: 0.5rem 0.75rem;
@@ -992,15 +976,18 @@
   font-size: 0.875rem;
   color: #111827;
 }
-.attestation_section .assessment_search_input::placeholder {
+.attestation_section .assessment_search_input::placeholder,
+.attestation_page .ai_assessments_section .assessment_search_input::placeholder {
   color: #9ca3af;
 }
-.attestation_section .assessment_search_input:focus {
+.attestation_section .assessment_search_input:focus,
+.attestation_page .ai_assessments_section .assessment_search_input:focus {
   outline: none;
   border-color: var(--main-auth-button-color, #1e3a8a);
   box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2);
 }
-.attestation_section .assessment_search_no_results {
+.attestation_section .assessment_search_no_results,
+.attestation_page .ai_assessments_section .assessment_search_no_results {
   padding: 1rem;
   color: #6b7280;
   font-size: 0.875rem;

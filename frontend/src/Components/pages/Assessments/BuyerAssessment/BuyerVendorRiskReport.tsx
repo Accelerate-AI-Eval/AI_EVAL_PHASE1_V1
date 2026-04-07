@@ -84,6 +84,19 @@ type ReportPayload = {
   generatedAt?: string;
 };
 
+type FrameworkMappingRow = {
+  framework?: unknown;
+  coverage?: unknown;
+  controls?: unknown;
+  notes?: unknown;
+};
+
+function formatFrameworkCell(v: unknown): string {
+  if (v == null) return "—";
+  const s = String(v).trim();
+  return s || "—";
+}
+
 export default function BuyerVendorRiskReport() {
   const { assessmentId } = useParams<{ assessmentId: string }>();
   const [loading, setLoading] = useState(true);
@@ -93,6 +106,7 @@ export default function BuyerVendorRiskReport() {
   const [productName, setProductName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [report, setReport] = useState<ReportPayload | null>(null);
+  const [frameworkMappingRows, setFrameworkMappingRows] = useState<FrameworkMappingRow[]>([]);
   const [archived, setArchived] = useState(false);
 
   const load = useCallback(async () => {
@@ -118,6 +132,11 @@ export default function BuyerVendorRiskReport() {
       setProductName(String(data.productName ?? ""));
       setOrgName(String(data.organizationName ?? ""));
       setArchived(Boolean(data.archived));
+      setFrameworkMappingRows(
+        Array.isArray(data.frameworkMappingRows)
+          ? (data.frameworkMappingRows as FrameworkMappingRow[])
+          : [],
+      );
       if (data.reportUnavailable) {
         setPending(false);
         setReport(null);
@@ -165,6 +184,38 @@ export default function BuyerVendorRiskReport() {
     return () => clearInterval(t);
   }, [pending, assessmentId, load]);
 
+  /** Match vendor portal complete report (`ReportDetail`): browser tab title. */
+  useEffect(() => {
+    if (error && !report) {
+      document.title = "AI Eval | Report not found";
+      return () => {
+        document.title = "AI Eval";
+      };
+    }
+    if (loading && !report) {
+      document.title = "AI Eval | Complete Report";
+      return () => {
+        document.title = "AI Eval";
+      };
+    }
+    if (pending && !report) {
+      document.title = "AI Eval | Complete Report";
+      return () => {
+        document.title = "AI Eval";
+      };
+    }
+    if (report) {
+      document.title = "AI Eval | Complete Report";
+      return () => {
+        document.title = "AI Eval";
+      };
+    }
+    document.title = "AI Eval | Complete Report";
+    return () => {
+      document.title = "AI Eval";
+    };
+  }, [loading, pending, error, report]);
+
   const title =
     vendorName && productName
       ? `${vendorName} – ${productName}`
@@ -189,17 +240,6 @@ export default function BuyerVendorRiskReport() {
   const score = hasImplementationScore
     ? implementationRiskScore
     : report?.overallRiskScore ?? 0;
-  const scoreClass = hasImplementationScore
-    ? score < 50
-      ? "bvr_score_high"
-      : score < 75
-        ? "bvr_score_mid"
-        : "bvr_score_low"
-    : score >= 80
-      ? "bvr_score_high"
-      : score >= 60
-        ? "bvr_score_mid"
-        : "bvr_score_low";
 
   if (loading && !report && !error) {
     return (
@@ -241,13 +281,40 @@ export default function BuyerVendorRiskReport() {
 
   if (!report) return null;
 
+  /** Circle color: IRS lower is better; vendor trust score higher is better. */
+  const scoreClass = hasImplementationScore
+    ? score < 50
+      ? "bvr_score_high"
+      : score < 75
+        ? "bvr_score_mid"
+        : "bvr_score_low"
+    : score >= 80
+      ? "bvr_score_high"
+      : score >= 60
+        ? "bvr_score_mid"
+        : "bvr_score_low";
+
   const riskByScope = groupRiskDomainsByScope(report.riskAnalysis ?? []);
   const systemRole = (sessionStorage.getItem("systemRole") ?? "")
     .toLowerCase()
     .trim()
     .replace(/_/g, " ");
+  const isBuyerOrganizationPortal = systemRole === "buyer";
   const riskAnalysisSections =
     systemRole === "vendor" ? RISK_ANALYSIS_DISPLAY_SECTIONS_VENDOR : RISK_ANALYSIS_DISPLAY_SECTIONS_BUYER;
+
+  const irsClassification = String(
+    report.implementationRiskClassification ?? "",
+  ).trim();
+  const irsDecision = String(report.implementationRiskDecision ?? "").trim();
+  const recommendationHeading = hasImplementationScore
+    ? irsClassification || irsDecision || "Implementation readiness"
+    : report.recommendationLabel;
+  const showIrsDecisionSubline =
+    hasImplementationScore &&
+    irsClassification.length > 0 &&
+    irsDecision.length > 0 &&
+    irsClassification !== irsDecision;
 
   return (
     <div className="bvr_page">
@@ -284,19 +351,18 @@ export default function BuyerVendorRiskReport() {
         ) : null}
 
         <section className={`bvr_card bvr_recommendation ${scoreClass}`}>
-          <div className="bvr_score_circle">
-            {hasImplementationScore ? Math.round(implementationRiskScore) : score}
+          <div className="bvr_score_circle" aria-label={`Score ${Math.round(score)} out of 100`}>
+            {Math.round(score)}
           </div>
-          <div>
-            <h2 className="bvr_recommendation_title">
-              {hasImplementationScore
-                ? (report.implementationRiskDecision ?? "Implementation Risk")
-                : report.recommendationLabel}
-            </h2>
+          <div className="bvr_recommendation_body">
+            <h2 className="bvr_recommendation_title">{recommendationHeading}</h2>
+            {showIrsDecisionSubline ? (
+              <p className="bvr_recommendation_decision">{irsDecision}</p>
+            ) : null}
             <p className="bvr_recommendation_sub">
               {hasImplementationScore
-                ? `Implementation risk score: ${Math.round(score)}/100 (lower is safer)`
-                : `Overall risk score: ${score}/100 (higher indicates stronger alignment / lower residual risk)`}
+                ? `Implementation risk score: ${Math.round(score)}/100`
+                : `Overall risk score: ${Math.round(score)}/100 (higher indicates stronger alignment / lower residual risk)`}
             </p>
           </div>
         </section>
@@ -395,6 +461,40 @@ export default function BuyerVendorRiskReport() {
           </h2>
           <p className="bvr_impl_text">{report.implementationNotes}</p>
         </section>
+
+        {!isBuyerOrganizationPortal ? (
+          <section className="bvr_card">
+            <h2 className="bvr_section_title">Framework Mapping</h2>
+            <div className="report_table_wrap">
+              <table className="report_table">
+                <thead>
+                  <tr>
+                    <th>Framework</th>
+                    <th>Coverage</th>
+                    <th>Controls</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {frameworkMappingRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="report_table_empty">—</td>
+                    </tr>
+                  ) : (
+                    frameworkMappingRows.map((row, i) => (
+                      <tr key={i}>
+                        <td>{formatFrameworkCell(row.framework)}</td>
+                        <td>{formatFrameworkCell(row.coverage)}</td>
+                        <td>{formatFrameworkCell(row.controls)}</td>
+                        <td>{formatFrameworkCell(row.notes)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
       </article>
     </div>
   );

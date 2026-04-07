@@ -1,0 +1,1180 @@
+{
+  "framework": {
+    "name": "NIST AI RMF",
+    "version": "1.0",
+    "description": "National Institute of Standards and Technology - Artificial Intelligence Risk Management Framework ",
+    "sourceDocument": "NIST-AI-RMF-1.0",
+    "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+    "lastVerified": "2024-03-23",
+    "mandatory": true
+  },
+  "controls": [
+    {
+      "controlId": "GOVERN 1.1",
+      "title": "Legal and regulatory requirements involving AI are understood, managed, and documented.",
+      "description": "Legal and regulatory requirements involving AI are understood, managed, and documented.",
+      "implementationGuidance": "Legal and regulatory requirements involving AI are understood, managed, and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.2",
+      "title": "The characteristics of trustworthy AI are integrated into organizational policies, processes, proced",
+      "description": "The characteristics of trustworthy AI are integrated into organizational policies, processes, procedures, and practices.",
+      "implementationGuidance": "The characteristics of trustworthy AI are integrated into organizational policies, processes, procedures, and practices.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.3",
+      "title": "Processes, procedures, and practices are in place to determine the needed level of risk management a",
+      "description": "Processes, procedures, and practices are in place to determine the needed level of risk management activities based on the organization’s risk tolerance.",
+      "implementationGuidance": "Processes, procedures, and practices are in place to determine the needed level of risk management activities based on the organization’s risk tolerance.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.4",
+      "title": "The risk management process and its outcomes are established through transparent policies, procedure",
+      "description": "The risk management process and its outcomes are established through transparent policies, procedures, and other controls based on organizational risk priorities.",
+      "implementationGuidance": "The risk management process and its outcomes are established through transparent policies, procedures, and other controls based on organizational risk priorities.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.5",
+      "title": "Ongoing monitoring and periodic review of the risk management process and its outcomes are planned a",
+      "description": "Ongoing monitoring and periodic review of the risk management process and its outcomes are planned and organizational roles and responsibilities clearly defined, including determining the frequency of periodic review.",
+      "implementationGuidance": "Ongoing monitoring and periodic review of the risk management process and its outcomes are planned and organizational roles and responsibilities clearly defined, including determining the frequency of periodic review.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.5",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.6",
+      "title": "Mechanisms are in place to inventory AI systems and are resourced according to organizational risk p",
+      "description": "Mechanisms are in place to inventory AI systems and are resourced according to organizational risk priorities.",
+      "implementationGuidance": "Mechanisms are in place to inventory AI systems and are resourced according to organizational risk priorities.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.6",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 1.7",
+      "title": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a",
+      "description": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a manner that does not increase risks or decrease the organization’s trustworthiness.",
+      "implementationGuidance": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a manner that does not increase risks or decrease the organization’s trustworthiness.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 1.7",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 2.1",
+      "title": "Roles and responsibilities and lines of communication related to mapping, measuring, and managing AI",
+      "description": "Roles and responsibilities and lines of communication related to mapping, measuring, and managing AI risks are documented and are clear to individuals and teams throughout the organization.",
+      "implementationGuidance": "Roles and responsibilities and lines of communication related to mapping, measuring, and managing AI risks are documented and are clear to individuals and teams throughout the organization.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 2.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 2.2",
+      "title": "The organization’s personnel and partners receive AI risk management training to enable them to perf",
+      "description": "The organization’s personnel and partners receive AI risk management training to enable them to perform their duties and responsibilities consistent with related policies, procedures, and agreements.",
+      "implementationGuidance": "The organization’s personnel and partners receive AI risk management training to enable them to perform their duties and responsibilities consistent with related policies, procedures, and agreements.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 2.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 2.3",
+      "title": "Executive leadership of the organization takes responsibility for decisions about risks associated w",
+      "description": "Executive leadership of the organization takes responsibility for decisions about risks associated with AI system development and deployment.",
+      "implementationGuidance": "Executive leadership of the organization takes responsibility for decisions about risks associated with AI system development and deployment.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 2.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 3.1",
+      "title": "Decision-making related to mapping, measuring, and managing AI risks throughout the lifecycle is inf",
+      "description": "Decision-making related to mapping, measuring, and managing AI risks throughout the lifecycle is informed by a diverse team (e.g., diversity of demographics, disciplines, experience, expertise, and backgrounds).",
+      "implementationGuidance": "Decision-making related to mapping, measuring, and managing AI risks throughout the lifecycle is informed by a diverse team (e.g., diversity of demographics, disciplines, experience, expertise, and backgrounds).",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 3.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 3.2",
+      "title": "Policies and procedures are in place to define and differentiate roles and responsibilities for huma",
+      "description": "Policies and procedures are in place to define and differentiate roles and responsibilities for human-AI configurations and oversight of AI systems.",
+      "implementationGuidance": "Policies and procedures are in place to define and differentiate roles and responsibilities for human-AI configurations and oversight of AI systems.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 3.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "GOVERN 4.1",
+      "title": "Organizational policies and practices are in place to foster a critical thinking and safety-first mi",
+      "description": "Organizational policies and practices are in place to foster a critical thinking and safety-first mindset in the design, development, deployment, and uses of AI systems to minimize potential negative impacts.",
+      "implementationGuidance": "Organizational policies and practices are in place to foster a critical thinking and safety-first mindset in the design, development, deployment, and uses of AI systems to minimize potential negative impacts.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 4.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 4.2",
+      "title": "Organizational teams document the risks and potential impacts of the AI technology they design, deve",
+      "description": "Organizational teams document the risks and potential impacts of the AI technology they design, develop, deploy, evaluate, and use, and they communicate about the impacts more broadly.",
+      "implementationGuidance": "Organizational teams document the risks and potential impacts of the AI technology they design, develop, deploy, evaluate, and use, and they communicate about the impacts more broadly.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 4.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 4.3",
+      "title": "Organizational practices are in place to enable AI testing, identification of incidents, and informa",
+      "description": "Organizational practices are in place to enable AI testing, identification of incidents, and information sharing.",
+      "implementationGuidance": "Organizational practices are in place to enable AI testing, identification of incidents, and information sharing.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 4.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 5.1",
+      "title": "Organizational policies and practices are in place to collect, consider, prioritize, and integrate f",
+      "description": "Organizational policies and practices are in place to collect, consider, prioritize, and integrate feedback from those external to the team that developed or deployed the AI system regarding the potential individual and societal impacts related to AI risks.",
+      "implementationGuidance": "Organizational policies and practices are in place to collect, consider, prioritize, and integrate feedback from those external to the team that developed or deployed the AI system regarding the potential individual and societal impacts related to AI risks.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 5.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 5.2",
+      "title": "Mechanisms are established to enable the team that developed or deployed AI systems to regularly inc",
+      "description": "Mechanisms are established to enable the team that developed or deployed AI systems to regularly incorporate adjudicated feedback from relevant AI actors into system design and implementation.",
+      "implementationGuidance": "Mechanisms are established to enable the team that developed or deployed AI systems to regularly incorporate adjudicated feedback from relevant AI actors into system design and implementation.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 5.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 6.1",
+      "title": "Policies and procedures are in place that address AI risks associated with third-party entities, inc",
+      "description": "Policies and procedures are in place that address AI risks associated with third-party entities, including risks of infringement of a third-party’s intellectual property or other rights.",
+      "implementationGuidance": "Policies and procedures are in place that address AI risks associated with third-party entities, including risks of infringement of a third-party’s intellectual property or other rights.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 6.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "GOVERN 6.2",
+      "title": "Contingency processes are in place to handle failures or incidents in third-party data or AI systems",
+      "description": "Contingency processes are in place to handle failures or incidents in third-party data or AI systems deemed to be high-risk.",
+      "implementationGuidance": "Contingency processes are in place to handle failures or incidents in third-party data or AI systems deemed to be high-risk.",
+      "category": "Requirement",
+      "officialControlNumber": "GOVERN 6.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 1.1",
+      "title": "Intended purposes, potentially beneficial uses, contextspecific laws, norms and expectations, and pr",
+      "description": "Intended purposes, potentially beneficial uses, contextspecific laws, norms and expectations, and prospective settings in which the AI system will be deployed are understood and documented. Considerations include: the specific set or types of users along with their expectations; potential positive and negative impacts of system uses to individuals, communities, organizations, society, and the planet; assumptions and related limitations about AI system purposes, uses, and risks across the development or product AI lifecycle; and related TEVV and system metrics.",
+      "implementationGuidance": "Intended purposes, potentially beneficial uses, contextspecific laws, norms and expectations, and prospective settings in which the AI system will be deployed are understood and documented. Considerations include: the specific set or types of users along with their expectations; potential positive and negative impacts of system uses to individuals, communities, organizations, society, and the planet; assumptions and related limitations about AI system purposes, uses, and risks across the development or product AI lifecycle; and related TEVV and system metrics.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MAP 1.2",
+      "title": "Interdisciplinary AI actors, competencies, skills, and capacities for establishing context reflect d",
+      "description": "Interdisciplinary AI actors, competencies, skills, and capacities for establishing context reflect demographic diversity and broad domain and user experience expertise, and their participation is documented. Opportunities for interdisciplinary collaboration are prioritized.",
+      "implementationGuidance": "Interdisciplinary AI actors, competencies, skills, and capacities for establishing context reflect demographic diversity and broad domain and user experience expertise, and their participation is documented. Opportunities for interdisciplinary collaboration are prioritized.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MAP 1.3",
+      "title": "The organization’s mission and relevant goals for AI technology are understood and documented.",
+      "description": "The organization’s mission and relevant goals for AI technology are understood and documented.",
+      "implementationGuidance": "The organization’s mission and relevant goals for AI technology are understood and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 1.4",
+      "title": "The business value or context of business use has been clearly defined or – in the case of assessing",
+      "description": "The business value or context of business use has been clearly defined or – in the case of assessing existing AI systems – re-evaluated.",
+      "implementationGuidance": "The business value or context of business use has been clearly defined or – in the case of assessing existing AI systems – re-evaluated.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 1.5",
+      "title": "Organizational risk tolerances are determined and documented.",
+      "description": "Organizational risk tolerances are determined and documented.",
+      "implementationGuidance": "Organizational risk tolerances are determined and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.5",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 1.6",
+      "title": "System requirements (e.g., “the system shall respect the privacy of its users”) are elicited from an",
+      "description": "System requirements (e.g., “the system shall respect the privacy of its users”) are elicited from and understood by relevant AI actors. Design decisions take socio-technical implications into account to address AI risks.",
+      "implementationGuidance": "System requirements (e.g., “the system shall respect the privacy of its users”) are elicited from and understood by relevant AI actors. Design decisions take socio-technical implications into account to address AI risks.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 1.6",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MAP 2.1",
+      "title": "The specific tasks and methods used to implement the tasks that the AI system will support are defin",
+      "description": "The specific tasks and methods used to implement the tasks that the AI system will support are defined (e.g., classifiers, generative models, recommenders).",
+      "implementationGuidance": "The specific tasks and methods used to implement the tasks that the AI system will support are defined (e.g., classifiers, generative models, recommenders).",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 2.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 2.2",
+      "title": "Information about the AI system’s knowledge limits and how system output may be utilized and oversee",
+      "description": "Information about the AI system’s knowledge limits and how system output may be utilized and overseen by humans is documented. Documentation provides sufficient information to assist relevant AI actors when making decisions and taking subsequent actions.",
+      "implementationGuidance": "Information about the AI system’s knowledge limits and how system output may be utilized and overseen by humans is documented. Documentation provides sufficient information to assist relevant AI actors when making decisions and taking subsequent actions.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 2.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MAP 2.3",
+      "title": "Scientific integrity and TEVV considerations are identified and documented, including those related ",
+      "description": "Scientific integrity and TEVV considerations are identified and documented, including those related to experimental design, data collection and selection (e.g., availability, representativeness, suitability), system trustworthiness, and construct validation.",
+      "implementationGuidance": "Scientific integrity and TEVV considerations are identified and documented, including those related to experimental design, data collection and selection (e.g., availability, representativeness, suitability), system trustworthiness, and construct validation.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 2.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 3.1",
+      "title": "Potential benefits of intended AI system functionality and performance are examined and documented.",
+      "description": "Potential benefits of intended AI system functionality and performance are examined and documented.",
+      "implementationGuidance": "Potential benefits of intended AI system functionality and performance are examined and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 3.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 3.2",
+      "title": "Potential costs, including non-monetary costs, which result from expected or realized AI errors or s",
+      "description": "Potential costs, including non-monetary costs, which result from expected or realized AI errors or system functionality and trustworthiness – as connected to organizational risk tolerance – are examined and documented.",
+      "implementationGuidance": "Potential costs, including non-monetary costs, which result from expected or realized AI errors or system functionality and trustworthiness – as connected to organizational risk tolerance – are examined and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 3.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 3.3",
+      "title": "Targeted application scope is specified and documented based on the system’s capability, established",
+      "description": "Targeted application scope is specified and documented based on the system’s capability, established context, and AI system categorization.",
+      "implementationGuidance": "Targeted application scope is specified and documented based on the system’s capability, established context, and AI system categorization.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 3.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 3.4",
+      "title": "Processes for operator and practitioner proficiency with AI system performance and trustworthiness –",
+      "description": "Processes for operator and practitioner proficiency with AI system performance and trustworthiness – and relevant technical standards and certifications – are defined, assessed, and documented.",
+      "implementationGuidance": "Processes for operator and practitioner proficiency with AI system performance and trustworthiness – and relevant technical standards and certifications – are defined, assessed, and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 3.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 3.5",
+      "title": "Processes for human oversight are defined, assessed, and documented in accordance with organizationa",
+      "description": "Processes for human oversight are defined, assessed, and documented in accordance with organizational policies from the GOVERN function.",
+      "implementationGuidance": "Processes for human oversight are defined, assessed, and documented in accordance with organizational policies from the GOVERN function.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 3.5",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MAP 4.1",
+      "title": "Approaches for mapping AI technology and legal risks of its components – including the use of third-",
+      "description": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and documented, as are risks of infringement of a third party’s intellectual property or other rights.",
+      "implementationGuidance": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and documented, as are risks of infringement of a third party’s intellectual property or other rights.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 4.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 4.2",
+      "title": "Internal risk controls for components of the AI system, including third-party AI technologies, are i",
+      "description": "Internal risk controls for components of the AI system, including third-party AI technologies, are identified and documented.",
+      "implementationGuidance": "Internal risk controls for components of the AI system, including third-party AI technologies, are identified and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 4.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 5.1",
+      "title": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based o",
+      "description": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based on expected use, past uses of AI systems in similar contexts, public incident reports, feedback from those external to the team that developed or deployed the AI system, or other data are identified and documented.",
+      "implementationGuidance": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based on expected use, past uses of AI systems in similar contexts, public incident reports, feedback from those external to the team that developed or deployed the AI system, or other data are identified and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 5.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MAP 5.2",
+      "title": "Practices and personnel for supporting regular engagement with relevant AI actors and integrating fe",
+      "description": "Practices and personnel for supporting regular engagement with relevant AI actors and integrating feedback about positive, negative, and unanticipated impacts are in place and documented.",
+      "implementationGuidance": "Practices and personnel for supporting regular engagement with relevant AI actors and integrating feedback about positive, negative, and unanticipated impacts are in place and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MAP 5.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 1.1",
+      "title": "Approaches and metrics for measurement of AI risks enumerated during the MAP function are selected f",
+      "description": "Approaches and metrics for measurement of AI risks enumerated during the MAP function are selected for implementation starting with the most significant AI risks. The risks or trustworthiness characteristics that will not – or cannot – be measured are properly documented.",
+      "implementationGuidance": "Approaches and metrics for measurement of AI risks enumerated during the MAP function are selected for implementation starting with the most significant AI risks. The risks or trustworthiness characteristics that will not – or cannot – be measured are properly documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 1.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 1.2",
+      "title": "Appropriateness of AI metrics and effectiveness of existing controls are regularly assessed and upda",
+      "description": "Appropriateness of AI metrics and effectiveness of existing controls are regularly assessed and updated, including reports of errors and potential impacts on affected communities.",
+      "implementationGuidance": "Appropriateness of AI metrics and effectiveness of existing controls are regularly assessed and updated, including reports of errors and potential impacts on affected communities.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 1.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 1.3",
+      "title": "Internal experts who did not serve as front-line developers for the system and/or independent assess",
+      "description": "Internal experts who did not serve as front-line developers for the system and/or independent assessors are involved in regular assessments and updates. Domain experts, users, AI actors external to the team that developed or deployed the AI system, and affected communities are consulted in support of assessments as necessary per organizational risk tolerance.",
+      "implementationGuidance": "Internal experts who did not serve as front-line developers for the system and/or independent assessors are involved in regular assessments and updates. Domain experts, users, AI actors external to the team that developed or deployed the AI system, and affected communities are consulted in support of assessments as necessary per organizational risk tolerance.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 1.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.1",
+      "title": "Test sets, metrics, and details about the tools used during TEVV are documented.",
+      "description": "Test sets, metrics, and details about the tools used during TEVV are documented.",
+      "implementationGuidance": "Test sets, metrics, and details about the tools used during TEVV are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.2",
+      "title": "Evaluations involving human subjects meet applicable requirements (including human subject protectio",
+      "description": "Evaluations involving human subjects meet applicable requirements (including human subject protection) and are representative of the relevant population.",
+      "implementationGuidance": "Evaluations involving human subjects meet applicable requirements (including human subject protection) and are representative of the relevant population.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.3",
+      "title": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonst",
+      "description": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonstrated for conditions similar to deployment setting(s). Measures are documented.",
+      "implementationGuidance": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonstrated for conditions similar to deployment setting(s). Measures are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.4",
+      "title": "The functionality and behavior of the AI system and its components – as identified in the MAP functi",
+      "description": "The functionality and behavior of the AI system and its components – as identified in the MAP function – are monitored when in production.",
+      "implementationGuidance": "The functionality and behavior of the AI system and its components – as identified in the MAP function – are monitored when in production.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.5",
+      "title": "The AI system to be deployed is demonstrated to be valid and reliable. Limitations of the generaliza",
+      "description": "The AI system to be deployed is demonstrated to be valid and reliable. Limitations of the generalizability beyond the conditions under which the technology was developed are documented.",
+      "implementationGuidance": "The AI system to be deployed is demonstrated to be valid and reliable. Limitations of the generalizability beyond the conditions under which the technology was developed are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.5",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.6",
+      "title": "The AI system is evaluated regularly for safety risks – as identified in the MAP function. The AI sy",
+      "description": "The AI system is evaluated regularly for safety risks – as identified in the MAP function. The AI system to be deployed is demonstrated to be safe, its residual negative risk does not exceed the risk tolerance, and it can fail safely, particularly if made to operate beyond its knowledge limits. Safety metrics reflect system reliability and robustness, real-time monitoring, and response times for AI system failures.",
+      "implementationGuidance": "The AI system is evaluated regularly for safety risks – as identified in the MAP function. The AI system to be deployed is demonstrated to be safe, its residual negative risk does not exceed the risk tolerance, and it can fail safely, particularly if made to operate beyond its knowledge limits. Safety metrics reflect system reliability and robustness, real-time monitoring, and response times for AI system failures.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.6",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.7",
+      "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+      "description": "AI system security and resilience – as identified in the MAP function – are evaluated and documented.",
+      "implementationGuidance": "AI system security and resilience – as identified in the MAP function – are evaluated and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.7",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.8",
+      "title": "Risks associated with transparency and accountability – as identified in the MAP function – are exam",
+      "description": "Risks associated with transparency and accountability – as identified in the MAP function – are examined and documented.",
+      "implementationGuidance": "Risks associated with transparency and accountability – as identified in the MAP function – are examined and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.8",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.9",
+      "title": "The AI model is explained, validated, and documented, and AI system output is interpreted within its",
+      "description": "The AI model is explained, validated, and documented, and AI system output is interpreted within its context – as identified in the MAP function – to inform responsible use and governance.",
+      "implementationGuidance": "The AI model is explained, validated, and documented, and AI system output is interpreted within its context – as identified in the MAP function – to inform responsible use and governance.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.9",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.10",
+      "title": "Privacy risk of the AI system – as identified in the MAP function – is examined and documented.",
+      "description": "Privacy risk of the AI system – as identified in the MAP function – is examined and documented.",
+      "implementationGuidance": "Privacy risk of the AI system – as identified in the MAP function – is examined and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.10",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.11",
+      "title": "Fairness and bias – as identified in the MAP function – are evaluated and results are documented.",
+      "description": "Fairness and bias – as identified in the MAP function – are evaluated and results are documented.",
+      "implementationGuidance": "Fairness and bias – as identified in the MAP function – are evaluated and results are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.11",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Discrimination and Toxicity"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.12",
+      "title": "Environmental impact and sustainability of AI model training and management activities – as identifi",
+      "description": "Environmental impact and sustainability of AI model training and management activities – as identified in the MAP function – are assessed and documented.",
+      "implementationGuidance": "Environmental impact and sustainability of AI model training and management activities – as identified in the MAP function – are assessed and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.12",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Socioeconomic and Environmental"
+      ]
+    },
+    {
+      "controlId": "MEASURE 2.13",
+      "title": "Effectiveness of the employed TEVV metrics and processes in the MEASURE function are evaluated and d",
+      "description": "Effectiveness of the employed TEVV metrics and processes in the MEASURE function are evaluated and documented.",
+      "implementationGuidance": "Effectiveness of the employed TEVV metrics and processes in the MEASURE function are evaluated and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 2.13",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 3.1",
+      "title": "Approaches, personnel, and documentation are in place to regularly identify and track existing, unan",
+      "description": "Approaches, personnel, and documentation are in place to regularly identify and track existing, unanticipated, and emergent AI risks based on factors such as intended and actual performance in deployed contexts.",
+      "implementationGuidance": "Approaches, personnel, and documentation are in place to regularly identify and track existing, unanticipated, and emergent AI risks based on factors such as intended and actual performance in deployed contexts.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 3.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 3.2",
+      "title": "Risk tracking approaches are considered for settings where AI risks are difficult to assess using cu",
+      "description": "Risk tracking approaches are considered for settings where AI risks are difficult to assess using currently available measurement techniques or where metrics are not yet available.",
+      "implementationGuidance": "Risk tracking approaches are considered for settings where AI risks are difficult to assess using currently available measurement techniques or where metrics are not yet available.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 3.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 3.3",
+      "title": "Feedback processes for end users and impacted communities to report problems and appeal system outco",
+      "description": "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI system evaluation metrics.",
+      "implementationGuidance": "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI system evaluation metrics.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 3.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MEASURE 4.1",
+      "title": "Measurement approaches for identifying AI risks are connected to deployment context(s) and informed ",
+      "description": "Measurement approaches for identifying AI risks are connected to deployment context(s) and informed through consultation with domain experts and other end users. Approaches are documented.",
+      "implementationGuidance": "Measurement approaches for identifying AI risks are connected to deployment context(s) and informed through consultation with domain experts and other end users. Approaches are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 4.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MEASURE 4.2",
+      "title": "Measurement results regarding AI system trustworthiness in deployment context(s) and across the AI l",
+      "description": "Measurement results regarding AI system trustworthiness in deployment context(s) and across the AI lifecycle are informed by input from domain experts and relevant AI actors to validate whether the system is performing consistently as intended. Results are documented.",
+      "implementationGuidance": "Measurement results regarding AI system trustworthiness in deployment context(s) and across the AI lifecycle are informed by input from domain experts and relevant AI actors to validate whether the system is performing consistently as intended. Results are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 4.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MEASURE 4.3",
+      "title": "Measurable performance improvements or declines based on consultations with relevant AI actors, incl",
+      "description": "Measurable performance improvements or declines based on consultations with relevant AI actors, including affected communities, and field data about contextrelevant risks and trustworthiness characteristics are identified and documented.",
+      "implementationGuidance": "Measurable performance improvements or declines based on consultations with relevant AI actors, including affected communities, and field data about contextrelevant risks and trustworthiness characteristics are identified and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MEASURE 4.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 1.1",
+      "title": "A determination is made as to whether the AI system achieves its intended purposes and stated object",
+      "description": "A determination is made as to whether the AI system achieves its intended purposes and stated objectives and whether its development or deployment should proceed.",
+      "implementationGuidance": "A determination is made as to whether the AI system achieves its intended purposes and stated objectives and whether its development or deployment should proceed.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 1.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 1.2",
+      "title": "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources",
+      "description": "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources or methods.",
+      "implementationGuidance": "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources or methods.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 1.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 1.3",
+      "title": "Responses to the AI risks deemed high priority, as identified by the MAP function, are developed, pl",
+      "description": "Responses to the AI risks deemed high priority, as identified by the MAP function, are developed, planned, and documented. Risk response options can include mitigating, transferring, avoiding, or accepting.",
+      "implementationGuidance": "Responses to the AI risks deemed high priority, as identified by the MAP function, are developed, planned, and documented. Risk response options can include mitigating, transferring, avoiding, or accepting.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 1.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 1.4",
+      "title": "Negative residual risks (defined as the sum of all unmitigated risks) to both downstream acquirers o",
+      "description": "Negative residual risks (defined as the sum of all unmitigated risks) to both downstream acquirers of AI systems and end users are documented.",
+      "implementationGuidance": "Negative residual risks (defined as the sum of all unmitigated risks) to both downstream acquirers of AI systems and end users are documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 1.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MANAGE 2.1",
+      "title": "Resources required to manage AI risks are taken into account – along with viable non-AI alternative ",
+      "description": "Resources required to manage AI risks are taken into account – along with viable non-AI alternative systems, approaches, or methods – to reduce the magnitude or likelihood of potential impacts.",
+      "implementationGuidance": "Resources required to manage AI risks are taken into account – along with viable non-AI alternative systems, approaches, or methods – to reduce the magnitude or likelihood of potential impacts.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 2.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 2.2",
+      "title": "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
+      "description": "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
+      "implementationGuidance": "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 2.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 2.3",
+      "title": "Procedures are followed to respond to and recover from a previously unknown risk when it is identifi",
+      "description": "Procedures are followed to respond to and recover from a previously unknown risk when it is identified.",
+      "implementationGuidance": "Procedures are followed to respond to and recover from a previously unknown risk when it is identified.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 2.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 2.4",
+      "title": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede,",
+      "description": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate performance or outcomes inconsistent with intended use.",
+      "implementationGuidance": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate performance or outcomes inconsistent with intended use.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 2.4",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 3.1",
+      "title": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are appl",
+      "description": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are applied and documented.",
+      "implementationGuidance": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are applied and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 3.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 3.2",
+      "title": "Pre-trained models which are used for development are monitored as part of AI system regular monitor",
+      "description": "Pre-trained models which are used for development are monitored as part of AI system regular monitoring and maintenance.",
+      "implementationGuidance": "Pre-trained models which are used for development are monitored as part of AI system regular monitoring and maintenance.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 3.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 4.1",
+      "title": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and e",
+      "description": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant AI actors, appeal and override, decommissioning, incident response, recovery, and change management.",
+      "implementationGuidance": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant AI actors, appeal and override, decommissioning, incident response, recovery, and change management.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 4.1",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations",
+        "Human-Computer Interaction"
+      ]
+    },
+    {
+      "controlId": "MANAGE 4.2",
+      "title": "Measurable activities for continual improvements are integrated into AI system updates and include r",
+      "description": "Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
+      "implementationGuidance": "Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 4.2",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    },
+    {
+      "controlId": "MANAGE 4.3",
+      "title": "Incidents and errors are communicated to relevant AI actors, including affected communities. Process",
+      "description": "Incidents and errors are communicated to relevant AI actors, including affected communities. Processes for tracking, responding to, and recovering from incidents and errors are followed and documented.",
+      "implementationGuidance": "Incidents and errors are communicated to relevant AI actors, including affected communities. Processes for tracking, responding to, and recovering from incidents and errors are followed and documented.",
+      "category": "Requirement",
+      "officialControlNumber": "MANAGE 4.3",
+      "sourceDocument": "NIST-AI-RMF-1.0",
+      "sourceUrl": "https://github.com/intuitem/ciso-assistant-community/tree/main/backend/library/libraries/nist-ai-rmf-1.0.yaml",
+      "lastVerified": "2024-03-23",
+      "isAuthoritative": true,
+      "aiRiskDomains": [
+        "Privacy and Security",
+        "AI System Safety, Failures, and Limitations"
+      ]
+    }
+  ]
+}

@@ -182,6 +182,7 @@ export function isPathAllowedForRole(path: string, normalizedRole: SystemRole | 
     return true;
   if (path.startsWith("/organizations/") && routesForRole.includes("/organizations")) return true;
   if (path.startsWith("/reports/") && path.length > "/reports/".length) return true;
+  if (path.startsWith("/vendor-directory/") && routesForRole.includes("/vendor-directory")) return true;
   if (normalizedRole === "vendor" && path.startsWith("/vendorSelfAttestation/")) return true;
   if (normalizedRole === "vendor" && path.startsWith("/vendorcots/")) return true;
   if (normalizedRole === "buyer" && path.startsWith("/buyerAssessment/")) return true;
