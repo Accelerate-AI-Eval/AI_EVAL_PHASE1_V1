@@ -111,10 +111,141 @@ function datasetMatchesRowLabel(ds: FrameworkDataset, hint: string): boolean {
   return hintFirst.length >= 3 && name.includes(hintFirst);
 }
 
+/** Loose match for control IDs across attestation vs catalog (e.g. "GOVERN 1.1" vs "GOVERN-1.1"). */
+export function normalizeControlIdKey(controlId: string): string {
+  return String(controlId ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
 function descriptionFromCatalogControl(c: FrameworkControl): string {
   const d = String(c.description ?? "").trim();
   if (d) return d;
   return String(c.implementationGuidance ?? "").trim();
+}
+
+export function slimFieldsFromCatalogControl(c: FrameworkControl): {
+  controlId: string;
+  title: string;
+  description: string;
+} {
+  const controlId = String(c.controlId ?? "").trim();
+  const title = String(c.title ?? "").trim() || controlId;
+  let description = descriptionFromCatalogControl(c);
+  if (description.length > MAX_LOOKUP_DESCRIPTION_LEN) {
+    description = `${description.slice(0, MAX_LOOKUP_DESCRIPTION_LEN)}…`;
+  }
+  return { controlId, title, description: description || "—" };
+}
+
+function normalizeAiRiskDomainLabel(s: string): string {
+  return String(s ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * True if the control lists any of the focus AI risk domains (from `src/data` catalogs).
+ * When `focusDomains` is empty, returns true (no domain filter).
+ */
+export function controlMatchesAiRiskDomains(
+  control: FrameworkControl,
+  focusDomains: string[],
+): boolean {
+  if (!focusDomains.length) return true;
+  const fds = new Set(focusDomains.map(normalizeAiRiskDomainLabel));
+  const ard = control.aiRiskDomains;
+  if (!ard?.length) return false;
+  return ard.some((d) => fds.has(normalizeAiRiskDomainLabel(d)));
+}
+
+/**
+ * First dataset whose framework name matches a mapping row label (e.g. "PCI DSS (4.0)", "GDPR").
+ */
+export function findDatasetForMappingRowLabel(rowLabel: string): FrameworkDataset | null {
+  const hint = stripVersionParenthetical(String(rowLabel ?? "").toLowerCase());
+  if (!hint) return null;
+  const datasets = loadFrameworkDatasets();
+  for (const ds of datasets) {
+    if (datasetMatchesRowLabel(ds, hint)) return ds;
+  }
+  return null;
+}
+
+export type AttestationControlHint = { controlId: string; relevanceScore?: number };
+
+const SLIM_CONTROL_DESC_CAP = 4000;
+
+/**
+ * Up to `limit` controls for a framework row: prefer attestation IDs (by relevance), filtered by
+ * catalog `aiRiskDomains` when `focusDomains` is non-empty; fill from catalog order when needed.
+ */
+export function pickTopControlsForFrameworkAndAiDomains(
+  rowFrameworkLabel: string,
+  focusDomains: string[],
+  limit: number,
+  attestationHints: AttestationControlHint[] | undefined,
+): Array<{ controlId: string; title: string; description: string }> {
+  const cap = Math.min(99, Math.max(1, limit));
+  const hints = attestationHints ?? [];
+  const relByNorm = new Map<string, number>();
+  for (const h of hints) {
+    const id = String(h.controlId ?? "").trim();
+    if (!id) continue;
+    const k = normalizeControlIdKey(id);
+    const r = typeof h.relevanceScore === "number" && Number.isFinite(h.relevanceScore) ? h.relevanceScore : 0;
+    relByNorm.set(k, Math.max(relByNorm.get(k) ?? 0, r));
+  }
+
+  const ds = findDatasetForMappingRowLabel(rowFrameworkLabel);
+  if (!ds) {
+    const out: Array<{ controlId: string; title: string; description: string }> = [];
+    const sortedHints = [...hints].sort(
+      (a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0),
+    );
+    for (const h of sortedHints) {
+      if (out.length >= cap) break;
+      const controlId = String(h.controlId ?? "").trim();
+      if (!controlId) continue;
+      let description = lookupControlDescription(rowFrameworkLabel, controlId);
+      if (description.length > SLIM_CONTROL_DESC_CAP) {
+        description = `${description.slice(0, SLIM_CONTROL_DESC_CAP)}…`;
+      }
+      out.push({
+        controlId,
+        title: controlId,
+        description: description || "—",
+      });
+    }
+    return out;
+  }
+
+  const sortKey = (c: FrameworkControl): [number, number, number, string] => {
+    const id = String(c.controlId ?? "").trim();
+    const nk = normalizeControlIdKey(id);
+    const inAtt = relByNorm.has(nk) ? 1 : 0;
+    const rel = relByNorm.get(nk) ?? -1;
+    const tagged = c.aiRiskDomains && c.aiRiskDomains.length > 0 ? 1 : 0;
+    return [inAtt, rel, tagged, id];
+  };
+
+  const compare = (a: FrameworkControl, b: FrameworkControl): number => {
+    const [ia, ra, ta, ida] = sortKey(a);
+    const [ib, rb, tb, idb] = sortKey(b);
+    if (ia !== ib) return ib - ia;
+    if (ra !== rb) return rb - ra;
+    if (ta !== tb) return tb - ta;
+    return ida.localeCompare(idb);
+  };
+
+  let pool = ds.controls.filter((c) => controlMatchesAiRiskDomains(c, focusDomains));
+  if (pool.length === 0) {
+    pool = ds.controls.filter((c) => controlMatchesAiRiskDomains(c, []));
+  }
+  pool = [...pool].sort(compare);
+  return pool.slice(0, cap).map((c) => slimFieldsFromCatalogControl(c));
 }
 
 const MAX_LOOKUP_DESCRIPTION_LEN = 4000;

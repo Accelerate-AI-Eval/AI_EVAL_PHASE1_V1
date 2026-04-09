@@ -10,6 +10,12 @@ import {
   CircleChevronLeft,
 } from "lucide-react";
 import LoadingMessage from "../../../UI/LoadingMessage";
+import {
+  frameworkControlsDisplayLinesTopRanked,
+  FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+} from "../../../../utils/frameworkMappingControlsDisplay";
+import { sanitizeFrameworkMappingNotesForDisplay } from "../../../../utils/frameworkMappingNotesDisplay";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../../utils/frameworkMappingFrameworkDisplay";
 import "../../Reports/reports.css";
 import "./buyer_vendor_risk_report.css";
 
@@ -95,6 +101,20 @@ function formatFrameworkCell(v: unknown): string {
   if (v == null) return "—";
   const s = String(v).trim();
   return s || "—";
+}
+
+function FrameworkMappingControlsCell({ value }: { value: unknown }) {
+  const lines = frameworkControlsDisplayLinesTopRanked(value, FRAMEWORK_MAPPING_TOP_CONTROLS_MAX);
+  if (lines.length === 0) return <>{formatFrameworkCell(value)}</>;
+  return (
+    <div className="report_framework_controls_stack">
+      {lines.map((line, i) => (
+        <div key={i} className="report_framework_control_line">
+          {line}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function BuyerVendorRiskReport() {
@@ -483,10 +503,14 @@ export default function BuyerVendorRiskReport() {
                   ) : (
                     frameworkMappingRows.map((row, i) => (
                       <tr key={i}>
-                        <td>{formatFrameworkCell(row.framework)}</td>
+                        <td>{formatFrameworkMappingFrameworkForDisplay(row.framework)}</td>
                         <td>{formatFrameworkCell(row.coverage)}</td>
-                        <td>{formatFrameworkCell(row.controls)}</td>
-                        <td>{formatFrameworkCell(row.notes)}</td>
+                        <td className="report_framework_td_controls">
+                          <FrameworkMappingControlsCell value={row.controls} />
+                        </td>
+                        <td>
+                          {formatFrameworkCell(sanitizeFrameworkMappingNotesForDisplay(row.notes))}
+                        </td>
                       </tr>
                     ))
                   )}

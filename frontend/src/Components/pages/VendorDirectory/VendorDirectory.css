@@ -528,7 +528,7 @@
 }
 
 #vendor-directory-panel-all {
-  padding-right: 20px;
+  /* padding-right: 20px; */
 }
 
 .vd_premium_card:hover {
@@ -824,7 +824,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #059669;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .vendor_intel_hero_product {
@@ -832,6 +832,7 @@
   font-size: 2.2rem;
   line-height: 1.1;
   color: #0f172a;
+  font-weight: 600;
 }
 
 .vendor_intel_hero_score {
@@ -857,14 +858,14 @@
 .vendor_intel_hero_score_value {
   font-size: 3.25rem;
   line-height: 1;
-  font-weight: 800;
+  font-weight: 700;
   color: #020617;
 }
 
 .vendor_intel_hero_score_scale {
   font-size: 1.5rem;
   color: #64748b;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @media (max-width: 780px) {
@@ -1378,51 +1379,4 @@
 .vendor_directory_product_card_arrow {
   color: #9ca3af;
   flex-shrink: 0;
-}
-
-/* Product Intelligence — framework mapping from attestation */
-.vendor_intel_framework_section {
-  margin-top: 2rem;
-  padding: 1.25rem 1.5rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(0, 13, 51, 0.06);
-}
-
-.vendor_intel_framework_heading {
-  margin: 0 0 0.75rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.vendor_intel_framework_table_wrap {
-  overflow-x: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-}
-
-.vendor_intel_framework_table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.vendor_intel_framework_table th,
-.vendor_intel_framework_table td {
-  padding: 0.55rem 0.75rem;
-  text-align: left;
-  vertical-align: top;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.vendor_intel_framework_table th {
-  background: #f8fafc;
-  font-weight: 600;
-  color: #334155;
-}
-
-.vendor_intel_framework_table tbody tr:last-child td {
-  border-bottom: none;
 }

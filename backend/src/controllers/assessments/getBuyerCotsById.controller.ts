@@ -6,6 +6,7 @@ import { cotsBuyerAssessments } from "../../schema/assessments/cotsBuyerAssessme
 import { eq, and } from "drizzle-orm";
 import { buildBuyerCotsOrganizationalPortalInsights } from "../../services/orgPortalComplianceInsights.js";
 import { buyerImplementationReadinessGradeFromScore } from "../../services/buyerImplementationRiskScore.js";
+import { buildBuyerCotsFrameworkMappingRows } from "../../services/buyerCotsFrameworkMapping.js";
 
 function extractImplementationReadinessFromVendorReport(report: unknown): {
   implementationReadinessGrade: string | null;
@@ -180,7 +181,14 @@ const getBuyerCotsById = async (req: Request, res: Response) => {
     data.organizationalPortal = buildBuyerCotsOrganizationalPortalInsights({
       industrySector: r.industry_sector,
       vendorCertifications: r.vendor_compliance_certifications,
-      vendorRiskReport: (r as { vendor_risk_assessment_report?: unknown }).vendor_risk_assessment_report,
+      vendorRiskReport: {
+        frameworkMapping: {
+          rows: buildBuyerCotsFrameworkMappingRows(
+            (r as { vendor_risk_assessment_report?: unknown }).vendor_risk_assessment_report,
+            r.regulatory_requirments,
+          ),
+        },
+      },
     });
     return res.status(200).json({ success: true, data });
   } catch (error) {

@@ -3,14 +3,18 @@
  */
 
 import {
-  buildFrameworkMappingRowsFromVendorCotsAssessment,
-  hasVendorCotsRegulatoryRequirementsProvided,
-} from "./vendorCotsFrameworkMappingGenerator.js";
-import {
   type FrameworkMappingTableRow,
-  resolveFrameworkMappingRowsForAttestation,
-  isSubstantiveFrameworkMappingRow,
+  mergeFrameworkMappingRows,
+  vendorCotsFrameworkMappingRowsForListView,
+  vendorCotsFrameworkMappingRowsFromAttestation,
 } from "./frameworkMappingFromCompliance.js";
+import { narrowVendorCotsFrameworkRowsToAiDomainControls } from "./vendorCotsAttestationFrameworkControls.js";
+import {
+  attestationFrameworkRowsCoverRegulatoryFramework,
+  getVendorCotsRegulatoryFrameworkNamesFromPayload,
+  mergeVendorCotsAttestationRowsWithRegulatoryGaps,
+  vendorCotsRegulatoryAttestationGapRow,
+} from "./vendorCotsFrameworkMappingGenerator.js";
 import { calcCertificationsScore } from "../controllers/agents/vendorAttestation.js";
 import {
   buildCertificationsSearchBlobsFromPayload,
@@ -29,6 +33,21 @@ export type CertificationGapRow = {
 };
 
 type CertBreakdownRow = { framework: string; points: number; detail?: string };
+
+function ensureRegulatoryGapRowsPresent(
+  rows: FrameworkMappingTableRow[],
+  payload: Record<string, unknown>,
+): FrameworkMappingTableRow[] {
+  const required = getVendorCotsRegulatoryFrameworkNamesFromPayload(payload);
+  if (required.length === 0) return rows;
+  const out = [...rows];
+  for (const fw of required) {
+    if (!attestationFrameworkRowsCoverRegulatoryFramework(out, fw)) {
+      out.push(vendorCotsRegulatoryAttestationGapRow(fw));
+    }
+  }
+  return out;
+}
 
 function frameworkMappingRowsFromVendorRiskReport(rawReport: unknown): FrameworkMappingTableRow[] {
   if (!rawReport || typeof rawReport !== "object") return [];
@@ -89,23 +108,19 @@ function gapAnalysisFromDetected(
 }
 
 export function buildVendorCotsOrganizationalPortalInsights(
-  vendorCotsCamel: Record<string, unknown>,
+  _vendorCotsCamel: Record<string, unknown>,
   attestationRow: Record<string, unknown> | null | undefined,
   buyerIndustrySegmentRaw: string,
+  opts?: { storedCustomerRiskReport?: unknown },
 ): {
   frameworkMappingRows: FrameworkMappingTableRow[];
   attestationFrameworkRows: FrameworkMappingTableRow[];
-  regulatoryRequirementsDocumentProvided: boolean;
+  regulatoryRequirementsDocumentProvided?: boolean;
   buyerIndustrySegment: string;
   relevantFrameworks: string[];
   certificationGapAnalysis: CertificationGapRow[];
   allDetectedCertifications: CertBreakdownRow[];
 } {
-  const regulatoryRequirementsDocumentProvided =
-    hasVendorCotsRegulatoryRequirementsProvided(vendorCotsCamel);
-  const frameworkMappingRows = regulatoryRequirementsDocumentProvided
-    ? buildFrameworkMappingRowsFromVendorCotsAssessment(vendorCotsCamel)
-    : [];
   const segment = normalizeCertIndustrySegmentInput(buyerIndustrySegmentRaw);
 
   const attPayload = attestationRow ? attestationRowToCertPayload(attestationRow) : {};
@@ -131,16 +146,37 @@ export function buildVendorCotsOrganizationalPortalInsights(
 
   const { relevantFrameworks, certificationGapAnalysis } = gapAnalysisFromDetected(segment, allDetected);
 
-  const attestationFrameworkRows = attestationRow
-    ? resolveFrameworkMappingRowsForAttestation(
-        attestationRow as Record<string, unknown>,
-      ).filter(isSubstantiveFrameworkMappingRow)
-    : [];
+  const computedRows = narrowVendorCotsFrameworkRowsToAiDomainControls(
+    mergeVendorCotsAttestationRowsWithRegulatoryGaps(
+      vendorCotsFrameworkMappingRowsFromAttestation(
+        attestationRow as Record<string, unknown> | null | undefined,
+      ),
+      _vendorCotsCamel,
+    ),
+    _vendorCotsCamel,
+  );
+  const fromStoredReport =
+    opts?.storedCustomerRiskReport != null
+      ? vendorCotsFrameworkMappingRowsForListView(
+          attestationRow as Record<string, unknown> | null | undefined,
+          opts.storedCustomerRiskReport,
+        )
+      : [];
+  const mergedFrameworkRows = mergeFrameworkMappingRows(computedRows, fromStoredReport);
+  const frameworkMappingRowsRaw =
+    mergedFrameworkRows.length > 0
+      ? mergedFrameworkRows
+      : computedRows.length > 0
+        ? computedRows
+        : fromStoredReport;
+  const frameworkMappingRows = ensureRegulatoryGapRowsPresent(
+    frameworkMappingRowsRaw,
+    _vendorCotsCamel,
+  );
 
   return {
     frameworkMappingRows,
-    attestationFrameworkRows,
-    regulatoryRequirementsDocumentProvided,
+    attestationFrameworkRows: [],
     buyerIndustrySegment: segment,
     relevantFrameworks,
     certificationGapAnalysis,

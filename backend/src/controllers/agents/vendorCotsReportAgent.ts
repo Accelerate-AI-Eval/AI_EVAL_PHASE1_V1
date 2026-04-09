@@ -148,7 +148,7 @@ Output the report in the following sections with clear headings. Use the exact s
 Write 2–5 paragraphs as a narrative executive summary. Include: deployment context, key benefits or outcomes, infrastructure/security highlights, risk conclusion (e.g. low overall risk with manageable mitigations), and a brief recommendation (e.g. recommend proceeding with deployment). Use professional tone.
 
 ## 2. Key Risks
-List 3–6 key risks as bullet points. Each line: "- [risk description]". Base these on: identified_risks, customer_specific_risks, data_sensitivity, regulatory_requirements, integration_complexity, and risk_domain_scores if provided.
+List 3–6 key risks as bullet points. Each line: "- [risk description]". Base these on: identified_risks, customer_specific_risks, data_sensitivity, regulatory_requirements, integration_complexity, and risk_domain_scores if provided. When linking a risk to a compliance framework, reference only frameworks that appear in the "Product attestation: compliance framework mappings" block below; if that block is only a "Not provided" placeholder, say compliance framework evidence was not provided rather than inferring frameworks from regulatory_requirements alone.
 
 ## 3. Recommendations
 List 3–6 actionable recommendations. For each line use this format: "- **Priority:** [High|Medium|Low] | **Title:** [short title] | **Description:** [1-2 sentences] | **Timeline:** [e.g. Immediate, Within 30 days, Q2 2026]"
@@ -162,7 +162,7 @@ After the sections above, output a single JSON object in a fenced code block sta
 - matchedRiskSummaries: array. If "Database-matched top risks" appears above, include exactly one object per listed catalog risk (same order, max 5). Each: { "risk_id": "<exact Risk [id] from that section>", "summary_points": ["2-4 concise bullets", "..."] } — bullets only from that risk's title/description; each bullet under 25 words; no generic filler. If no database-matched risks, use [].
 - matchedMitigationSummaries: array. For every "Mitigation:" line under those risks (same order), include { "risk_id": "<exact Risk [id]>", "mitigation_action_name": "<exact mitigation action name before '(' from that line>", "summary_points": ["1-3 complete sentences or short bullets", "..."] } — summarize only that mitigation's catalog meaning (name + definition text above); each bullet a full thought (not truncated mid-sentence); under 35 words each; no generic filler. If a risk has no mitigations, omit entries for it. If no database-matched risks, use [].
 - complianceAlignment: object with summary (string), requirements: array of { name, description, status: "Met"|"Pending"|"Deferred" }
-- frameworkMapping: object with rows: array of { framework, coverage, controls, notes }. If a "Product attestation: compliance framework mappings" JSON block appears in the assessment context, include every row from that block in frameworkMapping.rows (preserve framework names and use attestation coverage, controls, and notes when provided). Do not omit attestation frameworks.
+- frameworkMapping: object with rows: array of { framework, coverage, controls, notes }. Copy exactly the rows from the "Product attestation: compliance framework mappings" JSON block in the assessment context (same order, same text). If that block is a single placeholder with coverage and controls "Not provided", use that as the only row. Do NOT add frameworks from regulatory_requirements, customer sector, or other assessment fields. Do NOT omit attestation rows.
 - implementationPlan: object with phases: array of { title, timeline, status: "Complete"|"In Progress"|"Planned", activities (string array), deliverables (string array) }
 - competitivePositioning: string (2-4 sentences)
 - appendix: object with methodology (string), preparedBy (string), reviewedBy (string), confidentiality (string), dataSources (string array)
@@ -213,7 +213,7 @@ function buildAssessmentContext(
   if (attestationFrameworkRows && attestationFrameworkRows.length > 0) {
     lines.push(
       "",
-      "--- Framework mappings for this report (vendor attestation compliance + Vendor COTS regulatory/formula-derived rows; authoritative for REPORT_JSON.frameworkMapping.rows) ---",
+      "--- Product attestation: compliance framework mappings (authoritative for REPORT_JSON.frameworkMapping.rows; use only these frameworks—do not add rows from regulatory_requirements or sector) ---",
       JSON.stringify(attestationFrameworkRows, null, 2),
       "--- End of framework mappings ---",
     );
@@ -1378,11 +1378,43 @@ function toStringList(v: unknown): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Vendor COTS regulatory checkboxes from DB/API: arrays, JSON array strings (common when stored as text),
+ * or comma-separated fallback. Ensures gap rows + "Not provided" match vendor portal when buyer selections
+ * are not present on the linked product attestation.
+ */
+export function regulatoryRequirementsToStringList(v: unknown): string[] {
+  if (v == null) return [];
+  if (Array.isArray(v)) {
+    return v.map((x) => String(x ?? "").trim()).filter(Boolean);
+  }
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (!s) return [];
+    const c0 = s[0];
+    if (c0 === "[" || c0 === "{") {
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed.map((x) => String(x ?? "").trim()).filter(Boolean);
+        }
+      } catch {
+        /* fall through to comma split */
+      }
+    }
+    return s
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 /** Regulatory selections + CFR regulatory complexity used for framework mapping on submit. */
 export function getVendorCotsRegulatoryComplexitySnapshot(
   payload: Record<string, unknown>,
 ) {
-  const regulatory = toStringList(
+  const regulatory = regulatoryRequirementsToStringList(
     payload.regulatory_requirements ?? payload.regulatoryRequirements,
   );
   const sector = normalizeSectorForFormula(
@@ -1586,7 +1618,7 @@ function buildFormulaInputFromPayload(payload: Record<string, unknown>) {
   const sector = normalizeSectorForFormula(
     toStringValue(payload.customer_sector ?? payload.customerSector),
   );
-  const regulatory = toStringList(
+  const regulatory = regulatoryRequirementsToStringList(
     payload.regulatory_requirements ?? payload.regulatoryRequirements,
   );
   const customerSpecificRisks = toStringList(

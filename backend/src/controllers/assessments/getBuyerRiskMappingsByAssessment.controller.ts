@@ -5,23 +5,7 @@ import { usersTable } from "../../schema/schema.js";
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsBuyerAssessments } from "../../schema/assessments/cotsBuyerAssessments.js";
 import { getTop5RisksWithMitigations } from "../../services/getTop5RisksFromAssessmentContext.js";
-
-type FrameworkMappingRow = {
-  framework?: unknown;
-  coverage?: unknown;
-  controls?: unknown;
-  notes?: unknown;
-};
-
-function frameworkMappingRowsFromReport(rawReport: unknown): FrameworkMappingRow[] {
-  if (!rawReport || typeof rawReport !== "object") return [];
-  const reportObj = rawReport as Record<string, unknown>;
-  const top = reportObj.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
-  if (Array.isArray(top?.rows)) return top.rows;
-  const generated = reportObj.generatedAnalysis as { fullReport?: Record<string, unknown> } | undefined;
-  const nested = generated?.fullReport?.frameworkMapping as { rows?: FrameworkMappingRow[] } | undefined;
-  return Array.isArray(nested?.rows) ? nested.rows : [];
-}
+import { buildBuyerCotsFrameworkMappingRows } from "../../services/buyerCotsFrameworkMapping.js";
 
 function buildBuyerPayloadForRiskDb(row: {
   industry_sector: string | null;
@@ -105,7 +89,10 @@ const getBuyerRiskMappingsByAssessment = async (req: Request, res: Response): Pr
 
     const riskPayload = buildBuyerPayloadForRiskDb(cotsRow);
     const top5 = await getTop5RisksWithMitigations(riskPayload);
-    const frameworkMappingRows = frameworkMappingRowsFromReport(cotsRow.vendor_risk_assessment_report);
+    const frameworkMappingRows = buildBuyerCotsFrameworkMappingRows(
+      cotsRow.vendor_risk_assessment_report,
+      cotsRow.regulatory_requirments,
+    );
 
     res.status(200).json({
       success: true,

@@ -92,11 +92,11 @@ function appendixRiskMitigationActions(
 import { calculateRoiFromAssessment } from "../../services/roiCalculator.js";
 import {
   resolveFrameworkMappingRowsForAttestation,
-  mergeFrameworkMappingRows,
-  frameworkRowsFromUnknownArray,
   countSubstantiveFrameworkMappingRows,
+  vendorCotsFrameworkMappingRowsFromAttestation,
 } from "../../services/frameworkMappingFromCompliance.js";
-import { buildFrameworkMappingRowsFromVendorCotsAssessment } from "../../services/vendorCotsFrameworkMappingGenerator.js";
+import { narrowVendorCotsFrameworkRowsToAiDomainControls } from "../../services/vendorCotsAttestationFrameworkControls.js";
+import { mergeVendorCotsAttestationRowsWithRegulatoryGaps } from "../../services/vendorCotsFrameworkMappingGenerator.js";
 
 /** Fixed appendix text for all reports; only reviewedBy is set from the user who submitted. */
 const APPENDIX_METHODOLOGY = "AI EVAL 3-Layer Risk Assessment Framework v2.1 — Customer-Specific Analysis";
@@ -150,14 +150,14 @@ async function createCustomerRiskReport(
       : substantiveAttestationFrameworkCount === 0
         ? "incomplete"
         : "available";
-  const frameworkRowsFromAssessmentFormula =
-    buildFrameworkMappingRowsFromVendorCotsAssessment(payloadCots);
-  /** Attestation PDF/snapshot rows first; merge assessment-derived rows (regulatory + CFR formula). */
-  const frameworkRowsAttestationAndFormula = mergeFrameworkMappingRows(
-    frameworkRowsFromDocuments,
-    frameworkRowsFromAssessmentFormula,
-  );
-  const frameworkRowsForStoredReport = frameworkRowsAttestationAndFormula.map((r) => ({
+  /** Type 2 (Vendor COTS): attestation frameworks + gap rows when regulatory selections lack attestation mapping; top 3 controls where applicable. */
+  const frameworkRowsForStoredReport = narrowVendorCotsFrameworkRowsToAiDomainControls(
+    mergeVendorCotsAttestationRowsWithRegulatoryGaps(
+      vendorCotsFrameworkMappingRowsFromAttestation(attestationFrameworkSource),
+      payloadCots,
+    ),
+    payloadCots,
+  ).map((r) => ({
     framework: r.framework,
     coverage: r.coverage,
     controls: r.controls,
@@ -245,7 +245,7 @@ async function createCustomerRiskReport(
   const generated = await generateVendorCotsReport(
     payloadCots,
     top5RisksWithMitigations,
-    frameworkRowsAttestationAndFormula,
+    frameworkRowsForStoredReport,
   );
   if (generated) {
     if (
@@ -328,18 +328,7 @@ async function createCustomerRiskReport(
       ? (fullReport.appendix as Record<string, unknown>)
       : {};
     const calculatedRoi = calculateRoiFromAssessment(payloadCots);
-    const existingFm = fullReport?.frameworkMapping as { rows?: unknown[] } | undefined;
-    const llmFrameworkRows = frameworkRowsFromUnknownArray(existingFm?.rows ?? []);
-    let frameworkMappingRows = mergeFrameworkMappingRows(
-      frameworkRowsForStoredReport,
-      llmFrameworkRows,
-    );
-    if (frameworkMappingRows.length === 0 && frameworkRowsForStoredReport.length > 0) {
-      frameworkMappingRows = frameworkRowsForStoredReport;
-    }
-    if (frameworkMappingRows.length === 0 && llmFrameworkRows.length > 0) {
-      frameworkMappingRows = llmFrameworkRows;
-    }
+    const frameworkMappingRows = frameworkRowsForStoredReport;
 
     report.generatedAnalysis = {
       overallRiskScore: generated.overallRiskScore,

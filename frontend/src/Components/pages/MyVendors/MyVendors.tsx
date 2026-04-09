@@ -1,12 +1,42 @@
-import { ChevronDown, CircleX, Search, ShieldAlert } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, CircleChevronLeft, Search, ShieldAlert } from "lucide-react";
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Modal from "../../UI/Modal";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  FrameworkMappingCardGrid,
+  type FrameworkMappingDetailLocationState,
+} from "../../frameworkMapping/FrameworkMappingCardGrid";
 import Select from "../../UI/Select";
 import { ReportsPagination, REPORTS_PAGE_SIZE } from "../Reports/ReportsPagination";
+import {
+  FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+  parseFrameworkMappingControlsDetail,
+} from "../../../utils/frameworkMappingControlsDisplay";
+import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "../../../styles/page_tabs.css";
 import "./MyVendors.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
+
+const CONTROLS_NOT_PROVIDED_RE = /^not\s*provided\.?$/i;
+
+function isRawControlsFieldNotProvided(value: unknown): boolean {
+  const s = typeof value === "string" ? value.trim() : String(value ?? "").trim();
+  return s.length > 0 && CONTROLS_NOT_PROVIDED_RE.test(s);
+}
+
+function isParsedControlsNotProvidedOnly(
+  rows: ReturnType<typeof parseFrameworkMappingControlsDetail>,
+): boolean {
+  if (rows.length !== 1) return false;
+  const r = rows[0];
+  if (!CONTROLS_NOT_PROVIDED_RE.test(r.description.trim())) return false;
+  const isDash = (x: string) => {
+    const t = x.trim();
+    return t === "—" || t === "-" || t === "";
+  };
+  return isDash(r.controlId) && isDash(r.title);
+}
 
 type AssessmentRow = {
   assessmentId: number | string;
@@ -164,7 +194,7 @@ function filterFrameworkRowsByQuery(rows: FrameworkMappingRow[], query: string):
   if (!q) return rows;
   return rows.filter((row) => {
     const haystack = [
-      formatFrameworkCell(row.framework),
+      formatFrameworkMappingFrameworkForDisplay(row.framework),
       formatFrameworkCell(row.coverage),
       String(row.controls ?? ""),
       String(row.notes ?? ""),
@@ -173,62 +203,6 @@ function filterFrameworkRowsByQuery(rows: FrameworkMappingRow[], query: string):
       .toLowerCase();
     return haystack.includes(q);
   });
-}
-
-/** Split framework control text on semicolons; each segment on its own line in the table. */
-function splitFrameworkControlsLines(v: unknown): string[] {
-  if (v == null) return [];
-  const s = String(v).trim();
-  if (!s) return [];
-  return s
-    .split(";")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function FrameworkControlsCell({ value }: { value: unknown }) {
-  const lines = splitFrameworkControlsLines(value);
-  if (lines.length === 0) return <span>—</span>;
-  return (
-    <div className="risk_mapping_controls_stack">
-      {lines.map((line, idx) => (
-        <div key={idx} className="risk_mapping_control_line">
-          {line}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const CONTROL_LINE_PREVIEW_MAX = 100;
-const NOTES_PREVIEW_MAX_CHARS = 160;
-
-function truncateLineForPreview(s: string, max: number): string {
-  const t = s.trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, Math.max(0, max - 1))}…`;
-}
-
-function getControlsPreviewState(value: unknown): {
-  previewLines: string[];
-  isTruncated: boolean;
-} {
-  const fullLines = splitFrameworkControlsLines(value);
-  if (fullLines.length === 0) return { previewLines: [], isTruncated: false };
-  const longLine = fullLines.some((l) => l.length > CONTROL_LINE_PREVIEW_MAX);
-  const manyLines = fullLines.length > 2;
-  const isTruncated = longLine || manyLines;
-  const previewLines = fullLines
-    .slice(0, 2)
-    .map((l) => truncateLineForPreview(l, CONTROL_LINE_PREVIEW_MAX));
-  return { previewLines, isTruncated };
-}
-
-function getNotesPreviewText(value: unknown): { preview: string; isTruncated: boolean } {
-  const raw = String(value ?? "").trim();
-  if (!raw || raw === "—") return { preview: "", isTruncated: false };
-  if (raw.length <= NOTES_PREVIEW_MAX_CHARS) return { preview: raw, isTruncated: false };
-  return { preview: `${raw.slice(0, NOTES_PREVIEW_MAX_CHARS - 1)}…`, isTruncated: true };
 }
 
 interface FrameworkMultiSelectDropdownProps {
@@ -337,132 +311,97 @@ function FrameworkMultiSelectDropdown({
   );
 }
 
-interface FrameworkMappingCardGridProps {
-  rows: FrameworkMappingRow[];
-  emptyMessage: React.ReactNode;
-}
+function FrameworkMappingControlDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showToggle, setShowToggle] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
 
-function FrameworkMappingCardGrid({ rows, emptyMessage }: FrameworkMappingCardGridProps) {
-  const [detailRow, setDetailRow] = useState<FrameworkMappingRow | null>(null);
-
-  if (rows.length === 0) {
-    return <div className="risk_mapping_empty_text">{emptyMessage}</div>;
-  }
+  useLayoutEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    if (expanded) {
+      setShowToggle(true);
+      return;
+    }
+    setShowToggle(el.scrollHeight > el.clientHeight + 1);
+  }, [text, expanded]);
 
   return (
-    <>
-      <div className="risk_mapping_fw_grid">
-        {rows.map((row, i) => {
-          const fw = formatFrameworkCell(row.framework);
-          const cov = formatFrameworkCell(row.coverage);
-          const { previewLines, isTruncated: controlsTruncated } = getControlsPreviewState(row.controls);
-          const { preview: notesPreview, isTruncated: notesTruncated } = getNotesPreviewText(row.notes);
-          const showKnowMore = controlsTruncated || notesTruncated;
-
-          return (
-            <article key={i} className="risk_mapping_fw_card">
-              <header className="risk_mapping_fw_card_head">
-                <div className="risk_mapping_fw_card_titles">
-                  <h4 className="risk_mapping_fw_card_framework">{fw}</h4>
-                  <p className="risk_mapping_fw_card_coverage">
-                    <span className="risk_mapping_fw_card_label">Coverage</span>
-                    <span className="risk_mapping_fw_card_coverage_value">{cov}</span>
-                  </p>
-                </div>
-              </header>
-
-              <div className="risk_mapping_fw_card_body">
-                <div className="risk_mapping_fw_card_section">
-                  <span className="risk_mapping_fw_card_section_label">Controls</span>
-                  {previewLines.length === 0 ? (
-                    <span className="risk_mapping_fw_card_muted">—</span>
-                  ) : (
-                    <ul className="risk_mapping_fw_controls_preview_list">
-                      {previewLines.map((line, idx) => (
-                        <li key={idx} className="risk_mapping_fw_controls_preview_item">
-                          {line}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {controlsTruncated ? (
-                    <p className="risk_mapping_fw_card_hint">Showing a preview of mapped controls.</p>
-                  ) : null}
-                </div>
-
-                <div className="risk_mapping_fw_card_section">
-                  <span className="risk_mapping_fw_card_section_label">Notes</span>
-                  {notesPreview ? (
-                    <p className="risk_mapping_fw_notes_preview">{notesPreview}</p>
-                  ) : (
-                    <span className="risk_mapping_fw_card_muted">—</span>
-                  )}
-                  {notesTruncated ? (
-                    <p className="risk_mapping_fw_card_hint">Notes are truncated in this card.</p>
-                  ) : null}
-                </div>
-              </div>
-
-              <footer className="risk_mapping_fw_card_footer">
-                <button
-                  type="button"
-                  className="risk_mapping_fw_know_more"
-                  onClick={() => setDetailRow(row)}
-                >
-                  {showKnowMore ? "Know more" : "View details"}
-                </button>
-              </footer>
-            </article>
-          );
-        })}
-      </div>
-
-      <Modal
-        isOpen={detailRow != null}
-        onClose={() => setDetailRow(null)}
-        overlayClassName="profile_modal_overlay"
-        popupClassName=""
+    <div className="fw_mapping_control_detail_desc_wrap">
+      <p
+        ref={descRef}
+        className={
+          expanded
+            ? "fw_mapping_control_detail_desc"
+            : [
+                "fw_mapping_control_detail_desc",
+                "fw_mapping_control_detail_desc_clamped",
+                showToggle ? "fw_mapping_control_detail_desc_clamped_trunc" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")
+        }
       >
-        {detailRow ? (
-          <div className="risk_mapping_fw_modal profile_modal_content">
-            <div className="profile_modal_header risk_mapping_fw_modal_header">
-              <div>
-                <h2 id="risk_mapping_fw_modal_title" className="profile_modal_title risk_mapping_fw_modal_title">
-                  {formatFrameworkCell(detailRow.framework)}
-                </h2>
-                <p className="risk_mapping_fw_modal_sub">Framework mapping</p>
-              </div>
-              <button
-                type="button"
-                className="modal_close_btn"
-                onClick={() => setDetailRow(null)}
-                aria-label="Close"
-              >
-                <CircleX size={20} />
-              </button>
-            </div>
-            <div className="profile_modal_body risk_mapping_fw_modal_body">
-              <div className="risk_mapping_fw_modal_field">
-                <span className="risk_mapping_fw_modal_field_label">Coverage</span>
-                <p className="risk_mapping_fw_modal_field_value">{formatFrameworkCell(detailRow.coverage)}</p>
-              </div>
-              <div className="risk_mapping_fw_modal_field">
-                <span className="risk_mapping_fw_modal_field_label">Controls</span>
-                <div className="risk_mapping_fw_modal_field_block">
-                  <FrameworkControlsCell value={detailRow.controls} />
-                </div>
-              </div>
-              <div className="risk_mapping_fw_modal_field">
-                <span className="risk_mapping_fw_modal_field_label">Notes</span>
-                <div className="risk_mapping_fw_modal_field_block">
-                  <FrameworkNotesCell value={detailRow.notes} />
-                </div>
-              </div>
-            </div>
-          </div>
+        {text}
+        {expanded && showToggle ? (
+          <>
+            {"\u00a0"}
+            <button
+              type="button"
+              className="fw_mapping_control_detail_desc_toggle_embed"
+              onClick={() => setExpanded(false)}
+              aria-expanded={true}
+            >
+              Shrink <ChevronUp width={18}/>
+            </button>
+          </>
         ) : null}
-      </Modal>
-    </>
+      </p>
+      {!expanded && showToggle ? (
+        <button
+          type="button"
+          className="fw_mapping_control_detail_desc_toggle_nextline"
+          onClick={() => setExpanded(true)}
+          aria-expanded={false}
+        >
+          Know more <ChevronRight width={18}/>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function FrameworkMappingControlsDetailModal({ value }: { value: unknown }) {
+  if (isRawControlsFieldNotProvided(value)) {
+    return <p className="fw_mapping_control_detail_not_provided">Not provided</p>;
+  }
+  const rows = parseFrameworkMappingControlsDetail(value).slice(
+    0,
+    FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+  );
+  if (isParsedControlsNotProvidedOnly(rows)) {
+    return <p className="fw_mapping_control_detail_not_provided">Not provided</p>;
+  }
+  if (rows.length === 0) {
+    return <p className="fw_mapping_detail_muted">—</p>;
+  }
+  return (
+    <div className="fw_mapping_controls_detail_list fw_mapping_controls_detail_list_grid">
+      {rows.map((row, idx) => (
+        <div
+          key={`${row.controlId}-${idx}`}
+          className="fw_mapping_control_detail_card"
+        >
+          <div className="fw_mapping_control_detail_head">
+            <span className="fw_mapping_control_detail_id_tag" title={row.controlId}>
+              {row.controlId}
+            </span>
+            <p className="fw_mapping_control_detail_title">{row.title}</p>
+          </div>
+          <FrameworkMappingControlDescription text={row.description} />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -565,7 +504,7 @@ function splitFrameworkNotesSegments(raw: string): string[] {
  * Matches backend buildFrameworkMappingRowsFromComplianceExpiries notes shape.
  */
 function FrameworkNotesCell({ value }: { value: unknown }) {
-  const raw = String(value ?? "").trim();
+  const raw = sanitizeFrameworkMappingNotesForDisplay(value);
   if (!raw || raw === "—") return <span>—</span>;
 
   const parts = splitFrameworkNotesSegments(raw);
@@ -609,7 +548,9 @@ function FrameworkNotesCell({ value }: { value: unknown }) {
   const pills = afterExpiryJoined
     .split(/[;]\s*/)
     .map((s) => s.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((s) => sanitizeFrameworkMappingNotesForDisplay(s))
+    .filter((s) => s && s !== "—");
 
   const looksStructured = Boolean(category || sectionClass || hasExpirySegment);
 
@@ -618,9 +559,9 @@ function FrameworkNotesCell({ value }: { value: unknown }) {
   }
 
   return (
-    <div className="risk_mapping_notes_stack">
+    <div className="risk_mapping_notes_row_card" role="group" aria-label="Notes details">
       {category ? (
-        <div className="risk_mapping_notes_block">
+        <div className="risk_mapping_notes_block risk_mapping_notes_block_category">
           <span className="risk_mapping_notes_label">Category</span>
           <span className="risk_mapping_notes_value">{category}</span>
         </div>
@@ -638,7 +579,7 @@ function FrameworkNotesCell({ value }: { value: unknown }) {
         </div>
       ) : null}
       {pills.length > 0 ? (
-        <div className="risk_mapping_notes_pills" role="list">
+        <div className="risk_mapping_notes_pills risk_mapping_notes_pills_tail" role="list">
           {pills.map((pill, idx) => (
             <span key={idx} className="risk_mapping_notes_pill" role="listitem">
               {pill}
@@ -728,6 +669,8 @@ function buildRiskItems(
 }
 
 const MyVendors = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isVendorPortal, setIsVendorPortal] = useState(() => readIsVendorPortal());
   const [assessments, setAssessments] = useState<AssessmentRow[]>([]);
   const [vendorAssessmentIdsWithReport, setVendorAssessmentIdsWithReport] = useState<Set<string>>(
@@ -814,6 +757,14 @@ const MyVendors = () => {
   }, []);
 
   useEffect(() => {
+    if (location.pathname !== "/riskMappings/framework-detail") return;
+    const st = location.state as FrameworkMappingDetailLocationState | null | undefined;
+    if (!st?.row) {
+      navigate("/riskMappings", { replace: true });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
     const token = sessionStorage.getItem("bearerToken");
     if (!token || !isVendorPortal) {
       setVendorAssessmentIdsWithReport(new Set());
@@ -843,8 +794,8 @@ const MyVendors = () => {
   }, [isVendorPortal]);
 
   useEffect(() => {
-    if (isVendorPortal && activeTab === "gap_analysis") {
-      setActiveTab("risk_register");
+    if (activeTab === "gap_analysis") {
+      setActiveTab(isVendorPortal ? "risk_register" : "framework_mappings");
     }
   }, [isVendorPortal, activeTab]);
 
@@ -1056,7 +1007,7 @@ const MyVendors = () => {
   const uniqueFrameworkNames = useMemo(() => {
     const s = new Set<string>();
     frameworkRowsForTab.forEach((row) => {
-      s.add(formatFrameworkCell(row.framework));
+      s.add(formatFrameworkMappingFrameworkForDisplay(row.framework));
     });
     return [...s].sort((a, b) => {
       if (a === "—") return 1;
@@ -1068,7 +1019,7 @@ const MyVendors = () => {
   useLayoutEffect(() => {
     const next = new Set<string>();
     frameworkRowsForTab.forEach((row) => {
-      next.add(formatFrameworkCell(row.framework));
+      next.add(formatFrameworkMappingFrameworkForDisplay(row.framework));
     });
     setSelectedFrameworkNames(next);
   }, [frameworkRowsForTab]);
@@ -1077,7 +1028,7 @@ const MyVendors = () => {
     if (uniqueFrameworkNames.length === 0) return filteredFrameworkRows;
     if (selectedFrameworkNames.size === 0) return [];
     return filteredFrameworkRows.filter((row) =>
-      selectedFrameworkNames.has(formatFrameworkCell(row.framework)),
+      selectedFrameworkNames.has(formatFrameworkMappingFrameworkForDisplay(row.framework)),
     );
   }, [filteredFrameworkRows, selectedFrameworkNames, uniqueFrameworkNames.length]);
 
@@ -1103,6 +1054,140 @@ const MyVendors = () => {
     const open = riskItems.filter((r) => r.status === "open").length;
     return { total, criticalHigh, mitigated, open };
   }, [riskItems]);
+
+  const frameworkDetailState =
+    location.pathname === "/riskMappings/framework-detail"
+      ? (location.state as FrameworkMappingDetailLocationState | null)
+      : null;
+  const frameworkDetailRow = frameworkDetailState?.row;
+
+  if (location.pathname === "/riskMappings/framework-detail") {
+    if (!frameworkDetailRow) {
+      return null;
+    }
+    const detailAssessmentLabel = frameworkDetailState?.assessmentLabel?.trim();
+    const certificationGap = frameworkDetailState?.certificationGap;
+    const frameworkGap = frameworkDetailState?.frameworkGap;
+    const showCertificationGapCard =
+      frameworkDetailState?.source === "organizational_portal" && certificationGap != null;
+    const showFrameworkMappingGapCard =
+      frameworkDetailState?.source === "organizational_portal" && frameworkGap != null;
+    return (
+      <div className="sec_user_page org_settings_page fw_mapping_detail_page">
+        <div className="fw_mapping_detail_page_inner">
+          <button
+            type="button"
+            className="fw_mapping_detail_back_btn"
+            onClick={() => navigate("/riskMappings")}
+          >
+            <CircleChevronLeft size={20} aria-hidden />
+            Back to Risk &amp; Controls
+          </button>
+          <header className="fw_mapping_detail_page_header">
+            <h1 className="fw_mapping_detail_page_title">
+              {formatFrameworkMappingFrameworkForDisplay(frameworkDetailRow.framework)}
+            </h1>
+            <p className="fw_mapping_detail_page_sub">
+              Framework mapping
+              {detailAssessmentLabel ? ` · ${detailAssessmentLabel}` : ""}
+            </p>
+          </header>
+          <div className="fw_mapping_detail_layout" role="presentation">
+            <article
+              className="fw_mapping_detail_surface_card"
+              aria-labelledby="fw_detail_coverage_heading"
+            >
+              <div className="fw_mapping_detail_card_row">
+                <h2 id="fw_detail_coverage_heading" className="fw_mapping_detail_card_title">
+                  Coverage
+                </h2>
+                <p className="fw_mapping_detail_card_value">
+                  {formatFrameworkCell(frameworkDetailRow.coverage)}
+                </p>
+              </div>
+              <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_divider">
+                <h2 id="fw_detail_notes_heading" className="fw_mapping_detail_card_title">
+                  Notes
+                </h2>
+                <div className="fw_mapping_detail_card_block">
+                  <FrameworkNotesCell value={frameworkDetailRow.notes} />
+                </div>
+              </div>
+            </article>
+            {showCertificationGapCard ? (
+              <article
+                className="fw_mapping_detail_surface_card fw_mapping_detail_gap_card"
+                aria-labelledby="fw_detail_gap_heading"
+              >
+                <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_gap">
+                  <h2 id="fw_detail_gap_heading" className="fw_mapping_detail_card_title">
+                    Certification gap (buyer segment relevance)
+                  </h2>
+                  <div className="fw_mapping_detail_gap_card_body">
+                    <div className="fw_mapping_detail_gap_status_row">
+                      <span className="fw_mapping_detail_card_value fw_mapping_detail_gap_framework">
+                        {certificationGap.frameworkLabel ?? "—"}
+                      </span>
+                      <span
+                        className={
+                          certificationGap.status === "met"
+                            ? "fw_mapping_detail_gap_badge_met"
+                            : "fw_mapping_detail_gap_badge_gap"
+                        }
+                      >
+                        {certificationGap.status === "met" ? "Met" : "Gap"}
+                      </span>
+                    </div>
+                    {certificationGap.points != null && Number.isFinite(certificationGap.points) ? (
+                      <p className="fw_mapping_detail_gap_points">
+                        Points (matrix): {certificationGap.points}
+                      </p>
+                    ) : null}
+                    {certificationGap.detail != null && String(certificationGap.detail).trim() !== "" ? (
+                      <p className="fw_mapping_detail_gap_detail">
+                        {String(certificationGap.detail).trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ) : null}
+            {showFrameworkMappingGapCard ? (
+              <article
+                className="fw_mapping_detail_surface_card fw_mapping_detail_gap_card"
+                aria-labelledby="fw_detail_mapping_gap_heading"
+              >
+                <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_gap">
+                  <h2 id="fw_detail_mapping_gap_heading" className="fw_mapping_detail_card_title">
+                    Framework mapping gap
+                  </h2>
+                  <div className="fw_mapping_detail_gap_card_body">
+                    <div className="fw_mapping_detail_gap_status_row">
+                      <span className="fw_mapping_detail_card_value fw_mapping_detail_gap_framework">
+                        {formatFrameworkMappingFrameworkForDisplay(frameworkDetailRow.framework)}
+                      </span>
+                      <span className="fw_mapping_detail_gap_badge_gap">Gap</span>
+                    </div>
+                    <p className="fw_mapping_detail_gap_detail">{frameworkGap.detail}</p>
+                  </div>
+                </div>
+              </article>
+            ) : null}
+            <article className="fw_mapping_detail_surface_card" aria-labelledby="fw_detail_controls_heading">
+              <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_controls">
+                <h2 id="fw_detail_controls_heading" className="fw_mapping_detail_card_title">
+                  Controls
+                </h2>
+                <div className="fw_mapping_detail_card_block">
+                  <FrameworkMappingControlsDetailModal value={frameworkDetailRow.controls} />
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sec_user_page org_settings_page">
@@ -1158,6 +1243,7 @@ const MyVendors = () => {
           >
             Framework Mappings
           </button>
+          {/* Gap Analysis tab temporarily hidden
           {!isVendorPortal ? (
             <button
               type="button"
@@ -1169,6 +1255,7 @@ const MyVendors = () => {
               Gap Analysis
             </button>
           ) : null}
+          */}
         </div>
         <div className="risk_mapping_search_wrap">
           <Search size={18} className="risk_mapping_search_icon" aria-hidden />
@@ -1311,7 +1398,11 @@ const MyVendors = () => {
                     Select at least one framework in the filter above to see mapped controls.
                   </p>
                 ) : (
-                  <FrameworkMappingCardGrid rows={frameworkGridRows} emptyMessage="" />
+                  <FrameworkMappingCardGrid
+                    rows={frameworkGridRows}
+                    emptyMessage=""
+                    assessmentLabel={assessmentDetail?.assessmentLabel}
+                  />
                 )}
               </>
             ) : (
@@ -1325,11 +1416,17 @@ const MyVendors = () => {
                     Select at least one framework in the filter above to see mapped controls.
                   </p>
                 ) : (
-                  <FrameworkMappingCardGrid rows={frameworkGridRows} emptyMessage="" />
+                  <FrameworkMappingCardGrid
+                    rows={frameworkGridRows}
+                    emptyMessage=""
+                    assessmentLabel={assessmentDetail?.assessmentLabel}
+                  />
                 )}
               </>
             )}
           </section>
+        ) : null}
+        {/* Gap Analysis panel temporarily hidden (tab commented above; activeTab gap_analysis redirects in useEffect)
         ) : (
           <section className="risk_mapping_panel">
             <p className="risk_mapping_empty_text">
@@ -1337,6 +1434,7 @@ const MyVendors = () => {
             </p>
           </section>
         )}
+        */}
     </div>
   );
 };

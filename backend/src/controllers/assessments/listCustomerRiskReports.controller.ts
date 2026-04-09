@@ -6,11 +6,7 @@ import { customerRiskAssessmentReports } from "../../schema/assessments/customer
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsVendorAssessments } from "../../schema/assessments/cotsVendorAssessments.js";
 import { vendorSelfAttestations } from "../../schema/assessments/vendorSelfAttestations.js";
-import {
-  resolveFrameworkMappingRowsForAttestation,
-  extractFrameworkMappingRowsFromCustomerRiskReport,
-  mergeFrameworkMappingRows,
-} from "../../services/frameworkMappingFromCompliance.js";
+import { vendorCotsFrameworkMappingRowsForListView } from "../../services/frameworkMappingFromCompliance.js";
 
 /**
  * GET /customerRiskReports
@@ -89,18 +85,13 @@ const listCustomerRiskReports = async (req: Request, res: Response): Promise<voi
       .limit(100);
 
     const reports = rows.map((r) => {
-      const fromAttestation = resolveFrameworkMappingRowsForAttestation({
-        framework_mapping_rows: r.framework_mapping_rows,
-        compliance_document_expiries: r.compliance_document_expiries,
-      } as Record<string, unknown>);
-      const fromStoredReport = extractFrameworkMappingRowsFromCustomerRiskReport(r.report);
-      const merged = mergeFrameworkMappingRows(fromAttestation, fromStoredReport);
-      const frameworkMappingRows =
-        merged.length > 0
-          ? merged
-          : fromAttestation.length > 0
-            ? fromAttestation
-            : fromStoredReport;
+      const frameworkMappingRows = vendorCotsFrameworkMappingRowsForListView(
+        {
+          framework_mapping_rows: r.framework_mapping_rows,
+          compliance_document_expiries: r.compliance_document_expiries,
+        } as Record<string, unknown>,
+        r.report,
+      );
       return {
         id: r.id,
         assessmentId: r.assessmentId,

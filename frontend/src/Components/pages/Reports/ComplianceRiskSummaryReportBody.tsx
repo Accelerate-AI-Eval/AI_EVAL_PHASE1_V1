@@ -1,4 +1,5 @@
 import { FileCheck, Gavel, ListOrdered, Scale, ShieldAlert } from "lucide-react";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "../Assessments/BuyerAssessment/buyer_vendor_risk_report.css";
 
 export type CrsPayload = {
@@ -154,7 +155,7 @@ export default function ComplianceRiskSummaryReportBody({ data }: { data: CrsPay
               <tbody>
                 {mapping.map((row, i) => (
                   <tr key={i}>
-                    <td>{row.framework ?? "—"}</td>
+                    <td>{formatFrameworkMappingFrameworkForDisplay(row.framework)}</td>
                     <td>{row.requirement ?? "—"}</td>
                     <td>{row.vendorControlOrEvidence ?? "—"}</td>
                   </tr>

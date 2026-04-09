@@ -12,7 +12,12 @@ import {
   groupRisksByDomain,
   type ReportRiskScope,
 } from "../../../utils/reportRiskScope"
-import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay"
+import {
+  frameworkControlsDisplayLinesTopRanked,
+  FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+} from "../../../utils/frameworkMappingControlsDisplay"
+import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay"
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay"
 import { riskRowsToSummaryPoints, stringsToSummaryPoints } from "../../../utils/summarizeRiskPoints"
 import LoadingMessage from "../../UI/LoadingMessage"
 import "../UserManagement/user_management.css"
@@ -883,11 +888,16 @@ export default function ReportDetail() {
                   <tbody>
                     {frameworkRows.map((row, i) => (
                       <tr key={i}>
-                        <td className="report_framework_td_name">{formatReportValue(row.framework)}</td>
+                        <td className="report_framework_td_name">
+                          {formatFrameworkMappingFrameworkForDisplay(row.framework)}
+                        </td>
                         <td className="report_framework_td_coverage">{formatReportValue(row.coverage)}</td>
                         <td className="report_framework_td_controls">
                           {(() => {
-                            const lines = frameworkControlsDisplayLines(row.controls)
+                            const lines = frameworkControlsDisplayLinesTopRanked(
+                              row.controls,
+                              FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+                            )
                             if (lines.length === 0) return formatReportValue(row.controls)
                             return (
                               <div className="report_framework_controls_stack">
@@ -900,7 +910,9 @@ export default function ReportDetail() {
                             )
                           })()}
                         </td>
-                        <td className="report_framework_td_notes">{formatReportValue(row.notes)}</td>
+                        <td className="report_framework_td_notes">
+                          {formatReportValue(sanitizeFrameworkMappingNotesForDisplay(row.notes))}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

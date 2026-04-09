@@ -1,0 +1,192 @@
+/* Framework mapping cards (Risk & Controls + organizational portal regulatory rows) */
+.risk_mapping_empty_text {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+.risk_mapping_fw_grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  margin: 1em 0 0 0;
+}
+
+.risk_mapping_fw_card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5eaf2;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 6px rgba(0, 13, 51, 0.06);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.risk_mapping_fw_card:hover {
+  border-color: #dbeafe;
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.1);
+}
+
+.risk_mapping_fw_card_head {
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.risk_mapping_fw_card_framework {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.risk_mapping_fw_card_titles {
+  min-width: 0;
+}
+
+.risk_mapping_fw_card_coverage {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.risk_mapping_fw_card_label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.risk_mapping_fw_card_coverage_value {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.risk_mapping_fw_card_body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 0;
+}
+
+.risk_mapping_fw_card_section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.risk_mapping_fw_card_section_label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.risk_mapping_fw_controls_preview_list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #4f6480;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.risk_mapping_fw_controls_preview_item {
+  margin: 0.15rem 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.risk_mapping_fw_notes_preview {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #374151;
+  word-break: break-word;
+}
+
+.risk_mapping_fw_card_muted {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.risk_mapping_fw_card_footer {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  padding-bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border-top: 1px solid #f1f5f9;
+}
+
+.risk_mapping_fw_card_footer_left {
+  min-width: 0;
+  flex: 1;
+}
+
+.risk_mapping_fw_card_category_value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk_mapping_fw_card_category_icon {
+  flex-shrink: 0;
+  color: var(--main-auth-button-color, #2563eb);
+}
+
+.risk_mapping_fw_know_more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.risk_mapping_fw_know_more:hover {
+  color: #1d4ed8;
+}
+
+.risk_mapping_fw_know_more svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.risk_mapping_fw_know_more:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

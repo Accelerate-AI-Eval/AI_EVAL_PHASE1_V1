@@ -76,7 +76,7 @@ function App() {
                   path="/vendor-directory/intelligence/:vendorId/:productId"
                   element={<VendorDirectoryIntelligence />}
                 />
-                <Route path="/riskMappings" element={<MyVendors />} />
+                <Route path="/riskMappings/*" element={<MyVendors />} />
                 <Route path="/security_center" element={<Compilance />} />
                 <Route path="/governance" element={<Goverance />} />
                 <Route path="/salesEnablement" element={<SalesEnablement />} />

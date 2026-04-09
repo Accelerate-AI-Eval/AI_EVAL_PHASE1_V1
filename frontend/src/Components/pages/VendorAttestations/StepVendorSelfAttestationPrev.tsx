@@ -9,6 +9,8 @@ import { VENDOR_SELF_ATTESTATION } from "../../../constants/vendorAttestionData"
 import { ATTESTATION_SECTION_FIELDS } from "../../../constants/vendorAttestationFields";
 import { formatPreviewValueAsString } from "../../../utils/formatPreviewValue";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
+import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "../VendorOnboarding/StepVendorOnboardingPreview.css";
 import "./vendor_attestation_preview.css";
 
@@ -403,10 +405,12 @@ function StepVendorSelfAttestationPrev({
                 <tbody>
                   {frameworkMappingRows.map((row, i) => (
                     <tr key={i}>
-                      <td>{formatFrameworkCell(row.framework)}</td>
+                      <td>{formatFrameworkMappingFrameworkForDisplay(row.framework)}</td>
                       <td>{formatFrameworkCell(row.coverage)}</td>
                       <td>{formatFrameworkCell(row.controls)}</td>
-                      <td>{formatFrameworkCell(row.notes)}</td>
+                      <td>
+                        {formatFrameworkCell(sanitizeFrameworkMappingNotesForDisplay(row.notes))}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

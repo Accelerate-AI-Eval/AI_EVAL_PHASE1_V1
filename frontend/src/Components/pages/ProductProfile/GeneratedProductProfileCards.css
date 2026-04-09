@@ -75,7 +75,7 @@
 
 .generated_profile_trust_ring_value {
   font-size: 2.1rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #111827;
 }
 
@@ -84,7 +84,7 @@
   font-size: 0.58rem;
   letter-spacing: 0.08em;
   color: #64748b;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .generated_profile_trust_summary_block {
@@ -107,7 +107,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 600;
   color: #64748b;
 }
 
@@ -381,7 +381,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #6b7280;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .generated_profile_product_info_v,

@@ -32,19 +32,6 @@ const SECTION_ID_TO_VIS_KEY: Record<number, keyof SectionVisibility> = {
   9: "vendorManagement",
 };
 
-type FrameworkIntelRow = {
-  framework?: unknown;
-  coverage?: unknown;
-  controls?: unknown;
-  notes?: unknown;
-};
-
-function formatFrameworkCell(v: unknown): string {
-  if (v == null) return "—";
-  const s = String(v).trim();
-  return s || "—";
-}
-
 function parseGeneratedReport(raw: unknown): GeneratedProductProfileReport | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
@@ -73,8 +60,6 @@ const VendorDirectoryIntelligence = () => {
   const [productName, setProductName] = useState<string>(
     ((location.state as { productName?: string } | null)?.productName ?? "").trim(),
   );
-  const [frameworkMappingRows, setFrameworkMappingRows] = useState<FrameworkIntelRow[]>([]);
-
   useEffect(() => {
     document.title = "AI Eval | Vendor Intelligence";
   }, []);
@@ -91,7 +76,6 @@ const VendorDirectoryIntelligence = () => {
     const fetchDetail = async () => {
       setLoading(true);
       setError(null);
-      setFrameworkMappingRows([]);
       try {
         const res = await fetch(
           `${BASE_URL}/vendorDirectory/${encodeURIComponent(vendorId)}/products/${encodeURIComponent(productId)}`,
@@ -107,8 +91,6 @@ const VendorDirectoryIntelligence = () => {
         if (!cancelled) {
           if (!productName) setProductName(String(att.product_name ?? "Product"));
           setReport(parsed);
-          const fw = att.framework_mapping_rows;
-          setFrameworkMappingRows(Array.isArray(fw) ? (fw as FrameworkIntelRow[]) : []);
           const vis = data.sectionVisibility as Record<string, unknown> | undefined;
           setSectionVisibility(
             vis
@@ -204,34 +186,6 @@ const VendorDirectoryIntelligence = () => {
           <div className="generated_profile_wrap">
             <GeneratedProductProfileCards report={visibleReport} showAtAGlance />
           </div>
-
-          {frameworkMappingRows.length > 0 && (
-            <section className="vendor_intel_framework_section" aria-label="Framework mapping">
-              <h2 className="vendor_intel_framework_heading">Framework mapping</h2>
-              <div className="vendor_intel_framework_table_wrap">
-                <table className="vendor_intel_framework_table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Framework</th>
-                      <th scope="col">Coverage</th>
-                      <th scope="col">Controls</th>
-                      <th scope="col">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {frameworkMappingRows.map((row, i) => (
-                      <tr key={i}>
-                        <td>{formatFrameworkCell(row.framework)}</td>
-                        <td>{formatFrameworkCell(row.coverage)}</td>
-                        <td>{formatFrameworkCell(row.controls)}</td>
-                        <td>{formatFrameworkCell(row.notes)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
         </>
       )}
       {!loading && !error && visibleReport && visibleReport.sections.length === 0 && (

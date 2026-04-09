@@ -29,6 +29,25 @@ function parseJsonValue<T = unknown>(v: unknown): T | undefined {
 const MAX_FRAMEWORK_MAPPING_CONTROLS_CHARS = 12000;
 const MAX_STORED_CONTROL_DESC = 4000;
 
+/** User-visible framework column: omit redundant SOC 2 (2017) trust-criteria year. */
+function frameworkMappingFrameworkColumnFromParts(
+  framework: string,
+  version: string | undefined,
+): string {
+  const fw = String(framework ?? "").trim();
+  const ver = String(version ?? "").trim();
+  if (!ver) return fw;
+  if (/^soc\s*2$/i.test(fw.replace(/\s+/g, " ")) && ver === "2017") return fw;
+  return `${fw} (${ver})`;
+}
+
+function stripSoc2TrustCriteriaYearFromFrameworkLabel(label: string): string {
+  let s = String(label ?? "").trim().replace(/\s+/g, " ");
+  if (!s || s === "—") return s;
+  s = s.replace(/^SOC\s*2\s*\(\s*2017\s*\)/i, "SOC 2");
+  return s.replace(/\s+/g, " ").trim();
+}
+
 function descriptionFromControlObject(o: Record<string, unknown>): string {
   const d = String(o.description ?? "").trim();
   if (d) return d;
@@ -146,6 +165,55 @@ function stringifyControlsMap(map: FrameworkMappingControlsMap): string {
   return JSON.stringify(map).slice(0, MAX_FRAMEWORK_MAPPING_CONTROLS_CHARS);
 }
 
+/** Default max control entries persisted per framework mapping row (Vendor COTS reports, etc.). */
+export const FRAMEWORK_MAPPING_STORED_CONTROLS_MAX = 3;
+
+/**
+ * Keep at most `maxControls` entries when the `controls` field is JSON (object or array).
+ * Plain semicolon-separated text is returned unchanged. Used so stored reports only retain top N controls.
+ */
+export function capFrameworkMappingControlsFieldToTopN(
+  frameworkRowLabel: string,
+  controlsField: string,
+  maxControls: number = FRAMEWORK_MAPPING_STORED_CONTROLS_MAX,
+): string {
+  const s = String(controlsField ?? "").trim();
+  if (!s || s === "—") return s;
+  const cap = Math.min(99, Math.max(1, maxControls));
+  if (!(s.startsWith("{") || s.startsWith("["))) {
+    const segments = s
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (segments.length <= cap) return s;
+    return segments.slice(0, cap).join("; ");
+  }
+
+  const parsed = parseJsonValue<unknown>(s);
+  if (parsed == null) return s;
+
+  if (Array.isArray(parsed)) {
+    const normalized = normalizeStoredControlObjects(frameworkRowLabel, parsed);
+    const capped = normalized.slice(0, cap);
+    if (capped.length === 0) return s;
+    return stringifyControlsMap(controlsMapFromNormalized(capped));
+  }
+  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+    const map = normalizeControlsObjectFromRecord(
+      frameworkRowLabel,
+      parsed as Record<string, unknown>,
+    );
+    const entries = Object.entries(map).slice(0, cap);
+    if (entries.length === 0) return s;
+    const capped: FrameworkMappingControlsMap = {};
+    for (const [k, v] of entries) {
+      capped[k] = v;
+    }
+    return stringifyControlsMap(capped);
+  }
+  return s;
+}
+
 /**
  * Serialize `controls` for DB/report storage: JSON object keyed by control id, e.g.
  * `{ "PI1.1.2": { "description": "…", "title": "…" } }`. Legacy arrays are converted.
@@ -243,6 +311,22 @@ export function mergeFrameworkMappingRows(
   return out;
 }
 
+/**
+ * Same merge as the customer risk reports list: attestation-derived rows first,
+ * then supplemental rows from the stored analysis report (e.g. regulatory gap “Not provided”).
+ */
+export function vendorCotsFrameworkMappingRowsForListView(
+  attestation: Record<string, unknown> | null | undefined,
+  storedReport: unknown,
+): FrameworkMappingTableRow[] {
+  const fromAttestation = resolveFrameworkMappingRowsForAttestation(attestation ?? undefined);
+  const fromStoredReport = extractFrameworkMappingRowsFromCustomerRiskReport(storedReport);
+  const merged = mergeFrameworkMappingRows(fromAttestation, fromStoredReport);
+  if (merged.length > 0) return merged;
+  if (fromAttestation.length > 0) return fromAttestation;
+  return fromStoredReport;
+}
+
 /** Normalize loose objects (e.g. LLM JSON) into table rows. */
 export function frameworkRowsFromUnknownArray(
   rows: unknown,
@@ -278,16 +362,59 @@ type ExpiryEntry = {
   };
 };
 
+const FRAMEWORK_NOTES_FILENAME_EXT =
+  /\.(pdf|docx?|png|jpe?g|gif|webp|zip|txt|csv|xlsx?|pptx?|rtf|heic|tiff?)$/i;
+
+/** True when a notes segment is an upload / document filename (not structured metadata like `Category:`). */
+function frameworkNotesSegmentLooksLikeFileName(segment: string): boolean {
+  const t = segment.trim();
+  if (!t) return false;
+  if (FRAMEWORK_NOTES_FILENAME_EXT.test(t)) return true;
+  return false;
+}
+
+function frameworkNotesSegmentIsStructured(segment: string): boolean {
+  return /^(Category|Class|Expiry):/i.test(segment.trim());
+}
+
+/**
+ * Drop filename-only notes and any segment that looks like `…FINAL.pdf`, whether separated by ·, |, or newlines.
+ */
+function sanitizeFrameworkMappingNotes(raw: string): string {
+  const s = String(raw ?? "").trim();
+  if (!s || s === "—") return "—";
+
+  if (frameworkNotesSegmentLooksLikeFileName(s) && !frameworkNotesSegmentIsStructured(s)) {
+    return "—";
+  }
+
+  const segments = s
+    .split(/\s*·\s*/)
+    .flatMap((p) => p.split(/\s*\|\s*/))
+    .flatMap((p) => p.split(/\r?\n/))
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .filter(
+      (p) =>
+        !frameworkNotesSegmentLooksLikeFileName(p) ||
+        frameworkNotesSegmentIsStructured(p),
+    );
+  const out = segments.join(" · ").trim();
+  return out ? out.slice(0, 2000) : "—";
+}
+
 /** Normalize a loose framework-mapping row; ensures control JSON includes descriptions where possible. */
 export function normalizeFrameworkMappingTableRow(
   r: Record<string, unknown>,
 ): FrameworkMappingTableRow {
-  const framework = String(r.framework ?? "—").slice(0, 500);
+  const rawFw = String(r.framework ?? "—").slice(0, 500);
+  const framework =
+    stripSoc2TrustCriteriaYearFromFrameworkLabel(rawFw).slice(0, 500) || "—";
   return {
     framework,
     coverage: String(r.coverage ?? "—").slice(0, 500),
     controls: serializeFrameworkMappingControlsField(framework, r.controls),
-    notes: String(r.notes ?? "—").slice(0, 2000),
+    notes: sanitizeFrameworkMappingNotes(String(r.notes ?? "—")),
   };
 }
 
@@ -322,7 +449,6 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
       const entry = raw as ExpiryEntry & { fileName?: string };
       const fm = entry.frameworkMapping;
       if (!fm?.framework) continue;
-      const fileName = String(entry.fileName ?? "document").slice(0, 500);
       const controlsText: string =
         fm.controls?.length > 0
           ? formatExpiryFrameworkControlsForStorage(fm.framework, fm.version, fm.controls)
@@ -331,7 +457,6 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
         ? "Evidence-linked controls"
         : "Partial / unverified";
       const notes = [
-        fileName,
         entry.category ? `Category: ${entry.category}` : "",
         entry.documentClass ? `Class: ${entry.documentClass}` : "",
         entry.expiryAt ? `Expiry: ${entry.expiryAt}` : "",
@@ -341,9 +466,10 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
         .join(" · ")
         .slice(0, 500);
       rows.push({
-        framework: fm.version
-          ? `${fm.framework} (${fm.version})`
-          : fm.framework,
+        framework: frameworkMappingFrameworkColumnFromParts(
+          String(fm.framework),
+          fm.version,
+        ),
         coverage,
         controls: controlsText || "—",
         notes: notes || "—",
@@ -353,7 +479,7 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
   }
   if (typeof parsed !== "object") return [];
   const rows: FrameworkMappingTableRow[] = [];
-  for (const [fileName, raw] of Object.entries(
+  for (const [, raw] of Object.entries(
     parsed as Record<string, unknown>,
   )) {
     const entry = raw as ExpiryEntry;
@@ -367,7 +493,6 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
       ? "Evidence-linked controls"
       : "Partial / unverified";
     const notes = [
-      fileName,
       entry.category ? `Category: ${entry.category}` : "",
       entry.documentClass ? `Class: ${entry.documentClass}` : "",
       entry.expiryAt ? `Expiry: ${entry.expiryAt}` : "",
@@ -377,7 +502,10 @@ export function buildFrameworkMappingRowsFromComplianceExpiries(
       .join(" · ")
       .slice(0, 500);
     rows.push({
-      framework: fm.version ? `${fm.framework} (${fm.version})` : fm.framework,
+      framework: frameworkMappingFrameworkColumnFromParts(
+        String(fm.framework),
+        fm.version,
+      ),
       coverage,
       controls: controlsText || "—",
       notes: notes || "—",
@@ -408,6 +536,34 @@ export function resolveFrameworkMappingRowsForAttestation(
   const parsedExp = parseJsonValue<unknown>(exp);
   if (parsedExp != null) exp = parsedExp;
   return buildFrameworkMappingRowsFromComplianceExpiries(exp);
+}
+
+/** Vendor COTS (type 2): single placeholder when linked attestation has no compliance framework mapping. */
+export const VENDOR_COTS_ATTESTATION_FRAMEWORK_MAPPING_NOT_PROVIDED_ROW: FrameworkMappingTableRow =
+  {
+    framework: "Compliance framework mapping",
+    coverage: "Not provided",
+    controls: "Not provided",
+    notes: "No compliance framework mapping was provided on the linked product attestation.",
+  };
+
+/**
+ * Vendor COTS framework mapping uses only the linked product attestation (compliance parse / snapshot).
+ * If there is no attestation data or no substantive mapping rows, returns one "Not provided" row.
+ */
+export function vendorCotsFrameworkMappingRowsFromAttestation(
+  attestation: Record<string, unknown> | null | undefined,
+): FrameworkMappingTableRow[] {
+  if (!attestation) {
+    return [{ ...VENDOR_COTS_ATTESTATION_FRAMEWORK_MAPPING_NOT_PROVIDED_ROW }];
+  }
+  const substantive = resolveFrameworkMappingRowsForAttestation(attestation).filter(
+    isSubstantiveFrameworkMappingRow,
+  );
+  if (substantive.length === 0) {
+    return [{ ...VENDOR_COTS_ATTESTATION_FRAMEWORK_MAPPING_NOT_PROVIDED_ROW }];
+  }
+  return substantive;
 }
 
 /**

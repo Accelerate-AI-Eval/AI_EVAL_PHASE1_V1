@@ -10,8 +10,7 @@ import { riskMappings } from "../../schema/risks/riskMappings.js";
 import { riskTop5Mitigations } from "../../schema/risks/riskTop5Mitigations.js";
 import {
   resolveFrameworkMappingRowsForAttestation,
-  mergeFrameworkMappingRows,
-  extractFrameworkMappingRowsFromCustomerRiskReport,
+  vendorCotsFrameworkMappingRowsForListView,
   countSubstantiveFrameworkMappingRows,
 } from "../../services/frameworkMappingFromCompliance.js";
 
@@ -281,14 +280,10 @@ const getCustomerRiskReportById = async (req: Request, res: Response): Promise<v
     const fromAttestation = attestationSrc
       ? resolveFrameworkMappingRowsForAttestation(attestationSrc)
       : [];
-    const fromStoredReport = extractFrameworkMappingRowsFromCustomerRiskReport(reportObj);
-    const mergedFrameworkRows = mergeFrameworkMappingRows(fromAttestation, fromStoredReport);
-    const frameworkRowsForResponse =
-      mergedFrameworkRows.length > 0
-        ? mergedFrameworkRows
-        : fromAttestation.length > 0
-          ? fromAttestation
-          : fromStoredReport;
+    const frameworkRowsForResponse = vendorCotsFrameworkMappingRowsForListView(
+      attestationSrc ?? null,
+      reportObj,
+    );
     if (frameworkRowsForResponse.length > 0) {
       const mapped = frameworkRowsForResponse.map((r) => ({
         framework: r.framework,

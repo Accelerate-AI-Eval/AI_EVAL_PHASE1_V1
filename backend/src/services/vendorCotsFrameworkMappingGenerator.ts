@@ -5,6 +5,7 @@
  */
 
 import type { FrameworkMappingTableRow } from "./frameworkMappingFromCompliance.js";
+import { VENDOR_COTS_ATTESTATION_FRAMEWORK_MAPPING_NOT_PROVIDED_ROW } from "./frameworkMappingFromCompliance.js";
 import { getVendorCotsRegulatoryComplexitySnapshot } from "../controllers/agents/vendorCotsReportAgent.js";
 
 /** Exact values from frontend `VENDOR_COTS_REGULATORY_REQUIREMENTS_OPTIONS`. */
@@ -92,6 +93,156 @@ const REGULATORY_OPTION_TO_ROW: Record<
 function isExcludedRegulatorySelection(raw: string): boolean {
   const t = raw.trim().toLowerCase();
   return !t || t === "none/not applicable" || t === "none" || t === "n/a";
+}
+
+/**
+ * Canonical framework labels from Vendor COTS regulatory requirement selections (same basis as CFR scoring).
+ */
+export function getVendorCotsRegulatoryFrameworkNamesFromPayload(
+  payload: Record<string, unknown>,
+): string[] {
+  const snap = getVendorCotsRegulatoryComplexitySnapshot(payload);
+  const otherText = String(
+    payload.regulatory_requirements_other ?? payload.regulatoryRequirementsOther ?? "",
+  ).trim();
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  const pushFw = (fw: string) => {
+    const t = fw.trim();
+    if (!t) return;
+    const k = t.toLowerCase().replace(/\s+/g, " ");
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(t);
+  };
+
+  for (const sel of snap.regulatory) {
+    if (isExcludedRegulatorySelection(sel)) continue;
+    if (sel === "Other (Specify in Notes)") {
+      if (otherText.length > 0) {
+        pushFw(`Customer-specified: ${otherText.slice(0, 200)}`);
+      }
+      continue;
+    }
+    const mapped = REGULATORY_OPTION_TO_ROW[sel];
+    if (mapped) {
+      pushFw(mapped.framework);
+      continue;
+    }
+    pushFw(sel.trim().slice(0, 200));
+  }
+  return out;
+}
+
+function normalizeFrameworkMatchKey(s: string): string {
+  return String(s ?? "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * True if some attestation mapping row appears to cover the regulatory framework (name / version variants).
+ */
+export function attestationFrameworkRowsCoverRegulatoryFramework(
+  attestationRows: FrameworkMappingTableRow[],
+  regulatoryFrameworkName: string,
+): boolean {
+  const req = normalizeFrameworkMatchKey(regulatoryFrameworkName);
+  if (!req) return false;
+  for (const r of attestationRows) {
+    const lbl = normalizeFrameworkMatchKey(String(r.framework ?? ""));
+    if (!lbl) continue;
+    if (lbl.includes(req) || req.includes(lbl)) return true;
+    const reqParts = req.split(" ").filter((p) => p.length >= 3);
+    if (reqParts.some((p) => lbl.includes(p))) return true;
+    const lblParts = lbl.split(" ").filter((p) => p.length >= 3);
+    if (lblParts.some((p) => req.includes(p))) return true;
+  }
+  return false;
+}
+
+/** Coverage text for rows where the customer required a framework but attestation has no mapping. */
+export const VENDOR_COTS_REGULATORY_GAP_COVERAGE = "Not provided";
+
+/** Gap row when customer selected a regulatory framework but attestation has no mapping for it. */
+export function vendorCotsRegulatoryAttestationGapRow(
+  frameworkName: string,
+): FrameworkMappingTableRow {
+  return {
+    framework: frameworkName,
+    coverage: VENDOR_COTS_REGULATORY_GAP_COVERAGE,
+    controls: "Not provided",
+    notes:
+      "Selected on the Vendor COTS assessment; this framework is not present in the linked product attestation framework mapping.",
+  };
+}
+
+/**
+ * When the assessment lists regulatory requirements, keep only attestation rows whose framework matches
+ * at least one of those selections (same fuzzy matching as gap detection).
+ */
+function filterAttestationRowsToSelectedRegulatoryFrameworks(
+  attestationRows: FrameworkMappingTableRow[],
+  requiredFrameworkNames: string[],
+): FrameworkMappingTableRow[] {
+  if (!requiredFrameworkNames.length) return attestationRows;
+  return attestationRows.filter((row) =>
+    requiredFrameworkNames.some((req) =>
+      attestationFrameworkRowsCoverRegulatoryFramework([row], req),
+    ),
+  );
+}
+
+/**
+ * After resolving attestation-only rows: if the customer selected regulatory requirements, show only
+ * attestation frameworks that match those selections; add gap rows for selections missing from attestation.
+ * With no substantive regulatory selections, all attestation mapping rows are shown (no filtering).
+ */
+export function mergeVendorCotsAttestationRowsWithRegulatoryGaps(
+  attestationBasedRows: FrameworkMappingTableRow[],
+  payload: Record<string, unknown>,
+): FrameworkMappingTableRow[] {
+  const required = getVendorCotsRegulatoryFrameworkNamesFromPayload(payload);
+  const ph = VENDOR_COTS_ATTESTATION_FRAMEWORK_MAPPING_NOT_PROVIDED_ROW;
+
+  const isGlobalPlaceholderOnly =
+    attestationBasedRows.length === 1 &&
+    String(attestationBasedRows[0].framework ?? "").trim() === ph.framework &&
+    String(attestationBasedRows[0].coverage ?? "").trim() === "Not provided";
+
+  const substantiveAttestation = isGlobalPlaceholderOnly
+    ? []
+    : attestationBasedRows.filter(
+        (r) =>
+          !(
+            String(r.framework ?? "").trim() === ph.framework &&
+            String(r.coverage ?? "").trim() === "Not provided"
+          ),
+      );
+
+  const gaps: FrameworkMappingTableRow[] = [];
+  for (const fw of required) {
+    if (!attestationFrameworkRowsCoverRegulatoryFramework(substantiveAttestation, fw)) {
+      gaps.push(vendorCotsRegulatoryAttestationGapRow(fw));
+    }
+  }
+
+  const displayedAttestation = filterAttestationRowsToSelectedRegulatoryFrameworks(
+    substantiveAttestation,
+    required,
+  );
+
+  if (substantiveAttestation.length === 0 && gaps.length === 0) {
+    return attestationBasedRows.length > 0 ? attestationBasedRows : [{ ...ph }];
+  }
+  if (displayedAttestation.length === 0 && gaps.length > 0) {
+    return gaps;
+  }
+  return [...displayedAttestation, ...gaps];
 }
 
 /**

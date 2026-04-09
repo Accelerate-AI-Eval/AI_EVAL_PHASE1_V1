@@ -3,7 +3,14 @@
  */
 import React from "react";
 import { Layers, ListChecks } from "lucide-react";
-import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay";
+import {
+  frameworkControlsDisplayLines,
+  frameworkControlsDisplayLinesTopRanked,
+  FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+} from "../../../utils/frameworkMappingControlsDisplay";
+import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
+import { FrameworkMappingCardGrid } from "../../frameworkMapping/FrameworkMappingCardGrid";
 
 export type FrameworkMappingRow = {
   framework: string;
@@ -22,7 +29,6 @@ export type CertificationGapRow = {
 export type VendorOrganizationalPortal = {
   frameworkMappingRows: FrameworkMappingRow[];
   attestationFrameworkRows: FrameworkMappingRow[];
-  /** False when Vendor COTS has no substantive regulatory requirements (None/N/A only); engagement mapping is omitted. */
   regulatoryRequirementsDocumentProvided?: boolean;
   buyerIndustrySegment: string;
   relevantFrameworks: string[];
@@ -43,7 +49,27 @@ function formatCell(v: string | undefined): string {
   return String(v);
 }
 
-function FrameworkControlsCell({ value }: { value: string | undefined }) {
+function FrameworkControlsCell({
+  value,
+  topRankedMax,
+}: {
+  value: string | undefined;
+  /** Top-N lines with bullet prefix (• controlId: …). Omit to show all parsed lines without prefix. */
+  topRankedMax?: number;
+}) {
+  if (topRankedMax != null && topRankedMax > 0) {
+    const ranked = frameworkControlsDisplayLinesTopRanked(value, topRankedMax);
+    if (ranked.length === 0) return <>{formatCell(value)}</>;
+    return (
+      <div className="report_framework_controls_stack">
+        {ranked.map((line, i) => (
+          <div key={i} className="report_framework_control_line">
+            {line}
+          </div>
+        ))}
+      </div>
+    );
+  }
   const lines = frameworkControlsDisplayLines(value);
   if (lines.length === 0) return <>{formatCell(value)}</>;
   return (
@@ -57,7 +83,16 @@ function FrameworkControlsCell({ value }: { value: string | undefined }) {
   );
 }
 
-function FrameworkTable({ rows, emptyMessage }: { rows: FrameworkMappingRow[]; emptyMessage: string }) {
+function FrameworkTable({
+  rows,
+  emptyMessage,
+  controlsTopRankedMax,
+}: {
+  rows: FrameworkMappingRow[];
+  emptyMessage: string;
+  /** When set, controls column shows only the first N entries, each with a bullet prefix. */
+  controlsTopRankedMax?: number;
+}) {
   if (!rows.length) {
     return <p className="org_portal_compliance_empty">{emptyMessage}</p>;
   }
@@ -76,12 +111,14 @@ function FrameworkTable({ rows, emptyMessage }: { rows: FrameworkMappingRow[]; e
           <tbody>
             {rows.map((row, i) => (
               <tr key={`${row.framework}-${i}`}>
-                <td className="report_framework_td_name">{formatCell(row.framework)}</td>
+                <td className="report_framework_td_name">
+                  {formatFrameworkMappingFrameworkForDisplay(row.framework)}
+                </td>
                 <td>{formatCell(row.coverage)}</td>
                 <td className="report_framework_td_controls">
-                  <FrameworkControlsCell value={row.controls} />
+                  <FrameworkControlsCell value={row.controls} topRankedMax={controlsTopRankedMax} />
                 </td>
-                <td>{formatCell(row.notes)}</td>
+                <td>{formatCell(sanitizeFrameworkMappingNotesForDisplay(row.notes))}</td>
               </tr>
             ))}
           </tbody>
@@ -91,8 +128,14 @@ function FrameworkTable({ rows, emptyMessage }: { rows: FrameworkMappingRow[]; e
   );
 }
 
-export function OrgPortalFrameworkGapSectionVendor({ portal }: { portal: VendorOrganizationalPortal }) {
-  const regulatoryDocMissing = portal.regulatoryRequirementsDocumentProvided === false;
+export function OrgPortalFrameworkGapSectionVendor({
+  portal,
+  frameworkMappingAssessmentLabel,
+}: {
+  portal: VendorOrganizationalPortal;
+  /** Shown on Know More detail (e.g. assessment title from Organizations view). */
+  frameworkMappingAssessmentLabel?: string;
+}) {
   const segmentLabel =
     portal.buyerIndustrySegment && portal.buyerIndustrySegment !== "other"
       ? portal.buyerIndustrySegment
@@ -106,34 +149,23 @@ export function OrgPortalFrameworkGapSectionVendor({ portal }: { portal: VendorO
         Framework mapping & gap analysis
       </h2>
       <p className="org_portal_compliance_lead" style={{ color: "#6b7280", fontSize: "0.9375rem", marginBottom: "1.25rem" }}>
-        Regulatory context from this vendor COTS assessment and product attestation, compared to certifications relevant to the buyer segment{" "}
+        Framework mapping comes only from the linked product attestation (compliance evidence). Certification gap analysis uses the buyer segment{" "}
         <strong style={{ color: "#374151" }}>({segmentLabel})</strong>. Gaps are informational only; irrelevant certifications are not scored.
       </p>
 
       <div className="org_portal_compliance_subsection">
-        <h3 className="org_portal_compliance_subtitle">Engagement framework mapping (Vendor COTS)</h3>
+        <h3 className="org_portal_compliance_subtitle">Framework mapping (product attestation)</h3>
         <p className="org_portal_compliance_hint">
-          {regulatoryDocMissing
-            ? "No substantive regulatory requirements were specified on this Vendor COTS assessment (e.g. only None/Not applicable). Engagement mapping from the assessment is not shown."
-            : "Derived from customer regulatory selections and sector (same basis as sales-risk CFR)."}
+          Rows reflect frameworks from the vendor&apos;s linked self-attestation compliance mapping, filtered by regulatory requirements selected on this Vendor COTS assessment. Any selected framework missing from the attestation shows &quot;Not provided&quot; for coverage and controls. At most three controls are stored and shown per row, listed with bullet markers and control identifiers.
         </p>
-        <FrameworkTable
+        <FrameworkMappingCardGrid
           rows={portal.frameworkMappingRows}
-          emptyMessage={
-            regulatoryDocMissing
-              ? "Document not provided."
-              : "No framework mapping rows were generated for this assessment."
-          }
+          emptyMessage="Not provided."
+          assessmentLabel={frameworkMappingAssessmentLabel}
+          certificationGaps={portal.certificationGapAnalysis}
+          detailSource="organizational_portal"
         />
       </div>
-
-      {portal.attestationFrameworkRows.length > 0 ? (
-        <div className="org_portal_compliance_subsection" style={{ marginTop: "1.5rem" }}>
-          <h3 className="org_portal_compliance_subtitle">Product attestation — compliance evidence mapping</h3>
-          <p className="org_portal_compliance_hint">From parsed/stored attestation framework rows (when available).</p>
-          <FrameworkTable rows={portal.attestationFrameworkRows} emptyMessage="—" />
-        </div>
-      ) : null}
 
       <div className="org_portal_compliance_subsection" style={{ marginTop: "1.5rem" }}>
         <h3 className="org_portal_compliance_subtitle">
@@ -159,7 +191,9 @@ export function OrgPortalFrameworkGapSectionVendor({ portal }: { portal: VendorO
               <tbody>
                 {portal.certificationGapAnalysis.map((row) => (
                   <tr key={row.framework}>
-                    <td className="report_framework_td_name">{row.framework}</td>
+                    <td className="report_framework_td_name">
+                      {formatFrameworkMappingFrameworkForDisplay(row.framework)}
+                    </td>
                     <td>
                       <span className={row.status === "met" ? "org_portal_gap_met" : "org_portal_gap_gap"}>
                         {row.status === "met" ? "Met" : "Gap"}
@@ -201,6 +235,7 @@ export function OrgPortalFrameworkGapSectionBuyer({ portal }: { portal: BuyerOrg
         <FrameworkTable
           rows={portal.reportFrameworkMappingRows}
           emptyMessage="No framework mapping rows are present on the vendor risk report yet."
+          controlsTopRankedMax={FRAMEWORK_MAPPING_TOP_CONTROLS_MAX}
         />
       </div>
 
@@ -226,7 +261,9 @@ export function OrgPortalFrameworkGapSectionBuyer({ portal }: { portal: BuyerOrg
               <tbody>
                 {portal.certificationGapAnalysis.map((row) => (
                   <tr key={row.framework}>
-                    <td className="report_framework_td_name">{row.framework}</td>
+                    <td className="report_framework_td_name">
+                      {formatFrameworkMappingFrameworkForDisplay(row.framework)}
+                    </td>
                     <td>
                       <span className={row.status === "met" ? "org_portal_gap_met" : "org_portal_gap_gap"}>
                         {row.status === "met" ? "Met" : "Gap"}

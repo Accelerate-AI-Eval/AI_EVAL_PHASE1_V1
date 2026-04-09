@@ -340,6 +340,13 @@ export default function OrganizationAssessmentView() {
         typeof vendorDetail.organizationalPortal === "object" && (
           <OrgPortalFrameworkGapSectionVendor
             portal={vendorDetail.organizationalPortal as VendorOrganizationalPortal}
+            frameworkMappingAssessmentLabel={
+              typeof previewRow?.title === "string" && previewRow.title.trim()
+                ? previewRow.title.trim()
+                : typeof previewRow?.name === "string" && previewRow.name.trim()
+                  ? previewRow.name.trim()
+                  : undefined
+            }
           />
         )}
 

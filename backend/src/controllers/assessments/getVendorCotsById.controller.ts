@@ -4,7 +4,8 @@ import { usersTable } from "../../schema/schema.js";
 import { assessments } from "../../schema/assessments/assessments.js";
 import { cotsVendorAssessments } from "../../schema/assessments/cotsVendorAssessments.js";
 import { vendorSelfAttestations } from "../../schema/assessments/vendorSelfAttestations.js";
-import { eq, and, or } from "drizzle-orm";
+import { customerRiskAssessmentReports } from "../../schema/assessments/customerRiskAssessmentReports.js";
+import { eq, and, or, desc } from "drizzle-orm";
 import {
   buildVendorCotsOrganizationalPortalInsights,
   deriveBuyerIndustrySegmentForVendorCots,
@@ -164,7 +165,32 @@ const getVendorCotsById = async (req: Request, res: Response) => {
           compliance_document_expiries: rx.attestation_compliance_document_expiries,
         }
       : null;
-    data.organizationalPortal = buildVendorCotsOrganizationalPortalInsights(data, attestationRow, segmentForInsights);
+
+    const assessmentOrgId = String(r.organizationId ?? "").trim();
+    let storedCustomerRiskReport: unknown | undefined;
+    if (assessmentOrgId) {
+      const [latestReport] = await db
+        .select({ report: customerRiskAssessmentReports.report })
+        .from(customerRiskAssessmentReports)
+        .where(
+          and(
+            eq(customerRiskAssessmentReports.assessment_id, id),
+            eq(customerRiskAssessmentReports.organization_id, assessmentOrgId),
+          ),
+        )
+        .orderBy(desc(customerRiskAssessmentReports.created_at))
+        .limit(1);
+      if (latestReport?.report != null) {
+        storedCustomerRiskReport = latestReport.report;
+      }
+    }
+
+    data.organizationalPortal = buildVendorCotsOrganizationalPortalInsights(
+      data,
+      attestationRow,
+      segmentForInsights,
+      storedCustomerRiskReport !== undefined ? { storedCustomerRiskReport } : undefined,
+    );
 
     return res.status(200).json({ success: true, data });
   } catch (error) {
