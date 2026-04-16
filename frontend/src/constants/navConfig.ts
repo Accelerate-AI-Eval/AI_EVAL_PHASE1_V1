@@ -17,6 +17,7 @@ import {
   BotIcon,
   Layers,
   TestTube,
+  Workflow,
 } from "lucide-react"
 
 export interface NavItemConfig {
@@ -102,7 +103,8 @@ export const NAVIGATION = {
     },
     {
       label: "Risk Mapping",
-      icon: Users,
+      icon: Workflow,
+      // icon: Flo,
       path: "/riskMappings",
       accessRoles: ["admin", "manager", "lead", "engineer"],
       systemRoles: ["system admin", "system manager", "system viewer", "buyer", "vendor"],

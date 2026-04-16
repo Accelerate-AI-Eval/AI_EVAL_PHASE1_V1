@@ -22,6 +22,7 @@ import {
   formatOnboardingDate,
   formatPreviewValue,
 } from "../../../utils/orgOnboardingDisplay";
+import { getOrganizationTypeDisplay } from "../../../utils/organizationTypeDisplay";
 import { Landmark, Plus, User, FileCheck, ClipboardList, Eye, CircleX, Search, FileText } from "lucide-react";
 import Button from "../../UI/Button";
 import Breadcrumbs from "../../UI/Breadcrumbs";
@@ -81,7 +82,7 @@ const TAB_ATTESTATION = "attestation";
 const TAB_ASSESSMENTS = "assessments";
 
 const Organizations = () => {
-  document.title = "AI Eval | Organizations";
+  document.title = "AI-Q | Organizations";
   const navigate = useNavigate();
   const location = useLocation();
   const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim();
@@ -417,6 +418,12 @@ const Organizations = () => {
                       <dt className="vendor_preview_label">Organization name</dt>
                       <dd className="vendor_preview_value">
                         {previewOrg?.organizationName ?? "—"}
+                      </dd>
+                    </div>
+                    <div className="vendor_preview_row">
+                      <dt className="vendor_preview_label">Type</dt>
+                      <dd className="vendor_preview_value">
+                        {getOrganizationTypeDisplay(previewOrg)}
                       </dd>
                     </div>
                     <div className="vendor_preview_row">

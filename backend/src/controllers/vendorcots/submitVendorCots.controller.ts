@@ -227,7 +227,12 @@ async function createCustomerRiskReport(
       mitigationsByRiskId: Object.fromEntries(
         Object.entries(top5RisksWithMitigations.mitigationsByRiskId).map(([rid, list]) => [
           rid,
-          list.map((m) => ({ mitigation_action_id: m.mitigation_action_id })),
+          list.map((m) => ({
+            mitigation_action_id: m.mitigation_action_id,
+            mitigation_action_name: m.mitigation_action_name,
+            mitigation_category: m.mitigation_category,
+            mitigation_definition: m.mitigation_definition ?? null,
+          })),
         ]),
       ),
     };

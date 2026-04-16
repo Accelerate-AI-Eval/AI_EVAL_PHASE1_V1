@@ -355,7 +355,7 @@ const VendorAttestationsMainForm = () => {
   const isFromOnboarding = !sessionStorage.getItem("bearerToken");
 
   useEffect(() => {
-    document.title = "AI Eval | Vendor Attestation";
+    document.title = "AI-Q | Vendor Attestation";
   }, []);
 
   const BASE_URL =

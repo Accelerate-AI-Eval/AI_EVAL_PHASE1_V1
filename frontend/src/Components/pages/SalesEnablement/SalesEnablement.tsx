@@ -166,7 +166,7 @@ function hasBattleCardData(d: BattleCardData | null | undefined): boolean {
 
 export function SalesEnablement() {
   useEffect(() => {
-    document.title = "AI Eval | Sales Agent";
+    document.title = "AI-Q | Sales Agent";
   }, []);
   const [assessmentsList, setAssessmentsList] = useState<AssessmentRow[]>([]);
   const [loading, setLoading] = useState(true);

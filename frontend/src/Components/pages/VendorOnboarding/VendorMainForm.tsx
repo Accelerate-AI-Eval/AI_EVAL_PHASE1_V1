@@ -8,7 +8,8 @@ import StepCompanyScale from "./StepCompanyScale";
 import StepGeopgraphy from "./StepGeopgraphy";
 import { ChevronLeftCircle, ChevronRightCircle, Send } from "lucide-react";
 import StepVendorOnboardingPreview from "./StepVendorOnboardingPreview";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import CardOnBoarding from "../../UI/CardOnBoarding";
 import CardContainerOnBoarding from "../../UI/CardContainerOnBoarding";
 import CardConfirmation from "../../UI/CardConfirmation";
@@ -20,6 +21,15 @@ import { vendorStep1CompanyProfileSchema } from "../../../schemas/onboarding/ven
 import { vendorStep2ContactSchema } from "../../../schemas/onboarding/vendorStep2.schema";
 import { vendorStep3CompanyScaleSchema } from "../../../schemas/onboarding/vendorStep3.schema";
 import { vendorStep4GeographySchema } from "../../../schemas/onboarding/vendorStep4.schema";
+import { getApiBaseUrl } from "../../../utils/apiBaseUrl";
+import { fetchOnboardingAccessStatus } from "../../../utils/onboardingAccessStatus";
+
+interface OnboardingJwtPayload {
+  email?: string;
+  userId?: string | number;
+  organizationId?: string | number;
+  exp?: number;
+}
 
 /** Flatten Zod error into a list of user-facing messages */
 function getValidationMessages(error: z.ZodError): string[] {
@@ -130,13 +140,38 @@ function mapApiDataToFormState(
   };
 }
 
-const VendorMainForm = ({ type }: { type: string }) => {
+export default function VendorMainForm({ type }: { type: string }) {
+  const { token: tokenFromRoute } = useParams<{ token: string }>();
+
   useEffect(() => {
-    document.title = "AI Eval | Vendor Onboarding";
+    document.title = "AI-Q | Vendor Onboarding";
   }, []);
 
-  const BASE_URL =
-    import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
+  /** JWT is in the URL (`/onBoarding/vendorOnboarding/:token`); keep sessionStorage in sync for refresh/back. */
+  useEffect(() => {
+    const raw = tokenFromRoute?.trim();
+    if (!raw) return;
+    sessionStorage.setItem("onboardingToken", raw);
+    try {
+      const decoded = jwtDecode<OnboardingJwtPayload>(raw);
+      if (decoded.email) sessionStorage.setItem("email", String(decoded.email));
+      if (decoded.userId != null) {
+        sessionStorage.setItem("userId", String(decoded.userId));
+      }
+      if (decoded.organizationId != null) {
+        sessionStorage.setItem("organizationId", String(decoded.organizationId));
+      }
+    } catch {
+      // API still validates Bearer token
+    }
+  }, [tokenFromRoute]);
+
+  const BASE_URL = getApiBaseUrl();
+  const onboardingToken =
+    tokenFromRoute && tokenFromRoute.trim() !== ""
+      ? tokenFromRoute.trim()
+      : sessionStorage.getItem("onboardingToken");
+
   const vendor_Id = sessionStorage.getItem("userId");
   const organization_Id =
     sessionStorage.getItem("organizationId") ??
@@ -154,8 +189,39 @@ const VendorMainForm = ({ type }: { type: string }) => {
     useState<VendorDataInterface>(allDataVendor);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<z.ZodError | null>(null);
+  /** Inline field errors only after user clicks Continue and validation fails on that step */
+  const [showInlineErrors, setShowInlineErrors] = useState(false);
   // Path to vendor self attestation (set after successful onboarding submit; includes token when available)
   const [attestationPath, setAttestationPath] = useState<string>("");
+  const [onboardingGateReady, setOnboardingGateReady] = useState(false);
+
+  useEffect(() => {
+    const t = onboardingToken?.trim();
+    if (!t) {
+      setOnboardingGateReady(true);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const result = await fetchOnboardingAccessStatus(t);
+      if (cancelled) return;
+      if (result.ok && result.onboardingCompleted) {
+        sessionStorage.removeItem("onboardingToken");
+        toast.info("You have already completed onboarding. Please sign in.");
+        navigate("/login", { replace: true });
+        return;
+      }
+      if (!result.ok && (result.reason === "unauthorized" || result.reason === "not_found")) {
+        sessionStorage.removeItem("onboardingToken");
+        navigate("/login", { replace: true });
+        return;
+      }
+      setOnboardingGateReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [onboardingToken, navigate]);
 
   /** When user clicks "Proceed to Vendor Self Attestation": already auto-logged in from submit, or login with signup credentials. Then CardConfirmation navigates to self attestation (which fetches vendor onboarding data). */
   const handleProceedToAttestation = useCallback(async () => {
@@ -289,10 +355,12 @@ const VendorMainForm = ({ type }: { type: string }) => {
 
     const result = schema.safeParse(stepData)
     if (!result.success) {
-      setValidationError(result.error)
-      return
+      setShowInlineErrors(true);
+      setValidationError(result.error);
+      return;
     }
-    setValidationError(null)
+    setValidationError(null);
+    setShowInlineErrors(false);
     const orgId =
       sessionStorage.getItem("organizationId") ?? sessionStorage.getItem("org_Id")
     try {
@@ -300,7 +368,7 @@ const VendorMainForm = ({ type }: { type: string }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Onboardingtoken}`,
+          Authorization: `Bearer ${onboardingToken}`,
         },
         body: JSON.stringify({
           ...formVendorData,
@@ -318,11 +386,17 @@ const VendorMainForm = ({ type }: { type: string }) => {
   }
 
   const handleBack = () => {
-    setValidationError(null)
-    setCurrentStep((prev) => prev - 1)
-  }
+    setValidationError(null);
+    setShowInlineErrors(false);
+    setCurrentStep((prev) => prev - 1);
+  };
 
-  // Re-validate current step when form data changes so field errors disappear as user fixes them
+  useEffect(() => {
+    setShowInlineErrors(false);
+    setValidationError(null);
+  }, [currentStep]);
+
+  // After Continue failed, re-validate on change so errors clear/update as the user edits (no errors before first Continue).
   const vendorStepSchemas = [
     vendorStep1CompanyProfileSchema,
     vendorStep2ContactSchema,
@@ -330,7 +404,7 @@ const VendorMainForm = ({ type }: { type: string }) => {
     vendorStep4GeographySchema,
   ]
   useEffect(() => {
-    if (validationError == null || currentStep > 3) return
+    if (currentStep > 3) return
     const schema = vendorStepSchemas[currentStep]
     const stepData = [
       {
@@ -356,17 +430,16 @@ const VendorMainForm = ({ type }: { type: string }) => {
       },
     ][currentStep]
     const result = schema.safeParse(stepData)
+    if (!showInlineErrors) return
     if (result.success) setValidationError(null)
     else setValidationError(result.error)
-  }, [formVendorData, currentStep, validationError])
-
-  const Onboardingtoken = sessionStorage.getItem("onboardingToken");
+  }, [formVendorData, currentStep, showInlineErrors])
 
   // Step-specific field errors for inline display (only when validation failed on that step)
   const stepFieldErrors = useMemo(() => {
-    if (!validationError || currentStep > 3) return {}
+    if (!showInlineErrors || !validationError || currentStep > 3) return {}
     return getFieldErrorsFromZod(validationError, currentStep)
-  }, [validationError, currentStep])
+  }, [validationError, currentStep, showInlineErrors])
 
   // Can advance to next step via tab icon (same condition as Continue: current step valid). Used only for steps 0-3; step 4 has no next.
   const canGoNext = useMemo(() => {
@@ -460,7 +533,7 @@ const VendorMainForm = ({ type }: { type: string }) => {
       setFormVendorData,
       allStepsFilled,
       attestationPath,
-      Onboardingtoken,
+      onboardingToken,
       currentStep,
       stepFieldErrors,
     ]
@@ -515,11 +588,10 @@ const VendorMainForm = ({ type }: { type: string }) => {
   }, [formVendorData]);
 
   const handleBackToSelection = () =>
-    navigate(`/onboarding/${Onboardingtoken}`);
+    navigate(`/onboarding/${onboardingToken}`);
 
   const handleSubmitPreview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const onboardingToken = sessionStorage.getItem("onboardingToken");
     if (!onboardingToken) return;
     const orgId =
       sessionStorage.getItem("organizationId") ??
@@ -540,7 +612,6 @@ const VendorMainForm = ({ type }: { type: string }) => {
       });
 
       const result = await response.json();
-      console.log(result);
       if (response.ok) {
         const bearerToken = result.token;
         const userDetails = result.userDetails?.[0];
@@ -595,6 +666,14 @@ const VendorMainForm = ({ type }: { type: string }) => {
       console.log(error);
     }
   };
+
+  if (!onboardingGateReady) {
+    return (
+      <div className="form_card_centered">
+        <p style={{ textAlign: "center", color: "#64748b" }}>Loading…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="form_card_centered">
@@ -682,6 +761,4 @@ const VendorMainForm = ({ type }: { type: string }) => {
       </CardContainerOnBoarding>
     </div>
   );
-};
-
-export default VendorMainForm;
+}

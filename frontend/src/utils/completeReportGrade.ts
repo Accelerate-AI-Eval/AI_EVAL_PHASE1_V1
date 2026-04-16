@@ -69,3 +69,24 @@ export function customerRiskReportApprovalHeading(
 export function alignmentScoreFromRiskScore(riskScore: number): number {
   return Math.round(Math.max(0, Math.min(100, 100 - riskScore)));
 }
+
+/** Card/list payload: alignment score for customer reports; IRS (0–100) for buyer vendor risk rows. */
+export interface ReportContextScoreSource {
+  report?: Record<string, unknown>;
+  source?: "customer" | "buyer_vendor_risk";
+  implementationRiskScore?: number | null;
+}
+
+/**
+ * Score shown on complete-report cards (same basis as ReportDetail vendor context score for customer rows).
+ * Buyer vendor risk rows use implementation risk score from the merged assessment report.
+ */
+export function reportContextScoreFromListPayload(row: ReportContextScoreSource): number | null {
+  if (row.source === "buyer_vendor_risk") {
+    const irs = row.implementationRiskScore;
+    if (irs != null && Number.isFinite(Number(irs))) return Math.round(Math.max(0, Math.min(100, Number(irs))));
+    return null;
+  }
+  const risk = overallRiskScoreFromReportJson(row.report);
+  return risk != null ? alignmentScoreFromRiskScore(risk) : null;
+}

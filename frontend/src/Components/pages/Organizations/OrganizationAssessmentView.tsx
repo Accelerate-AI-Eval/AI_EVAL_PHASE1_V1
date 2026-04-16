@@ -9,12 +9,8 @@ import Breadcrumbs from "../../UI/Breadcrumbs";
 import AssessmentPreviewModalContent from "../Assessments/AssessmentPreviewModalContent";
 import LoadingMessage from "../../UI/LoadingMessage";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
-import {
-  overallRiskScoreFromReportJson,
-  riskLevelFromReportJson,
-  customerRiskReportApprovalHeading,
-  alignmentScoreFromRiskScore,
-} from "../../../utils/completeReportGrade";
+import CompleteReportsCards from "../Reports/CompleteReportsCards";
+import type { CustomerRiskReportItem } from "../Reports/Reports";
 import "../UserManagement/user_management.css";
 import "../Assessments/assessments.css";
 import "../VendorAttestationDetails/vendor_attestation_details.css";
@@ -370,79 +366,19 @@ export default function OrganizationAssessmentView() {
               No reports have been generated for this assessment yet.
             </p>
           ) : (
-            <div className="general_rpr_cards_sec vendor_directory_grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
-              {completeReports.map((report) => {
-                const archived = isCompleteReportArchived(report);
-                const riskScore = overallRiskScoreFromReportJson(report.report);
-                const riskLevel = riskLevelFromReportJson(report.report) ?? "Low";
-                const approvalTitle =
-                  riskScore != null
-                    ? customerRiskReportApprovalHeading(riskScore, riskLevel)
-                    : null;
-                const alignmentScore =
-                  riskScore != null ? alignmentScoreFromRiskScore(riskScore) : null;
-                return (
-                  <article
-                    key={`complete-${report.id}`}
-                    className={`vendor_directory_card general_rpr_card${archived ? " general_rpr_card_archived" : ""}`}
-                    data-accent="risk"
-                  >
-                    <div className="general_report_card_header">
-                      <p className="vendor_directory_card_products general_rpr_card_report_type">
-                        <span className="general_rpr_card_report_type_icon" aria-hidden>
-                          <FileText size={16} />
-                        </span>
-                        Complete Report
-                      </p>
-                    </div>
-                    <div className="general_rpr_title">
-                      <div className="vendor_directory_card_header_text">
-                        <h2 className="vendor_directory_card_name general_rpr_card_title_clamp">
-                          {getReportCardTitle(report.title ?? "")}
-                        </h2>
-                      </div>
-                    </div>
-                    {approvalTitle != null && alignmentScore != null ? (
-                      <div className="general_rpr_approval_banner">
-                        <h3 className="general_rpr_approval_banner_title">{approvalTitle}</h3>
-                        <p className="general_rpr_approval_banner_sub">
-                          Overall alignment score: {alignmentScore}/100 (higher indicates
-                          stronger alignment / lower residual risk)
-                        </p>
-                      </div>
-                    ) : null}
-                    <div className="general_rpr_card_footer">
-                      <div className="general_rpr_card_dates">
-                        <div className="general_rpr_card_date_row">
-                          {archived ? (
-                            <span className="general_rpr_card_status general_rpr_card_status_archived">Archived</span>
-                          ) : (
-                            <>
-                              <span className="general_rpr_card_date_label_expiry">Expires on:</span>
-                              <span className="general_rpr_card_date_value_expiry">{getCompleteReportExpiry(report)}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="view_rpr_btn vendor_directory_card_action_btn"
-                        onClick={() =>
-                          navigate(`/reports/${report.id}`, {
-                            state: {
-                              reportTitle: getReportCardTitle(report.title ?? ""),
-                            },
-                          })
-                        }
-                        aria-label={`View report: ${getReportCardTitle(report.title ?? "")}`}
-                      >
-                        View Report
-                        <ChevronRight size={16} aria-hidden />
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+            <div className="general_rpr_cards_sec vendor_directory_grid complete_rpr_cards_grid">
+              <CompleteReportsCards
+                reports={completeReports as CustomerRiskReportItem[]}
+                getTitle={(r) => getReportCardTitle(r.title ?? "")}
+                isArchived={isCompleteReportArchived}
+                getExpiryDate={getCompleteReportExpiry}
+                onViewReport={(report) =>
+                  navigate(`/reports/${report.id}`, {
+                    state: { reportTitle: getReportCardTitle(report.title ?? "") },
+                  })
+                }
+                singleCard
+              />
               {generalReports.map((report) => {
                 const archived = isGeneralReportArchived(report);
                 return (

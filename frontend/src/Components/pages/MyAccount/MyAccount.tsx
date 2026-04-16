@@ -104,7 +104,7 @@ const MyAccount = () => {
     newPassword.trim().length > 0 && confirmPassword.trim().length > 0;
 
   useEffect(() => {
-    document.title = "AI Eval | My Account";
+    document.title = "AI-Q | My Account";
   }, []);
 
   useEffect(() => {

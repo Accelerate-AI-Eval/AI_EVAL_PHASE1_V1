@@ -1,6 +1,7 @@
 import { formatDateDDMMMYYYY } from "./formatDate.js";
+import { getApiBaseUrl } from "./apiBaseUrl.js";
 
-export const BASE_URL = import.meta.env.VITE_BASE_URL;
+export const BASE_URL = getApiBaseUrl();
 
 /** Format date for display as DD-MMM-YYYY (e.g. 05-Mar-2026); returns "—" if invalid or missing */
 export const formatDisplayDate = formatDateDDMMMYYYY;

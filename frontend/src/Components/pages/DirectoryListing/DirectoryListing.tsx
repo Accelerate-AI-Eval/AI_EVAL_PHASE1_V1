@@ -439,7 +439,7 @@ export const DirectoryListing = () => {
 
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "AI Eval | Product Profile";
+    document.title = "AI-Q | Product Profile";
     return () => {
       document.title = prevTitle;
     };

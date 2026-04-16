@@ -195,7 +195,7 @@ const VendorAttestationDetails = () => {
   };
 
   useEffect(() => {
-    document.title = "AI Eval | Attestation";
+    document.title = "AI-Q | Attestation";
   }, []);
 
   const LOADER_MIN_MS = 2500; // same as Assessments page

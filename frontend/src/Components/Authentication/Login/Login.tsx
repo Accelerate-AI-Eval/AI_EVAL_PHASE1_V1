@@ -1,21 +1,11 @@
 import { useState } from "react";
-import "./login.css";
 import { toast } from "react-toastify";
-import {
-  LockKeyhole,
-  Mail,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  CircleAlert,
-  Loader2,
-} from "lucide-react";
+import { Eye, EyeOff, CheckCircle, Loader2, LogIn, User, Lock, MoveRightIcon } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Shield } from "lucide-react";
-import HeaderForAuth from "../../UI/HeaderForAuth";
+import { AuthShell } from "../AuthShell";
+
 const Login = () => {
-  document.title = "AI Eval Platform | Sign in";
+  document.title = "AI-Q Platform | Sign in";
 
   const BASE_URL =
     import.meta.env.VITE_BASE_URL;
@@ -27,14 +17,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [isUser, setIsUser] = useState({});
-  const [isError, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
 
   const getUser = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     const data = {
       email: emailOrUsername.trim(),
@@ -59,10 +47,11 @@ const Login = () => {
       try {
         result = text ? JSON.parse(text) : {};
       } catch {
-        setError(
+        toast.error(
           response.ok
             ? "Invalid response from server"
             : "Server error. Check that the API is running.",
+          { autoClose: 4000 },
         );
         setIsLoading(false);
         return;
@@ -71,7 +60,7 @@ const Login = () => {
         const bearerToken = result.token;
         const userDetails = result.userDetails?.[0];
         if (!userDetails || !bearerToken) {
-          setError("Invalid response from server");
+          toast.error("Invalid response from server", { autoClose: 4000 });
           setIsLoading(false);
           return;
         }
@@ -140,20 +129,30 @@ const Login = () => {
           msg.includes("invalid email") ||
           msg.includes("account not found");
         if (isInvited) {
-          setError("invited_signup");
+          toast.error(
+            "This account was invited. Please complete signup from your invitation email.",
+            { autoClose: 5000 },
+          );
         } else if (isInactive) {
-          setError("inactive_account");
+          toast.error(
+            "This account is inactive. Contact your administrator.",
+            { autoClose: 5000 },
+          );
         } else if (isUserNotFound) {
-          setError("User Not found.");
+          toast.error("User not found.", { autoClose: 4000 });
         } else {
-          setError(
-            result.message || "Login failed. Check your email/username and password.",
+          toast.error(
+            result.message ||
+              "Login failed. Check your email/username and password.",
+            { autoClose: 4000 },
           );
         }
       }
     } catch (error) {
       console.log(error);
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.", {
+        autoClose: 4000,
+      });
       setIsLoading(false);
     }
   };
@@ -165,63 +164,83 @@ const Login = () => {
   const isDisabledBtn = !emailOrUsername.trim() || !password.trim() || isLoading || loginSuccess;
 
   return (
-    <>
-      <div className="authPage">
-        <div className="authContent">
-          <div className="loginData">
-            <div className="loginCred">
-              <HeaderForAuth/>
-              <div className="loginForm">
-                <p className="loginHeading">Welcome</p>
-                <p className="loginCaption">Sign in to your AI EVAL account</p>
-                <form action="" autoComplete="off" onSubmit={getUser}>
-                  <div className="emailData">
-                    <label htmlFor="loginEmail">
-                      <span>
-                        <Mail width={20} strokeWidth={1.5} />
-                      </span>{" "}
-                      Email or username
+    <AuthShell
+      title="Sign in"
+      // subtitle="Enter your credentials to access the Governance Ledger"
+    >
+      <form action="" autoComplete="off" onSubmit={getUser}>
+                  <div className="emailData emailData--signin">
+                    <label
+                      htmlFor="loginEmail"
+                      className="signin-field-label signin-field-label--inline"
+                    >
+                      <User
+                        className="signin-field-label__icon"
+                        size={24}
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                      <span>Email / username</span>
                     </label>
                     <input
                       type="text"
                       id="loginEmail"
+                      className="signin-input"
                       autoComplete="username"
                       value={emailOrUsername}
-                      onChange={(e) => {
-                        setEmailOrUsername(e.target.value);
-                        if (isError) setError("");
-                      }}
-                      placeholder="Email or username"
-                      aria-invalid={!!isError}
+                      onChange={(e) => setEmailOrUsername(e.target.value)}
+                      placeholder="Email or Username"
                     />
                   </div>
-                  <div className="passwordData">
-                    <label htmlFor="loginPassword">
-                      <span>
-                        <LockKeyhole width={20} strokeWidth={1.5} />
-                      </span>
-                      Password
-                    </label>
-                    <input
-                      type={isVisible ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (isError) setError("");
-                      }}
-                      placeholder="......."
-                      aria-invalid={!!isError}
-                    />
-                    <span onClick={passwordVisible} className="passwordVisible">
-                      {isVisible ? (
-                        <Eye size={20} strokeWidth={1.5} />
-                      ) : (
-                        <EyeOff size={20} strokeWidth={1.5} />
-                      )}
-                    </span>
+                  <div className="passwordData passwordData--signin">
+                    <div className="signin-label-row">
+                      <label
+                        htmlFor="loginPassword"
+                        className="signin-field-label signin-field-label--inline"
+                      >
+                        <Lock
+                          className="signin-field-label__icon"
+                          size={24}
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                        <span>Password</span>
+                      </label>
+                      <Link
+                        to="/forgotPassword"
+                        className="signin-forgot-link"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="signin-input-wrap">
+                      <input
+                        type={isVisible ? "text" : "password"}
+                        id="loginPassword"
+                        className="signin-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        className="signin-eye"
+                        onClick={passwordVisible}
+                        aria-label={
+                          isVisible ? "Hide password" : "Show password"
+                        }
+                      >
+                        {isVisible ? (
+                          <Eye size={18} strokeWidth={1.75} />
+                        ) : (
+                          <EyeOff size={18} strokeWidth={1.75} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   {resetSuccess && (
-                    <div className="authMessage authMessage--success">
+                    <div className="authMessage authMessage--success signin-flash">
                       <CheckCircle
                         className="authMessage__icon"
                         size={16}
@@ -233,23 +252,10 @@ const Login = () => {
                       </p>
                     </div>
                   )}
-                  {isError && (
-                    <div
-                      className="authMessage authMessage--error"
-                      style={{ marginTop: "0.5em", marginBottom: 0 }}
-                    >
-                      <CircleAlert
-                        className="authMessage__icon"
-                        size={16}
-                        aria-hidden
-                      />
-                      <p className="orgError">{isError}</p>
-                    </div>
-                  )}
-                  <div className="loginBtn">
+                  <div className="loginBtn loginBtn--signin">
                     <button
                       type="submit"
-                      className={`login-btn ${isDisabledBtn ? "disabled_css" : ""} ${(isLoading || loginSuccess) ? "auth_btn_loading" : ""}`}
+                      className={`login-btn signin-submit ${isDisabledBtn ? "disabled_css" : ""} ${isLoading || loginSuccess ? "auth_btn_loading" : ""}`}
                       disabled={isDisabledBtn}
                       aria-busy={isLoading || loginSuccess}
                     >
@@ -264,7 +270,6 @@ const Login = () => {
                         </>
                       ) : isLoading ? (
                         <>
-                          
                           <Loader2
                             className="auth_spinner"
                             size={20}
@@ -274,27 +279,18 @@ const Login = () => {
                       ) : (
                         <>
                           Sign in
-                          <span>
-                            <ArrowRight width={20} />
-                          </span>
+                          <MoveRightIcon
+                            className="signin-submit__icon"
+                            size={20}
+                            strokeWidth={2}
+                            aria-hidden
+                          />
                         </>
                       )}
                     </button>
                   </div>
-                  <div>
-                    <p className="forgotPassword">
-                      <Link to="/forgotPassword">
-                        <span>Forgot Password?</span>
-                      </Link>
-                    </p>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+      </form>
+    </AuthShell>
   );
 };
 

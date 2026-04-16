@@ -3,7 +3,7 @@ import "./home.css";
 
 function Home() {
   useEffect(() => {
-    document.title = "AI Eval | Home";
+    document.title = "AI-Q | Home";
   }, []);
 
   return (

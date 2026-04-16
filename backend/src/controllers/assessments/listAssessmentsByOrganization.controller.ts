@@ -134,11 +134,54 @@ const listAssessmentsByOrganization = async (req: Request, res: Response) => {
         v.created_at AS "vendorCotsCreatedAt",
         v.updated_at AS "vendorCotsUpdatedAt",
         vsa.product_name AS "attestationProductName",
-        vsa.expiry_at AS "attestationExpiryAt"
+        vsa.expiry_at AS "attestationExpiryAt",
+        COALESCE(
+          CASE
+            WHEN (b.vendor_risk_assessment_report->>'implementationRiskScore') IS NOT NULL
+              AND TRIM(b.vendor_risk_assessment_report->>'implementationRiskScore') <> ''
+              AND TRIM(b.vendor_risk_assessment_report->>'implementationRiskScore')
+                ~ '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$'
+            THEN TRIM(b.vendor_risk_assessment_report->>'implementationRiskScore')::double precision
+            ELSE NULL
+          END,
+          vcr.vendor_report_risk_score
+        ) AS "reportRiskScore"
       FROM assessments a
       LEFT JOIN cots_buyer_assessments b ON a.id = b.assessment_id
       LEFT JOIN cots_vendor_assessments v ON a.id = v.assessment_id
       LEFT JOIN vendor_self_attestations vsa ON (v.vendor_attestation_id = vsa.vendor_self_attestation_id OR v.vendor_attestation_id = vsa.id)
+      LEFT JOIN LATERAL (
+        SELECT
+          CASE
+            WHEN COALESCE(
+              cr.report->'generatedAnalysis'->>'overallRiskScore',
+              cr.report->>'overallRiskScore'
+            ) IS NOT NULL
+              AND TRIM(
+                COALESCE(
+                  cr.report->'generatedAnalysis'->>'overallRiskScore',
+                  cr.report->>'overallRiskScore'
+                )
+              ) <> ''
+              AND TRIM(
+                COALESCE(
+                  cr.report->'generatedAnalysis'->>'overallRiskScore',
+                  cr.report->>'overallRiskScore'
+                )
+              ) ~ '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$'
+            THEN TRIM(
+              COALESCE(
+                cr.report->'generatedAnalysis'->>'overallRiskScore',
+                cr.report->>'overallRiskScore'
+              )
+            )::double precision
+            ELSE NULL
+          END AS vendor_report_risk_score
+        FROM customer_risk_assessment_reports cr
+        WHERE cr.assessment_id = a.id
+        ORDER BY cr.created_at DESC
+        LIMIT 1
+      ) vcr ON TRUE
       LEFT JOIN users u ON b.user_id = u.id
       LEFT JOIN users u2 ON v.user_id = u2.id
       WHERE ${whereClause}
@@ -245,6 +288,10 @@ const listAssessmentsByOrganization = async (req: Request, res: Response) => {
       vendorRiskMitigation: r.vendorRiskMitigation ?? null,
       vendorCotsCreatedAt: r.vendorCotsCreatedAt ?? null,
       vendorCotsUpdatedAt: r.vendorCotsUpdatedAt ?? null,
+      reportRiskScore:
+        r.reportRiskScore != null && Number.isFinite(Number(r.reportRiskScore))
+          ? Number(r.reportRiskScore)
+          : null,
     }));
 
     return res.status(200).json({

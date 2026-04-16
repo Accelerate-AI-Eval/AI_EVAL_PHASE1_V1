@@ -8,7 +8,11 @@
 }
 
 :root {
-  --main-auth-button-color: #2463eb;
+  /* Auth sign-in fields + matching toast outline (periwinkle ring, cool tint fill) */
+  --auth-signin-input-border: #b8c9f3;
+  --auth-signin-input-bg: #f2f6fc;
+  /* --main-auth-button-color: #2463eb; */
+  --main-auth-button-color: #014aad;
   --ui-border-radius: 5px;
   --background-color-onboarding: #eff6ff;
   --edit-button-background: #bde0fe;
@@ -149,7 +153,7 @@ select option {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1em;
+  /* gap: 1em; */
   margin: 0em 0 1em 0;
 }
 .header_for_auth p {

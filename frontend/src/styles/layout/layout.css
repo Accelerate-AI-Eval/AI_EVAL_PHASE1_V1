@@ -46,7 +46,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background-color: #1e3a5f;
+  background-color: #014aad;
   overflow-y: auto;
 }
 
@@ -73,6 +73,14 @@
 .header_onboarding {
   text-align: center;
   padding: 20px 20px 0 20px;
+}
+
+.onboarding-header-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .container_onBoarding {

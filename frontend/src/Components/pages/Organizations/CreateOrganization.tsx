@@ -1,13 +1,16 @@
-import { Ban, CircleX, Landmark, Plus } from "lucide-react";
+import { Ban, CircleX, Landmark, Plus, Mail, Tags, Shield } from "lucide-react";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { getOrganizations } from "../../../Context/OrganizationsData";
+import "../UserProfile/user_profile.css";
 
 const CreateOrganization = ({ setIsOrganization }) => {
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [isOrganizationName, setIsOrganizationName] = useState("");
+  const [organizationType, setOrganizationType] = useState("vendor");
+  const [adminEmail, setAdminEmail] = useState("");
   const [isError, setIsError] = useState("");
   const [isCreateLoading, setIsCreateLoading] = useState(false);
   const dispatch = useDispatch();
@@ -22,13 +25,24 @@ const CreateOrganization = ({ setIsOrganization }) => {
 
     const nameTrimmed = isOrganizationName?.trim() ?? "";
     if (!nameTrimmed) {
-      setIsError("Organization field is required");
+      setIsError("Organization name is required");
+      return;
+    }
+
+    const emailTrimmed = adminEmail?.trim() ?? "";
+    if (!emailTrimmed) {
+      setIsError("Admin email is required");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      setIsError("Please enter a valid email address");
       return;
     }
 
     const nameLower = nameTrimmed.toLowerCase();
     const duplicate = (organizations ?? []).some(
-      (org) => (org.organizationName ?? "").trim().toLowerCase() === nameLower
+      (org) => (org.organizationName ?? "").trim().toLowerCase() === nameLower,
     );
     if (duplicate) {
       setIsError("An organization with this name already exists.");
@@ -36,7 +50,12 @@ const CreateOrganization = ({ setIsOrganization }) => {
     }
 
     const user = sessionStorage.getItem("userId");
-    const orgData = { isOrganizationName, user };
+    const orgData = {
+      isOrganizationName: nameTrimmed,
+      user,
+      organizationType,
+      adminEmail: emailTrimmed,
+    };
     const token = sessionStorage.getItem("bearerToken");
 
     setIsCreateLoading(true);
@@ -53,6 +72,8 @@ const CreateOrganization = ({ setIsOrganization }) => {
       if (response.ok) {
         closeNewOrg();
         setIsOrganizationName("");
+        setOrganizationType("vendor");
+        setAdminEmail("");
         toast.success("Organization created successfully");
         dispatch(getOrganizations());
         setIsError("");
@@ -86,17 +107,66 @@ const CreateOrganization = ({ setIsOrganization }) => {
                 Organization Name
               </label>
               <input
+                id="orgname"
                 type="text"
                 value={isOrganizationName}
                 onChange={(e) => setIsOrganizationName(e.target.value)}
               />
-              {isError && <p className="orgError">{isError}</p>}
             </div>
-            <div className="orgBtns">
-              <button className="orgCancelBtn" onClick={closeNewOrg}>
+            <div className="orgName">
+              <label htmlFor="orgtype">
                 <span>
-                  <Ban width={16} />
+                  <Tags width={20} />
                 </span>
+                Organization Type
+              </label>
+              <select
+                id="orgtype"
+                value={organizationType}
+                onChange={(e) => setOrganizationType(e.target.value)}
+                aria-label="Organization type"
+              >
+                <option value="vendor">Vendor</option>
+                <option value="buyer">Buyer</option>
+              </select>
+            </div>
+            <div className="orgName">
+              <label htmlFor="orgadminemail">
+                <span>
+                  <Mail width={20} />
+                </span>
+                Admin email
+              </label>
+              <input
+                id="orgadminemail"
+                type="email"
+                autoComplete="email"
+                placeholder="admin@company.com"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+              />
+            </div>
+            <div className="orgName">
+              <label htmlFor="orgadminrole">
+                <span>
+                  <Shield width={20} />
+                </span>
+                Role
+              </label>
+              <input
+                id="orgadminrole"
+                type="text"
+                className="orgReadonlyField"
+                value="Admin"
+                readOnly
+                disabled
+                aria-readonly="true"
+              />
+            </div>
+            {isError && <p className="orgError">{isError}</p>}
+            <div className="settings_form_actions">
+              <button type="button" className="orgCancelBtn" onClick={closeNewOrg}>
+                <Ban size={16} aria-hidden />
                 Cancel
               </button>
               <button
@@ -105,9 +175,7 @@ const CreateOrganization = ({ setIsOrganization }) => {
                 disabled={isCreateLoading}
                 aria-busy={isCreateLoading}
               >
-                <span>
-                  <Plus width={18} />
-                </span>
+                <Plus size={16} aria-hidden />
                 {isCreateLoading ? "Creating…" : "Create"}
               </button>
             </div>

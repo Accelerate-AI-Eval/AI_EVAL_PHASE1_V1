@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Building2, CircleChevronLeft, Sparkles } from "lucide-react";
+import { Building2, CircleChevronLeft, Plus, Sparkles } from "lucide-react";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import GeneratedProductProfileCards from "../ProductProfile/GeneratedProductProfileCards";
 import "../../../styles/card.css";
@@ -53,15 +53,22 @@ const VendorDirectoryIntelligence = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { vendorId = "", productId = "" } = useParams();
+  const systemRole = (sessionStorage.getItem("systemRole") ?? "")
+    .toLowerCase()
+    .trim();
+  const isBuyer = systemRole === "buyer";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<GeneratedProductProfileReport | null>(null);
   const [sectionVisibility, setSectionVisibility] = useState<SectionVisibility | null>(null);
+  const [vendorName, setVendorName] = useState<string>(
+    ((location.state as { vendorName?: string } | null)?.vendorName ?? "").trim(),
+  );
   const [productName, setProductName] = useState<string>(
     ((location.state as { productName?: string } | null)?.productName ?? "").trim(),
   );
   useEffect(() => {
-    document.title = "AI Eval | Vendor Intelligence";
+    document.title = "AI-Q | Vendor Intelligence";
   }, []);
 
   useEffect(() => {
@@ -89,6 +96,7 @@ const VendorDirectoryIntelligence = () => {
         const att = data.attestation as Record<string, unknown>;
         const parsed = parseGeneratedReport(att.generated_profile_report);
         if (!cancelled) {
+          if (!vendorName) setVendorName(String(att.organization_name ?? "").trim());
           if (!productName) setProductName(String(att.product_name ?? "Product"));
           setReport(parsed);
           const vis = data.sectionVisibility as Record<string, unknown> | undefined;
@@ -119,7 +127,26 @@ const VendorDirectoryIntelligence = () => {
     return () => {
       cancelled = true;
     };
-  }, [vendorId, productId, productName]);
+  }, [vendorId, productId, productName, vendorName]);
+
+  const handleStartAssessment = () => {
+    const query = new URLSearchParams({
+      ...(vendorName ? { vendorName } : {}),
+      ...(productName ? { productName } : {}),
+    }).toString();
+    navigate(
+      {
+        pathname: "/buyerAssessment",
+        search: query ? `?${query}` : "",
+      },
+      {
+        state: {
+          ...(vendorName ? { prefillVendorName: vendorName } : {}),
+          ...(productName ? { prefillProductName: productName } : {}),
+        },
+      },
+    );
+  };
 
   const visibleReport = useMemo(() => {
     if (!report || !sectionVisibility) return report;
@@ -148,15 +175,28 @@ const VendorDirectoryIntelligence = () => {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="vendor_intel_back_link"
-        onClick={() => navigate("/vendor-directory")}
-        aria-label="Back to AI Vendor Directory"
-      >
-        <CircleChevronLeft size={18} aria-hidden />
-        Back to AI Vendor Directory
-      </button>
+      <div className="vendor_intel_actions">
+        <button
+          type="button"
+          className="vendor_intel_back_link"
+          onClick={() => navigate("/vendor-directory")}
+          aria-label="Back to AI Vendor Directory"
+        >
+          <CircleChevronLeft size={18} aria-hidden />
+          Back to AI Vendor Directory
+        </button>
+        {isBuyer && (
+          <button
+            type="button"
+            className="vendor_intel_start_assessment_btn"
+            onClick={handleStartAssessment}
+            aria-label="Start assessment"
+          >
+            <Plus size={16} aria-hidden />
+            Start Assessment
+          </button>
+        )}
+      </div>
 
       {loading && <div className="vendor_directory_loading">Loading product intelligence...</div>}
       {error && !loading && <div className="vendor_directory_error">{error}</div>}

@@ -743,6 +743,21 @@
   transition: color 0.15s ease, filter 0.15s ease;
 }
 
+.vd_premium_actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.vd_premium_cta--create {
+  color: #111827;
+}
+
+.vd_premium_cta--create:hover {
+  color: #111827;
+  filter: brightness(0.85);
+}
+
 @media (max-width: 900px) {
   .vd_premium_card {
     min-height: 19.5rem;
@@ -780,6 +795,40 @@
   /* text-decoration: underline; */
   text-underline-offset: 3px;
   transition: color 0.15s ease;
+}
+
+.vendor_intel_actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.vendor_intel_actions .vendor_intel_back_link {
+  margin-bottom: 0;
+}
+
+.vendor_intel_start_assessment_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--main-auth-button-color, #2463eb);
+  background: var(--main-auth-button-color, #2463eb);
+  color: #fff;
+  border-radius: var(--ui-border-radius, 8px);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.vendor_intel_start_assessment_btn:focus-visible {
+  outline: 2px solid var(--main-auth-button-color, #2463eb);
+  outline-offset: 2px;
 }
 
 .vendor_intel_back_link:hover {

@@ -75,7 +75,7 @@ body:has(.authPage) {
 
 .loginForm {
   width: 100%;
-  padding: 1.3em 1.5em 1.5em 1.5em;
+  padding: 1.3em 1.5em 2.3em 1.5em;
   border-radius: 5px;
   /* Single background: use .authPage only; no card background here */
 }
@@ -84,7 +84,7 @@ body:has(.authPage) {
 .passwordData {
   display: flex;
   flex-direction: column;
-  margin: 0px 0px 10px 0px;
+  /* margin: 0px 0px 10px 0px; */
 }
 
 .passwordData {
@@ -96,7 +96,7 @@ body:has(.authPage) {
 .passwordData label,
 .passwordData input {
   /* margin: 0; */
-  font-size: 1em;
+  font-size: 0.9em;
   /* margin: 0px 0px 8px 0px; */
 }
 
@@ -112,7 +112,7 @@ body:has(.authPage) {
 
 .passwordData input,
 .emailData input {
-  height: 40px;
+  height: 46px;
   width: 100%;
 }
 
@@ -168,7 +168,8 @@ body:has(.authPage) {
   border: 1px solid var(--main-auth-button-color);
   padding: 10px;
   width: 8em;
-  background-color: var(--main-auth-button-color);
+  /* background-color: var(--main-auth-button-color); */
+  background-color: #014aad;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -232,7 +233,7 @@ body:has(.authPage) {
 
 .loginBtn {
   text-align: center;
-  margin: 15px 0px 0px 0px;
+  /* margin: 15px 0px 0px 0px; */
 }
 
 .emailData label span,
@@ -279,4 +280,398 @@ body:has(.authPage) {
 
 .auth_btn_loading .auth_spinner {
   animation: auth-spin 0.8s linear infinite;
+}
+
+/* —— Sign-in page (reference layout): centered card, protocol footer —— */
+body:has(.authPage--signin) {
+  background-color: #f4f6f8;
+  background-image: radial-gradient(
+    ellipse 120% 80% at 50% 45%,
+    rgba(255, 255, 255, 0.95) 0%,
+    #eef1f4 45%,
+    #e8ebef 100%
+  );
+  background-attachment: fixed;
+}
+
+.authPage--signin {
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem 1rem 1.25rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.authContent--signin {
+  max-width: 440px;
+  flex: 1;
+  justify-content: center;
+}
+
+.loginData--signin {
+  width: 100%;
+}
+
+.loginCred--signin {
+  padding: 0;
+  width: 100%;
+}
+
+.loginForm--signin {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 12px 40px rgba(15, 23, 42, 0.08);
+  /* padding: 2rem 2rem 1.75rem; */
+  text-align: center;
+}
+
+.signin-heading-block {
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+/* .signin-heading-block .signin-subtitle {
+  margin-bottom: 1.5rem;
+} */
+
+.authContent--signin-wide {
+  max-width: 920px;
+  width: 100%;
+}
+
+.loginForm--signin-wide {
+  text-align: left;
+  max-width: 100%;
+  padding: 1.3em 1.5em 2.3em 1.5em;
+}
+
+.loginForm--signin-wide .signin-heading-block {
+  text-align: center;
+  /* margin-bottom: 0.5rem; */
+}
+
+.auth-shell-centered {
+  text-align: center;
+}
+
+.auth-shell-centered .authMessage {
+  justify-content: center;
+}
+
+.signin-brand {
+  display: flex;
+  justify-content: center;
+  /* border: 1px solid red; */
+  /* margin-bottom: 1.25rem; */
+}
+
+.signin-logo {
+  width: 75px;
+  height: 75px;
+  /* border-radius: 50%; */
+  object-fit: contain;
+  /* background: linear-gradient(145deg, #1e3a5f 0%, #0f2744 100%); */
+  /* padding: 6px; */
+  box-sizing: border-box;
+}
+
+.signin-title {
+  /* margin: 0 0 0.5rem; */
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  /* color: #0f2744; */
+  color: #014aad;
+}
+
+.signin-subtitle {
+ margin: 0.5em 0 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.emailData--signin {
+  text-align: left;
+  margin: 1em 0 1.5em 0;
+  /* margin-bottom: 2em; */
+}
+
+.passwordData--signin {
+  margin: 0 0 1.5em 0;
+}
+
+.signin-field-label {
+  display: block;
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.signin-field-label--inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Slightly larger than plain labels so icons read clearly */
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+/* Icon box matches label line height (line-height × font-size ≈ 1.35em) */
+.signin-field-label__icon {
+  flex-shrink: 0;
+  align-self: center;
+  color: #64748b;
+  width: 1.35em;
+  height: 1.35em;
+  min-width: 16px;
+  min-height: 16px;
+}
+
+.signin-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.signin-label-row .signin-field-label {
+  margin: 0;
+}
+
+.signin-forgot-link {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* color: #2563eb; */
+  color: #014aad;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.signin-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.signin-input {
+  width: 100%;
+  height: 45px;
+  padding: 0 14px;
+  border: 1px solid var(--auth-signin-input-border, #b8c9f3);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background-color: var(--auth-signin-input-bg, #f2f6fc);
+  box-sizing: border-box;
+}
+
+.signin-input::placeholder {
+  color: #94a3b8;
+}
+
+.signin-input:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 0;
+}
+
+.signin-input[readonly],
+.signin-input--readonly {
+  color: #64748b;
+  background-color: #e8edf3;
+  cursor: default;
+}
+
+.loginForm--signin .signin-auth-footer {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.loginForm--signin .signin-auth-footer a span {
+  /* color: #2563eb; */
+  color: #014aad;
+  font-weight: 600;
+}
+
+.signin-input-wrap {
+  display: flex;
+  align-items: center;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+  /* One ring around input + toggle (inner input:focus only drew the text box) */
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  transition: outline-color 0.12s ease;
+}
+
+.signin-input-wrap:focus-within {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 0;
+}
+
+.signin-input-wrap .signin-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.signin-input-wrap .signin-input:focus {
+  outline: none;
+}
+
+.signin-eye {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.signin-eye:hover {
+  color: #64748b;
+}
+
+.signin-flash {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.loginBtn--signin {
+  /* margin-top: 1.35rem; */
+}
+
+.loginForm--signin .signin-submit.login-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* background-color: #2563eb;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); */
+  background-color: #014aad;
+  gap: 0.5rem;
+}
+
+.signin-submit__icon {
+  flex-shrink: 0;
+}
+
+/* .loginForm--signin .signin-submit.login-btn:not(:disabled):hover {
+  background-color: #1d4ed8;
+} */
+
+.loginForm--signin .signin-submit.login-btn:focus-visible {
+  outline: 1px solid #1e40af;
+  outline-offset: 2px;
+}
+
+a.login-btn.signin-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+  gap: 0.35rem;
+}
+
+.loginBtn--signin > a.login-btn.signin-submit {
+  width: 100%;
+}
+
+.signin-protocol {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0 1rem;
+  width: 100%;
+}
+
+.signin-protocol-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #e2e8f0 20%,
+    #e2e8f0 80%,
+    transparent
+  );
+}
+
+.signin-protocol-text {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.signin-disclaimer {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  max-width: 32ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.signin-page-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: 1.25rem;
+}
+
+.signin-footer-version {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.signin-footer-links {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.signin-footer-link {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.signin-footer-link:hover {
+  color: #94a3b8;
 }

@@ -390,7 +390,7 @@ export async function parseAndStoreComplianceDocumentExpiries(
               isValid: frameworkMapping.controls.length > 0,
               reason:
                 frameworkMapping.controls.length > 0
-                  ? "Document classified and mapped to framework controls"
+                  ? "" // "Document classified and mapped to framework controls"
                   : "Framework detected but no controls matched document content",
               controlsMapped: frameworkMapping.controls.length,
             }

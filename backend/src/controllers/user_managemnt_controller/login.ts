@@ -26,6 +26,7 @@ const userLogin = async (req: Request, res: Response) => {
       .select({
         user: usersTable,
         organizationName: createOrganization.organizationName,
+        organizationStatus: createOrganization.organizationStatus,
       })
       .from(usersTable)
       .leftJoin(createOrganization, eq(usersTable.organization_id, createOrganization.id))
@@ -82,6 +83,18 @@ const userLogin = async (req: Request, res: Response) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Password is mismatched" });
     }
+
+    const organizationStatus = String(row.organizationStatus ?? "")
+      .trim()
+      .toLowerCase();
+    if (organizationStatus !== "active") {
+      return res.status(403).json({
+        code: "organization_inactive",
+        message:
+          "Your organization is inactive. You cannot sign in. Please contact your administrator.",
+      });
+    }
+
     // const checkUser = await db
     //   .select()
     //   .from(usersTable)

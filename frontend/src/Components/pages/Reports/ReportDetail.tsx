@@ -410,19 +410,19 @@ export default function ReportDetail() {
   useEffect(() => {
     if (loading) {
       const loadingTitle = "Complete Report"
-      document.title = `AI Eval | ${loadingTitle}`
-      return () => { document.title = "AI Eval" }
+      document.title = `AI-Q | ${loadingTitle}`
+      return () => { document.title = "AI-Q" }
     }
     if (notFound || !report) {
-      document.title = "AI Eval | Report not found"
-      return () => { document.title = "AI Eval" }
+      document.title = "AI-Q | Report not found"
+      return () => { document.title = "AI-Q" }
     }
     const title = "Complete Report"
-    document.title = `AI Eval | ${title}`
+    document.title = `AI-Q | ${title}`
     if (cachedTitleKey) {
       sessionStorage.setItem(cachedTitleKey, title)
     }
-    return () => { document.title = "AI Eval" }
+    return () => { document.title = "AI-Q" }
   }, [loading, notFound, report, reportTitleFromNavState, cachedReportTitle, cachedTitleKey])
 
   const handleBack = (e: React.MouseEvent) => {

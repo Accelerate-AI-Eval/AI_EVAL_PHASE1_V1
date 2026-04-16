@@ -876,6 +876,19 @@
   background: #f9fafb;
 }
 
+.governance_assessment_link_icon {
+  flex-shrink: 0;
+  color: #2563eb;
+}
+
+.governance_assessment_link:hover .governance_assessment_link_icon {
+  color: #1d4ed8;
+}
+
+.governance_assessment_link_table {
+  white-space: nowrap;
+}
+
 .governance_assessment_link_btn {
   border: none;
 }
@@ -1221,6 +1234,29 @@
   color: #374151;
   line-height: 1.5;
   font-size: 0.9rem;
+}
+
+/* Selected assessment: same “Actions” + complete report link as Top Risk Implementations table */
+.governance_summary_actions {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 9rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.governance_summary_actions_label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.governance_summary_actions_value {
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {

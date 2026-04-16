@@ -172,7 +172,7 @@ function extractOverallRiskScoreFromCompleteReport(
 }
 
 const VendorOverview = () => {
-  document.title = "AI Eval | Dashboard"
+  document.title = "AI-Q | Dashboard"
   const [attestations, setAttestations] = useState<AttestationItem[]>([]);
   const [assessments, setAssessments] = useState<VendorAssessmentItem[]>([]);
   const [reportsByAssessmentId, setReportsByAssessmentId] = useState<

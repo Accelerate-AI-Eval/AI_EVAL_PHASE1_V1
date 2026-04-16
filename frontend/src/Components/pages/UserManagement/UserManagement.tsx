@@ -166,7 +166,7 @@ const ROLE_DEFINITIONS: {
 
 const UserManagement = () => {
   useEffect(() => {
-    document.title = "AI Eval | User Management Settings";
+    document.title = "AI-Q | User Management Settings";
   }, []);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;

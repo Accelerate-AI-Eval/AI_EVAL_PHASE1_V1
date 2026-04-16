@@ -207,32 +207,32 @@ export default function BuyerVendorRiskReport() {
   /** Match vendor portal complete report (`ReportDetail`): browser tab title. */
   useEffect(() => {
     if (error && !report) {
-      document.title = "AI Eval | Report not found";
+      document.title = "AI-Q | Report not found";
       return () => {
-        document.title = "AI Eval";
+        document.title = "AI-Q";
       };
     }
     if (loading && !report) {
-      document.title = "AI Eval | Complete Report";
+      document.title = "AI-Q | Complete Report";
       return () => {
-        document.title = "AI Eval";
+        document.title = "AI-Q";
       };
     }
     if (pending && !report) {
-      document.title = "AI Eval | Complete Report";
+      document.title = "AI-Q | Complete Report";
       return () => {
-        document.title = "AI Eval";
+        document.title = "AI-Q";
       };
     }
     if (report) {
-      document.title = "AI Eval | Complete Report";
+      document.title = "AI-Q | Complete Report";
       return () => {
-        document.title = "AI Eval";
+        document.title = "AI-Q";
       };
     }
-    document.title = "AI Eval | Complete Report";
+    document.title = "AI-Q | Complete Report";
     return () => {
-      document.title = "AI Eval";
+      document.title = "AI-Q";
     };
   }, [loading, pending, error, report]);
 

@@ -16,7 +16,7 @@ import {
   mapOnboardingToAssessmentForm,
 } from "../../../../constants/buyerCotsOnboardingMapping";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useParams, Navigate } from "react-router-dom";
+import { useNavigate, useParams, Navigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import Button from "../../../UI/Button";
 import {
@@ -55,6 +55,13 @@ const BUYER_COTS_SECTION_KEYS = [
   "implementation",
   "evidence",
 ] as const;
+
+type BuyerAssessmentPrefillState = {
+  prefillVendorName?: unknown;
+  prefillProductName?: unknown;
+  vendorName?: unknown;
+  productName?: unknown;
+};
 
 function hasValue(
   formData: Record<string, string>,
@@ -157,6 +164,7 @@ function prepareSubmitPayload(
 
 const BuyerAssessment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: assessmentIdFromUrl } = useParams();
   const [assessmentId, setAssessmentId] = useState<string | null>(
     assessmentIdFromUrl ?? null,
@@ -200,6 +208,38 @@ const BuyerAssessment = () => {
   useEffect(() => {
     if (assessmentIdFromUrl) setAssessmentId(assessmentIdFromUrl);
   }, [assessmentIdFromUrl]);
+
+  // Prefill vendor/product when user starts from AI Vendor Directory create-assessment action.
+  useEffect(() => {
+    if (assessmentIdFromUrl) return;
+    const params = new URLSearchParams(location.search);
+    const state = (location.state ?? {}) as BuyerAssessmentPrefillState;
+    const pickText = (value: unknown): string =>
+      typeof value === "string" ? value.trim() : "";
+
+    const vendorName =
+      pickText(state.prefillVendorName) ||
+      pickText(state.vendorName) ||
+      pickText(params.get("vendorName"));
+    const productName =
+      pickText(state.prefillProductName) ||
+      pickText(state.productName) ||
+      pickText(params.get("productName"));
+
+    if (!vendorName && !productName) return;
+    setFormData((prev) => {
+      const next = { ...prev };
+      if (vendorName) next.vendorName = vendorName;
+      if (productName) next.productName = productName;
+      if (
+        next.vendorName === prev.vendorName &&
+        next.productName === prev.productName
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [assessmentIdFromUrl, location.search, location.state]);
 
   // Load draft by id when URL has /buyerAssessment/:id
   useEffect(() => {

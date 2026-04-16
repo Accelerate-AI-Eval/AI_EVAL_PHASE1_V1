@@ -4,7 +4,13 @@ import { db } from "../../database/db.js";
 import { eq } from "drizzle-orm";
 import { createOrganization, userEditLogs, usersTable } from "../../schema/schema.js";
 import emailConfig from "../../functions/emailconfig.js";
+import {
+  EMAIL_BRAND_PRIMARY,
+  EMAIL_PAGE_BG,
+  emailSignatureCheckmarkHtml,
+} from "../../email/emailBrand.js";
 
+const SIGNUP_CONFIRM_PLATFORM_NAME = "AI-Q Platform";
 
 /** HTML email for signup confirmation (invite or reactivation). */
 function signupConfirmationEmailHtml(
@@ -12,19 +18,36 @@ function signupConfirmationEmailHtml(
   role: string,
   confirmationLink: string,
 ) {
+  const brandHyphen = SIGNUP_CONFIRM_PLATFORM_NAME.replace("-", "&#8209;");
   return `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AI Eval - Confirm your account</title></head>
-<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; color:#333333;">
-<div style="max-width: 600px; margin: 20px auto; padding: 30px; background: #ffffff; border-radius: 8px; color:#333333;">
-  <h1 style="color: #2463eb;">Welcome to AI Eval!</h1>
-  <p style="font-size:16px; line-height:1.5;">Your account has been activated. Please confirm your email to access the portal and set your password if needed.</p>
-  <p style="font-size:16px; line-height:1.5;">You are registered as <strong>${role}</strong> in <strong>${organizationName}</strong>.</p>
-  <div style="margin:20px 0;">
-    <a href="${confirmationLink}" style="background-color: #2463eb; color:#ffffff; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold;">Confirm Email</a>
-  </div>
-  <p style="font-size:16px; line-height:1.5;">Thanks,<br>The AI Eval Team</p>
-</div>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Confirm your account | ${SIGNUP_CONFIRM_PLATFORM_NAME}</title></head>
+<body style="margin:0;padding:0;background-color:${EMAIL_PAGE_BG};font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#333333;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:${EMAIL_PAGE_BG};padding:24px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;">
+        <tr>
+          <td style="padding:40px;">
+            <h1 style="margin:0 0 24px;font-size:22px;line-height:1.3;font-weight:700;color:${EMAIL_BRAND_PRIMARY};">Welcome to ${brandHyphen}!</h1>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#333333;">Your account has been activated. Please confirm your email to access the portal and set your password if needed.</p>
+            <p style="margin:0 0 28px;font-size:16px;line-height:1.5;color:#333333;">You are registered as <strong>${role}</strong> in <strong>${organizationName}</strong>.</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:6px;background-color:${EMAIL_BRAND_PRIMARY};">
+                  <a href="${confirmationLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;">Confirm Email</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#333333;">Thanks,<br>The ${SIGNUP_CONFIRM_PLATFORM_NAME} Team</p>
+            ${emailSignatureCheckmarkHtml()}
+            <p style="margin:0;font-size:12px;line-height:1.5;color:#888888;text-align:center;">&copy; 2026 ${SIGNUP_CONFIRM_PLATFORM_NAME}. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>`;
 }

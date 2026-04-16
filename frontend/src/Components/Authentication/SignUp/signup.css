@@ -105,7 +105,7 @@
 }
 
 .signup_page .settings_form_group label {
-  font-size: 1em;
+  font-size: 0.9em;
   color: #212529;
 }
 
@@ -149,4 +149,44 @@
   justify-content: center;
   border-radius: 6px;
   padding: 0.6rem 1.5rem;
+}
+
+/* Shared AuthShell layout (sign-up form inside wide card) */
+.signup-shell-body {
+  width: 100%;
+}
+
+.signup-form-actions {
+  justify-content: stretch;
+  width: 100%;
+  margin-top: 1em;
+  padding-top: 0.75em;
+}
+
+.signup-form-actions .login-btn.signin-submit {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.signup-confirmation-inner .signup_confirmation_card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border: none;
+  /* padding: 0; */
+  text-align: center;
+  opacity: 1;
+  transform: none;
+}
+
+/* Invite email (read-only): default readonly gray was too faint on this card */
+.signup-shell-body .signin-input--readonly,
+.signup-shell-body .signin-input[readonly] {
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #e8edf3;
 }

@@ -10,6 +10,7 @@ import {
   buildOnboardingEmailHtml,
   ONBOARDING_MAIL_PLATFORM_NAME,
 } from "../../email/onboardingEmailHtml.js";
+import { onboardingPathSegmentFromOrgType } from "../../utils/onboardingPathFromOrgType.js";
 
 const userSignup = async (req: Request, res: Response) => {
   const userData = req.body ?? {};
@@ -154,24 +155,42 @@ const userSignup = async (req: Request, res: Response) => {
       .limit(1);
     const isOrgOnboardingCompleted = orgOnboardedUsers.length > 0;
 
-    const secret = process.env.JWT_SECRET_KEY;
-    if (!secret) throw new Error("JWT_SECRET_KEY not set");
-    const token = jwt.sign({ email, userId, organizationId }, secret, {
-      expiresIn: ONBOARDING_LINK_EXPIRY_JWT,
-    } as jwt.SignOptions);
-
-    const onboardingLink = `${BASE_URL}/onBoarding/${token}`;
-
-    // Resolve organization display name for email
+    // Resolve organization (name + buyer/vendor) for email link and JWT
     let orgDisplayName = "";
+    let organizationTypeForOnboarding: "buyer" | "vendor" = "vendor";
     const orgRows = await db
-      .select({ organizationName: createOrganization.organizationName })
+      .select({
+        organizationName: createOrganization.organizationName,
+        organizationType: createOrganization.organizationType,
+      })
       .from(createOrganization)
       .where(eq(createOrganization.id, dbUser.organization_id))
       .limit(1);
     if (orgRows.length > 0 && orgRows[0]?.organizationName) {
       orgDisplayName = orgRows[0].organizationName;
     }
+    const orgTypeRaw = orgRows[0]?.organizationType;
+    if (String(orgTypeRaw ?? "").trim().toLowerCase() === "buyer") {
+      organizationTypeForOnboarding = "buyer";
+    }
+
+    const secret = process.env.JWT_SECRET_KEY;
+    if (!secret) throw new Error("JWT_SECRET_KEY not set");
+    const token = jwt.sign(
+      {
+        email,
+        userId,
+        organizationId,
+        organizationType: organizationTypeForOnboarding,
+      },
+      secret,
+      {
+        expiresIn: ONBOARDING_LINK_EXPIRY_JWT,
+      } as jwt.SignOptions,
+    );
+
+    const pathSegment = onboardingPathSegmentFromOrgType(organizationTypeForOnboarding);
+    const onboardingLink = `${BASE_URL}/onBoarding/${pathSegment}/${token}`;
 
     let onboardingEmailSent = false;
 

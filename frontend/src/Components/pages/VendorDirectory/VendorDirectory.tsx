@@ -458,7 +458,7 @@ function matchesIndustryFilter(
 const VendorDirectory = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    document.title = "AI Eval | Vendor Portal";
+    document.title = "AI-Q | Vendor Portal";
   });
   const systemRole = (sessionStorage.getItem("systemRole") ?? "")
     .toLowerCase()
@@ -1032,18 +1032,20 @@ const VendorDirectory = () => {
                 />
                 {complianceBadgeForProduct(dp.productId)}
               </span>
-              <button
-                type="button"
-                className="vd_premium_cta"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDirectoryProductClick(dp);
-                }}
-                aria-label={`View intelligence for ${dp.productName}`}
-              >
-                View Intelligence
-                <ChevronRight size={16} aria-hidden />
-              </button>
+              <div className="vd_premium_actions">
+                <button
+                  type="button"
+                  className="vd_premium_cta"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDirectoryProductClick(dp);
+                  }}
+                  aria-label={`View intelligence for ${dp.productName}`}
+                >
+                  View Intelligence
+                  <ChevronRight size={16} aria-hidden />
+                </button>
+              </div>
             </div>
           </article>
         );

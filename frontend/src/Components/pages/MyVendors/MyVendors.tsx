@@ -1,16 +1,33 @@
-import { ChevronDown, ChevronRight, ChevronUp, CircleChevronLeft, Search, ShieldAlert } from "lucide-react";
+import {
+  BarChart3,
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  CircleChevronLeft,
+  LayoutGrid,
+  Search,
+  Shield,
+  ShieldAlert,
+} from "lucide-react";
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FrameworkMappingCardGrid,
   type FrameworkMappingDetailLocationState,
+  type FrameworkMappingRiskMappingContextPayload,
 } from "../../frameworkMapping/FrameworkMappingCardGrid";
 import Select from "../../UI/Select";
 import { ReportsPagination, REPORTS_PAGE_SIZE } from "../Reports/ReportsPagination";
 import {
   FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
+  type FrameworkMappingControlDetail,
   parseFrameworkMappingControlsDetail,
 } from "../../../utils/frameworkMappingControlsDisplay";
+import {
+  buildControlMitigationCards,
+  type ControlDetailMitigationCardVM,
+} from "../../../utils/frameworkControlRiskMitigation";
 import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "../../../styles/page_tabs.css";
@@ -103,6 +120,81 @@ type FrameworkMappingRow = {
   controls?: unknown;
   notes?: unknown;
 };
+
+/** Control drill-down from framework detail; `parentFrameworkDetail` restores Know More context. */
+type FrameworkControlDetailLocationState = {
+  control: FrameworkMappingControlDetail;
+  parentFrameworkDetail: FrameworkMappingDetailLocationState;
+};
+
+function parseRiskMappingContextPayload(
+  raw: FrameworkMappingRiskMappingContextPayload | undefined | null,
+): {
+  top5Risks: DbMatchedRisk[];
+  mitigationsByRiskId: Record<string, DbMitigation[]>;
+  assessmentDetail: AssessmentDetail | null;
+} {
+  if (!raw) return { top5Risks: [], mitigationsByRiskId: {}, assessmentDetail: null };
+  const top5 = Array.isArray(raw.top5Risks) ? (raw.top5Risks as DbMatchedRisk[]) : [];
+  const mitigationsByRiskId =
+    raw.mitigationsByRiskId && typeof raw.mitigationsByRiskId === "object"
+      ? (raw.mitigationsByRiskId as Record<string, DbMitigation[]>)
+      : {};
+  const assessmentDetail =
+    raw.assessmentDetail != null && typeof raw.assessmentDetail === "object"
+      ? (raw.assessmentDetail as AssessmentDetail)
+      : null;
+  return { top5Risks: top5, mitigationsByRiskId, assessmentDetail };
+}
+
+function formatAssessmentLongDate(iso: string | undefined): string {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function firstSentence(text: string): string {
+  const clean = String(text ?? "").trim();
+  if (!clean) return "";
+  const m = clean.match(/^.*?[.?!](?=\s|$)/);
+  return m ? m[0]!.trim() : clean;
+}
+
+function normalizePointText(line: string): string {
+  return line
+    .replace(/^\s*(?:[-*•]+|[a-zA-Z][.)]|\d+[.)])\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractSummaryPoints(text: string): string[] {
+  const clean = String(text ?? "").replace(/\r/g, "").trim();
+  if (!clean) return [];
+
+  const lines = clean
+    .split(/\n+/)
+    .map(normalizePointText)
+    .filter(Boolean);
+  if (lines.length > 1) return lines;
+
+  const numbered = clean.match(/\d+[.)]\s*[^]+?(?=(?:\s\d+[.)]\s)|$)/g);
+  if (numbered && numbered.length > 1) {
+    return numbered.map(normalizePointText).filter(Boolean);
+  }
+
+  const alpha = clean.match(/[a-zA-Z][.)]\s*[^]+?(?=(?:\s[a-zA-Z][.)]\s)|$)/g);
+  if (alpha && alpha.length > 1) {
+    return alpha.map(normalizePointText).filter(Boolean);
+  }
+
+  const semicolon = clean
+    .split(/\s*;\s*/g)
+    .map(normalizePointText)
+    .filter(Boolean);
+  if (semicolon.length > 1) return semicolon;
+
+  return [];
+}
 
 function readIsVendorPortal(): boolean {
   return (sessionStorage.getItem("systemRole") ?? "").trim().toLowerCase() === "vendor";
@@ -312,66 +404,50 @@ function FrameworkMultiSelectDropdown({
 }
 
 function FrameworkMappingControlDescription({ text }: { text: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const [showToggle, setShowToggle] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
+  const points = extractSummaryPoints(text);
+  const previewRaw = points.length > 0 ? points[0]! : firstSentence(text);
+  const preview = previewRaw.replace(/;\s*$/, ".");
+  const descRef = useRef<HTMLParagraphElement | null>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
 
   useLayoutEffect(() => {
-    const el = descRef.current;
-    if (!el) return;
-    if (expanded) {
-      setShowToggle(true);
-      return;
-    }
-    setShowToggle(el.scrollHeight > el.clientHeight + 1);
-  }, [text, expanded]);
+    const node = descRef.current;
+    if (!node) return;
+    const measureOverflow = () => {
+      const computed = window.getComputedStyle(node);
+      const lineHeight = Number.parseFloat(computed.lineHeight || "");
+      const effectiveLineHeight = Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : 20;
+      const maxAllowedHeight = effectiveLineHeight * 4;
+      setIsTruncated(node.scrollHeight > maxAllowedHeight + 1);
+    };
+    measureOverflow();
+    window.addEventListener("resize", measureOverflow);
+    return () => window.removeEventListener("resize", measureOverflow);
+  }, [preview]);
 
   return (
     <div className="fw_mapping_control_detail_desc_wrap">
       <p
         ref={descRef}
-        className={
-          expanded
-            ? "fw_mapping_control_detail_desc"
-            : [
-                "fw_mapping_control_detail_desc",
-                "fw_mapping_control_detail_desc_clamped",
-                showToggle ? "fw_mapping_control_detail_desc_clamped_trunc" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")
-        }
+        className={`fw_mapping_control_detail_desc${isTruncated ? " fw_mapping_control_detail_desc_truncated" : ""}`}
       >
-        {text}
-        {expanded && showToggle ? (
-          <>
-            {"\u00a0"}
-            <button
-              type="button"
-              className="fw_mapping_control_detail_desc_toggle_embed"
-              onClick={() => setExpanded(false)}
-              aria-expanded={true}
-            >
-              Shrink <ChevronUp width={18}/>
-            </button>
-          </>
-        ) : null}
+        {preview || "—"}
       </p>
-      {!expanded && showToggle ? (
-        <button
-          type="button"
-          className="fw_mapping_control_detail_desc_toggle_nextline"
-          onClick={() => setExpanded(true)}
-          aria-expanded={false}
-        >
-          Know more <ChevronRight width={18}/>
-        </button>
-      ) : null}
     </div>
   );
 }
 
-function FrameworkMappingControlsDetailModal({ value }: { value: unknown }) {
+function FrameworkMappingControlsDetailModal({
+  value,
+  showControlRiskLinks,
+  riskMappingContext,
+  onControlKnowMore,
+}: {
+  value: unknown;
+  showControlRiskLinks?: boolean;
+  riskMappingContext?: FrameworkMappingRiskMappingContextPayload | null;
+  onControlKnowMore?: (control: FrameworkMappingControlDetail) => void;
+}) {
   if (isRawControlsFieldNotProvided(value)) {
     return <p className="fw_mapping_control_detail_not_provided">Not provided</p>;
   }
@@ -385,6 +461,9 @@ function FrameworkMappingControlsDetailModal({ value }: { value: unknown }) {
   if (rows.length === 0) {
     return <p className="fw_mapping_detail_muted">—</p>;
   }
+  const { top5Risks, mitigationsByRiskId } = parseRiskMappingContextPayload(riskMappingContext ?? undefined);
+  const hasRiskContext = top5Risks.length > 0 || Object.keys(mitigationsByRiskId).length > 0;
+
   return (
     <div className="fw_mapping_controls_detail_list fw_mapping_controls_detail_list_grid">
       {rows.map((row, idx) => (
@@ -393,16 +472,49 @@ function FrameworkMappingControlsDetailModal({ value }: { value: unknown }) {
           className="fw_mapping_control_detail_card"
         >
           <div className="fw_mapping_control_detail_head">
+            <div className="fw_mapping_control_detail_title_wrap">
+              <span className="fw_mapping_control_detail_title_icon fw_control_detail_mit_icon_wrap" aria-hidden>
+                <Shield size={16} className="fw_control_detail_mit_icon" />
+              </span>
+              <p className="fw_mapping_control_detail_title fw_control_detail_mitigation_name">{row.title}</p>
+            </div>
             <span className="fw_mapping_control_detail_id_tag" title={row.controlId}>
               {row.controlId}
             </span>
-            <p className="fw_mapping_control_detail_title">{row.title}</p>
           </div>
           <FrameworkMappingControlDescription text={row.description} />
+          {showControlRiskLinks && onControlKnowMore ? (
+            <div className="fw_mapping_control_detail_card_actions">
+              <button
+                type="button"
+                className="fw_mapping_control_risk_map_btn"
+                disabled={!hasRiskContext}
+                title={
+                  hasRiskContext
+                    ? "Open mitigation mapping for this control"
+                    : "No database-matched risks for this assessment. Complete the assessment or open Risk Register when data is available."
+                }
+                onClick={() => onControlKnowMore(row)}
+              >
+                Know more
+                <ChevronRight width={16} aria-hidden />
+              </button>
+            </div>
+          ) : null}
         </div>
       ))}
     </div>
   );
+}
+
+function MitigationDecorIcon({ kind }: { kind: ControlDetailMitigationCardVM["iconKind"] }) {
+  if (kind === "chart") {
+    return <BarChart3 size={18} className="fw_control_detail_mit_icon" aria-hidden />;
+  }
+  if (kind === "grid") {
+    return <LayoutGrid size={18} className="fw_control_detail_mit_icon" aria-hidden />;
+  }
+  return <Shield size={18} className="fw_control_detail_mit_icon" aria-hidden />;
 }
 
 function isAssessmentExpired(row: AssessmentRow): boolean {
@@ -499,13 +611,18 @@ function splitFrameworkNotesSegments(raw: string): string[] {
   return t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 }
 
-/**
- * Renders Category, Class (section), Expiry (DD-Mon-YYYY), then post-expiry text as pills (split on `;`).
- * Matches backend buildFrameworkMappingRowsFromComplianceExpiries notes shape.
- */
-function FrameworkNotesCell({ value }: { value: unknown }) {
+function parseFrameworkNotesDetails(value: unknown): {
+  raw: string;
+  category?: string;
+  sectionClass?: string;
+  expiryFormatted?: string;
+  pills: string[];
+  looksStructured: boolean;
+} {
   const raw = sanitizeFrameworkMappingNotesForDisplay(value);
-  if (!raw || raw === "—") return <span>—</span>;
+  if (!raw || raw === "—") {
+    return { raw: "—", pills: [], looksStructured: false };
+  }
 
   const parts = splitFrameworkNotesSegments(raw);
   let category: string | undefined;
@@ -553,6 +670,17 @@ function FrameworkNotesCell({ value }: { value: unknown }) {
     .filter((s) => s && s !== "—");
 
   const looksStructured = Boolean(category || sectionClass || hasExpirySegment);
+  return { raw, category, sectionClass, expiryFormatted, pills, looksStructured };
+}
+
+/**
+ * Renders Category, Class (section), Expiry (DD-Mon-YYYY), then post-expiry text as pills (split on `;`).
+ * Matches backend buildFrameworkMappingRowsFromComplianceExpiries notes shape.
+ */
+function FrameworkNotesCell({ value }: { value: unknown }) {
+  const { raw, category, sectionClass, expiryFormatted, pills, looksStructured } =
+    parseFrameworkNotesDetails(value);
+  if (!raw || raw === "—") return <span>—</span>;
 
   if (!looksStructured) {
     return <span className="risk_mapping_notes_plain">{raw}</span>;
@@ -693,6 +821,7 @@ const MyVendors = () => {
   const [riskRegisterPageSize, setRiskRegisterPageSize] = useState(REPORTS_PAGE_SIZE);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFrameworkNames, setSelectedFrameworkNames] = useState<Set<string>>(() => new Set());
+  const [showFullControlSummary, setShowFullControlSummary] = useState(false);
 
   const buyerFrameworkRows = useMemo(
     () =>
@@ -707,9 +836,9 @@ const MyVendors = () => {
   }, []);
 
   useEffect(() => {
-    document.title = "AI Eval | Risk Mapping";
+    document.title = "AI-Q | Risk Mapping";
     return () => {
-      document.title = "AI Eval";
+      document.title = "AI-Q";
     };
   }, []);
 
@@ -760,6 +889,14 @@ const MyVendors = () => {
     if (location.pathname !== "/riskMappings/framework-detail") return;
     const st = location.state as FrameworkMappingDetailLocationState | null | undefined;
     if (!st?.row) {
+      navigate("/riskMappings", { replace: true });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (location.pathname !== "/riskMappings/control-detail") return;
+    const st = location.state as FrameworkControlDetailLocationState | null | undefined;
+    if (!st?.control || !st?.parentFrameworkDetail?.row) {
       navigate("/riskMappings", { replace: true });
     }
   }, [location.pathname, location.state, navigate]);
@@ -1061,6 +1198,241 @@ const MyVendors = () => {
       : null;
   const frameworkDetailRow = frameworkDetailState?.row;
 
+  const frameworkControlDetailState =
+    location.pathname === "/riskMappings/control-detail"
+      ? (location.state as FrameworkControlDetailLocationState | null)
+      : null;
+
+  useEffect(() => {
+    setShowFullControlSummary(false);
+  }, [location.pathname, frameworkControlDetailState?.control?.controlId]);
+
+  const riskMappingContextForGrid = useMemo((): FrameworkMappingRiskMappingContextPayload | undefined => {
+    if (!selectedAssessmentId) return undefined;
+    if (dbTop5Risks.length === 0 && Object.keys(dbMitigationsByRiskId).length === 0) return undefined;
+    return {
+      top5Risks: dbTop5Risks,
+      mitigationsByRiskId: dbMitigationsByRiskId,
+      assessmentDetail,
+    };
+  }, [selectedAssessmentId, dbTop5Risks, dbMitigationsByRiskId, assessmentDetail]);
+
+  if (location.pathname === "/riskMappings/control-detail") {
+    if (!frameworkControlDetailState?.control || !frameworkControlDetailState.parentFrameworkDetail?.row) {
+      return null;
+    }
+    const parent = frameworkControlDetailState.parentFrameworkDetail;
+    const fwRow = parent.row;
+    const ctrl = frameworkControlDetailState.control;
+    const detailLabel = parent.assessmentLabel?.trim();
+    const { top5Risks: ctxRisks, mitigationsByRiskId: ctxMits, assessmentDetail: ctxDetail } =
+      parseRiskMappingContextPayload(parent.riskMappingContext);
+    const mitigationCards = buildControlMitigationCards(
+      ctrl,
+      ctxRisks,
+      ctxMits,
+      (idx) => severityFromDomainScores(ctxDetail?.riskDomainScores, idx),
+      3,
+    );
+    const controlTitleLabel =
+      ctrl.title.trim() && ctrl.title !== "—"
+        ? ctrl.title.trim()
+        : formatFrameworkMappingFrameworkForDisplay(fwRow.framework);
+    const controlSummaryRaw =
+      ctrl.description.trim() && ctrl.description !== "—"
+        ? ctrl.description
+        : "No additional control narrative is stored on this framework mapping row.";
+    const summaryPoints = extractSummaryPoints(controlSummaryRaw);
+    const collapsedSummary =
+      summaryPoints.length > 0
+        ? firstSentence(summaryPoints[0] ?? "") || (summaryPoints[0] ?? "")
+        : firstSentence(controlSummaryRaw);
+    const canToggleSummary = collapsedSummary.length < controlSummaryRaw.length;
+    const effectiveness =
+      mitigationCards.length === 0
+        ? "—"
+        : mitigationCards.every((c) => c.status === "MITIGATED")
+          ? "High (Mitigated)"
+          : mitigationCards.some((c) => c.status === "PARTIAL")
+            ? "Partial coverage"
+            : "—";
+
+    return (
+      <div className="sec_user_page org_settings_page fw_mapping_detail_page fw_control_detail_page">
+        <div className="fw_mapping_detail_page_inner fw_control_detail_page_inner">
+          <button
+            type="button"
+            className="fw_mapping_detail_back_btn"
+            onClick={() =>
+              navigate("/riskMappings/framework-detail", { state: parent })
+            }
+          >
+            <CircleChevronLeft size={20} aria-hidden />
+            Back to framework mapping
+          </button>
+          <header className="fw_control_detail_header">
+            <p className="fw_control_detail_layer">Layer 3 analysis</p>
+            <h1 className="fw_mapping_detail_page_title fw_control_detail_title">
+              Control Detail: {controlTitleLabel}
+            </h1>
+            <p className="fw_mapping_detail_page_sub">
+              Detailed risk mitigation mapping for technical control {ctrl.controlId}.
+              {detailLabel ? ` · ${detailLabel}` : ""}
+            </p>
+          </header>
+
+          <div className="fw_control_detail_columns">
+            <article className="fw_control_detail_summary_card" aria-labelledby="fw_control_summary_heading">
+              <p className="fw_control_detail_id_pill">{ctrl.controlId}</p>
+              <h2 id="fw_control_summary_heading" className="fw_control_detail_summary_title">
+                {ctrl.title.trim() && ctrl.title !== "—" ? ctrl.title : "Control summary"}
+              </h2>
+              {showFullControlSummary && summaryPoints.length > 0 ? (
+                <ul className="fw_control_detail_summary_points">
+                  {summaryPoints.map((point, idx) => (
+                    <li key={`${ctrl.controlId}-summary-point-${idx}`}>{point}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="fw_control_detail_summary_desc">
+                  {(showFullControlSummary ? controlSummaryRaw : collapsedSummary).replace(/;\s*$/, ".")}
+                </p>
+              )}
+              {canToggleSummary ? (
+                <button
+                  type="button"
+                  className="fw_control_detail_summary_toggle"
+                  onClick={() => setShowFullControlSummary((prev) => !prev)}
+                >
+                  {showFullControlSummary ? "Show less" : "Show more"}
+                  {showFullControlSummary ? (
+                    <ChevronUp size={14} aria-hidden />
+                  ) : (
+                    <ChevronDown size={14} aria-hidden />
+                  )}
+                </button>
+              ) : null}
+              <dl className="fw_control_detail_meta_grid">
+                <div>
+                  <dt>Effectiveness</dt>
+                  <dd>
+                    {effectiveness === "—" ? (
+                      <span className="fw_control_detail_meta_muted">—</span>
+                    ) : (
+                      <span
+                        className={
+                          effectiveness.startsWith("High")
+                            ? "fw_control_detail_pill fw_control_detail_pill_ok"
+                            : "fw_control_detail_pill fw_control_detail_pill_partial"
+                        }
+                      >
+                        {effectiveness}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Last assessment</dt>
+                  <dd>{formatAssessmentLongDate(ctxDetail?.updatedAt)}</dd>
+                </div>
+                <div>
+                  <dt>Owner</dt>
+                  <dd>Risk Team</dd>
+                </div>
+              </dl>
+            </article>
+
+            <section className="fw_control_detail_mitigations" aria-labelledby="fw_control_mitigations_heading">
+              <div className="fw_control_detail_mitigations_head">
+                <h2 id="fw_control_mitigations_heading" className="fw_control_detail_mitigations_title">
+                  Active mitigation mapping
+                </h2>
+                <div className="fw_control_detail_legend" role="list" aria-label="Status legend">
+                  <span className="fw_control_detail_legend_item" role="listitem">
+                    <span className="fw_control_detail_legend_dot fw_control_detail_legend_dot_ok" aria-hidden />
+                    Mitigated
+                  </span>
+                  <span className="fw_control_detail_legend_item" role="listitem">
+                    <span className="fw_control_detail_legend_dot fw_control_detail_legend_dot_partial" aria-hidden />
+                    Partial
+                  </span>
+                </div>
+              </div>
+              {mitigationCards.length === 0 ? (
+                <p className="fw_mapping_detail_muted fw_control_detail_empty">
+                  No database-matched mitigations are linked for this assessment yet, or risk mapping has not been
+                  generated. Open Risk Register after completing the assessment, or check back when mitigation data is
+                  available.
+                </p>
+              ) : (
+                <ul className="fw_control_detail_mitigation_list">
+                  {mitigationCards.map((card) => (
+                    <li key={card.key} className="fw_control_detail_mitigation_card">
+                      <div className="fw_control_detail_mitigation_top">
+                        <div className="fw_control_detail_mitigation_title_row">
+                          <span className="fw_control_detail_mit_icon_wrap" aria-hidden>
+                            <MitigationDecorIcon kind="shield" />
+                          </span>
+                          <h3 className="fw_control_detail_mitigation_name">{card.title}</h3>
+                          <div className="fw_control_detail_mitigation_status_block">
+                            <span
+                              className={
+                                card.status === "MITIGATED"
+                                  ? "fw_control_detail_status_pill fw_control_detail_status_pill_ok"
+                                  : "fw_control_detail_status_pill fw_control_detail_status_pill_partial"
+                              }
+                            >
+                              {card.status}
+                            </span>
+                            <span className="fw_control_detail_reliability">
+                              {card.reliabilityPercent}% Reliability
+                            </span>
+                          </div>
+                        </div>
+                        <p className="fw_control_detail_mitigation_desc">{card.description}</p>
+                      </div>
+                      <div className="fw_control_detail_risks_block">
+                        <p className="fw_control_detail_risks_label">RISKS ADDRESSED:</p>
+                        <ul className="fw_control_detail_risk_rows">
+                          {card.risksAddressed.map((r) => (
+                            <li key={`${card.key}-${r.riskId}`} className="fw_control_detail_risk_row">
+                              <span className="fw_control_detail_risk_row_label">Mitigating Risk</span>
+                              <span className="fw_control_detail_risk_id">{r.riskId}</span>
+                              <span className="fw_control_detail_risk_sep" aria-hidden>
+                                |
+                              </span>
+                              <span
+                                className={`fw_control_detail_risk_sev fw_control_detail_risk_sev_${r.severity.toLowerCase()}`}
+                              >
+                                {r.severity}
+                              </span>
+                              <span className="fw_control_detail_risk_sep" aria-hidden>
+                                |
+                              </span>
+                              <span
+                                className={
+                                  r.mitigationStatus === "MITIGATED"
+                                    ? "fw_control_detail_risk_stat_ok"
+                                    : "fw_control_detail_risk_stat_partial"
+                                }
+                              >
+                                STATUS: {r.mitigationStatus}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (location.pathname === "/riskMappings/framework-detail") {
     if (!frameworkDetailRow) {
       return null;
@@ -1072,6 +1444,7 @@ const MyVendors = () => {
       frameworkDetailState?.source === "organizational_portal" && certificationGap != null;
     const showFrameworkMappingGapCard =
       frameworkDetailState?.source === "organizational_portal" && frameworkGap != null;
+    const noteMeta = parseFrameworkNotesDetails(frameworkDetailRow.notes);
     return (
       <div className="sec_user_page org_settings_page fw_mapping_detail_page">
         <div className="fw_mapping_detail_page_inner">
@@ -1093,30 +1466,53 @@ const MyVendors = () => {
             </p>
           </header>
           <div className="fw_mapping_detail_layout" role="presentation">
-            <article
-              className="fw_mapping_detail_surface_card"
-              aria-labelledby="fw_detail_coverage_heading"
-            >
-              <div className="fw_mapping_detail_card_row">
-                <h2 id="fw_detail_coverage_heading" className="fw_mapping_detail_card_title">
+            <section className="fw_mapping_detail_snapshot_grid" aria-label="Framework mapping summary cards">
+              <article className="fw_mapping_detail_snapshot_card">
+                <h2 id="fw_detail_coverage_heading" className="fw_mapping_detail_card_title fw_mapping_detail_snapshot_title_with_icon">
+                  <span className="fw_mapping_detail_snapshot_title_icon_wrap fw_control_detail_mit_icon_wrap" aria-hidden>
+                    <BarChart3 size={14} className="fw_control_detail_mit_icon" />
+                  </span>
                   Coverage
                 </h2>
-                <p className="fw_mapping_detail_card_value">
-                  {formatFrameworkCell(frameworkDetailRow.coverage)}
-                </p>
-              </div>
-              <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_divider">
-                <h2 id="fw_detail_notes_heading" className="fw_mapping_detail_card_title">
-                  Notes
-                </h2>
-                <div className="fw_mapping_detail_card_block">
-                  <FrameworkNotesCell value={frameworkDetailRow.notes} />
-                </div>
-              </div>
-            </article>
+                <p className="fw_mapping_detail_card_value">{formatFrameworkCell(frameworkDetailRow.coverage)}</p>
+              </article>
+              {noteMeta.category ? (
+                <article className="fw_mapping_detail_snapshot_card">
+                  <h2 className="fw_mapping_detail_card_title fw_mapping_detail_snapshot_title_with_icon">
+                    <span className="fw_mapping_detail_snapshot_title_icon_wrap fw_control_detail_mit_icon_wrap" aria-hidden>
+                      <Shield size={14} className="fw_control_detail_mit_icon" />
+                    </span>
+                    Category
+                  </h2>
+                  <p className="fw_mapping_detail_card_value">{noteMeta.category}</p>
+                </article>
+              ) : null}
+              {noteMeta.sectionClass ? (
+                <article className="fw_mapping_detail_snapshot_card">
+                  <h2 className="fw_mapping_detail_card_title fw_mapping_detail_snapshot_title_with_icon">
+                    <span className="fw_mapping_detail_snapshot_title_icon_wrap fw_control_detail_mit_icon_wrap" aria-hidden>
+                      <LayoutGrid size={14} className="fw_control_detail_mit_icon" />
+                    </span>
+                    Class
+                  </h2>
+                  <p className="fw_mapping_detail_card_value">{noteMeta.sectionClass}</p>
+                </article>
+              ) : null}
+              {noteMeta.expiryFormatted ? (
+                <article className="fw_mapping_detail_snapshot_card">
+                  <h2 className="fw_mapping_detail_card_title fw_mapping_detail_snapshot_title_with_icon">
+                    <span className="fw_mapping_detail_snapshot_title_icon_wrap fw_control_detail_mit_icon_wrap" aria-hidden>
+                      <Calendar size={14} className="fw_control_detail_mit_icon" />
+                    </span>
+                    Expiry
+                  </h2>
+                  <p className="fw_mapping_detail_card_value">{noteMeta.expiryFormatted}</p>
+                </article>
+              ) : null}
+            </section>
             {showCertificationGapCard ? (
               <article
-                className="fw_mapping_detail_surface_card fw_mapping_detail_gap_card"
+                className="fw_mapping_detail_gap_card"
                 aria-labelledby="fw_detail_gap_heading"
               >
                 <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_gap">
@@ -1154,7 +1550,7 @@ const MyVendors = () => {
             ) : null}
             {showFrameworkMappingGapCard ? (
               <article
-                className="fw_mapping_detail_surface_card fw_mapping_detail_gap_card"
+                className="fw_mapping_detail_gap_card"
                 aria-labelledby="fw_detail_mapping_gap_heading"
               >
                 <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_gap">
@@ -1173,16 +1569,28 @@ const MyVendors = () => {
                 </div>
               </article>
             ) : null}
-            <article className="fw_mapping_detail_surface_card" aria-labelledby="fw_detail_controls_heading">
-              <div className="fw_mapping_detail_card_row fw_mapping_detail_card_row_controls">
+            <section aria-labelledby="fw_detail_controls_heading">
+              <div className="fw_mapping_detail_card_row_controls">
                 <h2 id="fw_detail_controls_heading" className="fw_mapping_detail_card_title">
                   Controls
                 </h2>
                 <div className="fw_mapping_detail_card_block">
-                  <FrameworkMappingControlsDetailModal value={frameworkDetailRow.controls} />
+                  <FrameworkMappingControlsDetailModal
+                    value={frameworkDetailRow.controls}
+                    showControlRiskLinks
+                    riskMappingContext={frameworkDetailState?.riskMappingContext}
+                    onControlKnowMore={(control) =>
+                      navigate("/riskMappings/control-detail", {
+                        state: {
+                          control,
+                          parentFrameworkDetail: frameworkDetailState!,
+                        } satisfies FrameworkControlDetailLocationState,
+                      })
+                    }
+                  />
                 </div>
               </div>
-            </article>
+            </section>
           </div>
         </div>
       </div>
@@ -1402,6 +1810,7 @@ const MyVendors = () => {
                     rows={frameworkGridRows}
                     emptyMessage=""
                     assessmentLabel={assessmentDetail?.assessmentLabel}
+                    riskMappingContext={riskMappingContextForGrid}
                   />
                 )}
               </>
@@ -1420,6 +1829,7 @@ const MyVendors = () => {
                     rows={frameworkGridRows}
                     emptyMessage=""
                     assessmentLabel={assessmentDetail?.assessmentLabel}
+                    riskMappingContext={riskMappingContextForGrid}
                   />
                 )}
               </>

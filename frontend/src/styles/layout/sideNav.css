@@ -16,13 +16,18 @@
   padding: 0.5rem;
   width: 40px;
   height: 40px;
-  background-color: #2563eb;
+  /* background-color: #2563eb; */
   color: white;
   border-radius: 5px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.side_nav_logo_icon img {
+  width: 64px;
+  height: 60px;
 }
 
 .side_nav_logo_text {
@@ -47,15 +52,16 @@
   flex: 1;
   min-height: 0;
   padding-bottom: 1rem;
+  margin-top: 15px;
 }
 
 /* Role-based portal label (e.g. VENDOR PORTAL) - light grey on dark */
 .side_nav_portal_label {
-  margin: 0 0 0 10px;
-  padding: 1.5rem 0 0.5rem 1rem;
-  padding-left: calc(1rem + 0.5rem);
-  font-size: 0.75rem;
-  font-weight: 500;
+  /* margin: 0 0 0 10px; */
+  /* padding: 1.5rem 0 0.5rem 1rem; */
+  /* padding-left: calc(1rem + 0.5rem); */
+  /* font-size: 0.75rem; */
+  /* font-weight: 500; */
   /* color: #94a3b8; */
   color: lightgray;
   letter-spacing: 0.08em;
@@ -63,6 +69,18 @@
   cursor: default;
   user-select: none;
   line-height: 1.3;
+  border-top: 0.5px solid #efefef8a;
+  text-align: center;
+  /* margin-top: 10px; */
+  padding: 10px 0 0 0;
+  font-size: 0.7em;
+  font-weight: 600;
+  color: #efefef8a;
+  display: flex;
+  align-content: center;
+  align-items: center;
+  gap: 0.5em;
+  justify-content: center;
 }
 
 .side_nav_list {
@@ -100,8 +118,10 @@
 }
 
 .side_nav_link.active {
-  background-color: #2563eb;
-  color: #ffffff;
+  /* background-color: #2563eb;
+  color: #ffffff; */
+  background-color: #f8f8f8;
+  color: black;
 }
 
 .side_nav_list li a:hover:not(.active) {

@@ -112,9 +112,9 @@ function Reports() {
   }, [activeTab, searchQuery]);
 
   useEffect(() => {
-    document.title = "AI Eval | Reports";
+    document.title = "AI-Q | Reports";
     return () => {
-      document.title = "AI Eval";
+      document.title = "AI-Q";
     };
   }, []);
 
@@ -426,7 +426,7 @@ function Reports() {
             />
             {combinedArchivedList.length > 0 ? (
               <>
-                <div className="general_rpr_cards_sec vendor_directory_grid">
+                <div className="general_rpr_cards_sec vendor_directory_grid complete_rpr_cards_grid">
                   {paginatedArchivedList.map((item) =>
                     item.type === "complete" ? (
                       <CompleteReportsCards

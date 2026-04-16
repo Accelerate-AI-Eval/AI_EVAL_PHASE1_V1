@@ -1,7 +1,8 @@
 /* 4 cards per row; responsive: 2 on medium screens, 1 on small */
 .general_rpr_cards_sec {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* grid-template-columns: repeat(4, 1fr); */
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
 }
 @media (max-width: 1200px) {
@@ -541,7 +542,7 @@
   flex-shrink: 0;
 }
 .general_rpr_card .general_rpr_title {
-  flex: 1 1 auto;
+  flex: 1 1 auto; 
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -559,6 +560,270 @@
   cursor: default;
 }
 
+/*
+ * Complete report cards — grid + dimensions (UX)
+ * Width: columns min ~360px (readable title block); card max 400px (avoids overly long lines in wide cells).
+ * Height: min 272px / 17rem — fits header + 2-line title + model + risk + footer; rows align in grid; grows with content.
+ */
+.general_rpr_cards_sec.vendor_directory_grid.complete_rpr_cards_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 2em;
+  align-items: stretch;
+}
+
+@media (max-width: 640px) {
+  .general_rpr_cards_sec.vendor_directory_grid.complete_rpr_cards_grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Complete report cards — reference layout: left-aligned copy, badge top-left, doc icon top-right, thin green bottom accent */
+.complete_rpr_card_design {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  /* border-bottom: 3px solid #4ade80; */
+  border-bottom: 3px solid #10b981;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.vendor_directory_card.complete_rpr_card_design {
+  border-radius: 5px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  min-height: 272px;
+}
+
+.complete_rpr_card_design .general_report_card_header.complete_rpr_card_top {
+  padding: 0.75rem 1.25rem 0.625rem;
+  align-items: center;
+}
+
+.complete_rpr_card_top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.complete_rpr_card_status_badge {
+  display: inline-block;
+  padding: 0.3em 0.5rem;
+  border-radius: 5px;
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  /* background: #d1fae0;
+  color: #166534; */
+  /* color: #047857; */
+  /* background: #d1fae5; */
+
+  color: #10b981;
+  background: #d1fae5
+}
+
+.complete_rpr_card_status_badge_archived {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.complete_rpr_card_header_actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.complete_rpr_card_header_doc_icon {
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Download: same blue as View Report; background = light tint of that blue */
+.complete_rpr_card_design .general_rpr_card_download_btn {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.complete_rpr_card_design .general_rpr_card_download_btn:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.complete_rpr_card_design .general_rpr_card_download_btn svg {
+  color: inherit;
+}
+
+/* Title + model: flush left; reference ~20px horizontal inset (1.25rem) */
+.complete_rpr_card_design.general_rpr_card .general_rpr_title.complete_rpr_card_title_block {
+  text-align: left;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 0.375rem 1.25rem 0;
+}
+
+.complete_rpr_card_title_block .vendor_directory_card_header_text {
+  width: 100%;
+}
+
+/*
+ * Reference rhythm: small gap title↔model; much larger gap model↔risk block.
+ */
+.complete_rpr_card_title_model_group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.complete_rpr_card_design .complete_rpr_card_title_model_group .click_tooltip_wrapper,
+.complete_rpr_card_design .complete_rpr_card_title_model_group .click_tooltip_trigger,
+.complete_rpr_card_design .complete_rpr_card_title_model_group .general_rpr_card_title_wrap {
+  text-align: left;
+  width: 100%;
+}
+
+.complete_rpr_card_title_model_group .complete_rpr_card_model {
+  margin: 0;
+}
+
+.complete_rpr_card_model {
+  margin: 0.375rem 0 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 400;
+  color: #4b5563;
+  text-align: left;
+}
+
+.complete_rpr_card_design .complete_rpr_card_model {
+  text-align: left;
+  align-self: stretch;
+  width: 100%;
+}
+
+/* Large top padding = whitespace between model line and RISK SCORE (reference) */
+.complete_rpr_card_risk_block {
+  padding: 1.75rem 1.25rem 1.125rem;
+}
+
+.complete_rpr_card_risk_row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.complete_rpr_card_risk_label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.complete_rpr_card_risk_value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  /* color: #16a34a; */
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.general_rpr_card_archived .complete_rpr_card_risk_value {
+  color: #6b7280;
+}
+
+.complete_rpr_card_risk_track {
+  height: 6px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.complete_rpr_card_risk_fill {
+  height: 100%;
+  border-radius: 999px;
+  /* background: #22c55e; */
+  background: #10b981;
+
+  transition: width 0.25s ease;
+}
+
+.general_rpr_card_archived .complete_rpr_card_risk_fill {
+  background: #9ca3af;
+}
+
+.complete_rpr_card_design .general_rpr_card_footer.complete_rpr_card_footer {
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 1.25rem;
+  gap: 0.75rem 1rem;
+  flex-wrap: nowrap;
+  margin-top: auto;
+}
+
+.complete_rpr_card_footer {
+  flex-wrap: nowrap;
+  border-top: 1px solid #f1f5f9;
+}
+
+.complete_rpr_card_expiry_col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.complete_rpr_card_expiry_label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.complete_rpr_card_expiry_value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #000000;
+}
+
+.complete_rpr_card_view_btn {
+  margin-top: 0;
+  flex-shrink: 0;
+  align-self: flex-end;
+  color: #2563eb;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.complete_rpr_card_view_btn:hover {
+  color: #1d4ed8;
+}
+
+.complete_rpr_card_view_btn svg {
+  color: #2563eb;
+}
+
+.complete_rpr_card_view_btn:hover svg {
+  color: #1d4ed8;
+}
+
 .general_rpr_card .general_rpr_card_title_clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -569,6 +834,16 @@
   word-break: break-word;
   font-size: 1.1em;
   font-weight: 500;
+}
+
+/* Complete report reference: large bold black title (overrides line above) */
+.complete_rpr_card_design.general_rpr_card .general_rpr_card_title_clamp {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #000000;
+  line-height: 1.35;
+  text-align: left;
+  margin-bottom: 0;
 }
 
 .general_rpr_card .click_tooltip_wrapper {
@@ -742,6 +1017,12 @@
   font-size: 0.8em;
   font-weight: 600;
   margin: 15px 0 0 0;
+}
+
+/* Complete report card: override generic .view_rpr_btn (comes after — wins on tie) */
+.complete_rpr_card_design .view_rpr_btn.complete_rpr_card_view_btn {
+  font-size: 0.8125rem;
+  margin: 0;
 }
 
 .general_rpr_card_footer{

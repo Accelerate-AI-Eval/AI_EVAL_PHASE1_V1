@@ -30,7 +30,9 @@
     "db:run-0057": "node migrations/run-migration-0057.js",
     "dump-excel": "node scripts/dump-excel-schema.js",
     "sync-excel-to-db": "node scripts/sync-excel-to-db.js",
-    "seed-risk-mappings": "node scripts/seed-risk-mappings.js"
+    "seed-risk-mappings": "node scripts/seed-risk-mappings.js",
+    "db:run-org-organization-type": "node scripts/runOrganizationTypeMigration.mjs",
+    "db:backfill-org-type-from-admin": "node scripts/runOrganizationTypeBackfillFromAdmin.mjs"
   },
   "keywords": [],
   "author": "",

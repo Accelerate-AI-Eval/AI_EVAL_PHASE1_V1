@@ -105,7 +105,7 @@ const VendorCOTSMain = () => {
   }>();
 
   useEffect(() => {
-    document.title = "AI Eval | Vendor COTS";
+    document.title = "AI-Q | Vendor COTS";
   }, []);
 
   const [currentStep, setCurrentStep] = useState(0);

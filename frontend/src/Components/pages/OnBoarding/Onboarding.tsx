@@ -6,11 +6,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import CardContainerOnBoarding from "../../UI/CardContainerOnBoarding";
 import CardOnBoarding from "../../UI/CardOnBoarding";
 import  {jwtDecode}  from "jwt-decode";
+import { getApiBaseUrl } from "../../../utils/apiBaseUrl";
+import { fetchOnboardingAccessStatus } from "../../../utils/onboardingAccessStatus";
+import { toast } from "react-toastify";
 
 interface TokenPayload {
   email: string;
   userId: string;
   organizationId?: string;
+  /** Set by API from organizations.organizationType — skips buyer/vendor chooser */
+  organizationType?: string;
   exp: number;
 }
 
@@ -20,44 +25,78 @@ const Onboarding = () => {
   const [disableBtn, setDisabledBtn] = useState(true);
   const { token } = useParams<{ token: string }>();
 useEffect(() => {
-  document.title = "AI Eval | Onboarding";
+  let cancelled = false;
+  document.title = "AI-Q | Onboarding";
 
-  const activeToken = token || sessionStorage.getItem("onboardingToken");
+  const run = async () => {
+    const activeToken = token || sessionStorage.getItem("onboardingToken");
 
-  if (!activeToken) {
-    navigate("/login");
-    return;
-  }
-
-  try {
-    const decoded: TokenPayload = jwtDecode(activeToken);
-
-    if (decoded.exp * 1000 < Date.now()) {
-      alert("Token expired. Please login again.");
-      sessionStorage.clear();
+    if (!activeToken) {
       navigate("/login");
       return;
     }
 
-    sessionStorage.setItem("onboardingToken", activeToken);
-    sessionStorage.setItem("email", decoded.email);
-    sessionStorage.setItem("userId", decoded.userId);
-    if (decoded.organizationId != null) {
-      sessionStorage.setItem("organizationId", String(decoded.organizationId));
+    try {
+      const decoded: TokenPayload = jwtDecode(activeToken);
+
+      if (decoded.exp * 1000 < Date.now()) {
+        alert("Token expired. Please login again.");
+        sessionStorage.clear();
+        navigate("/login");
+        return;
+      }
+
+      sessionStorage.setItem("onboardingToken", activeToken);
+      sessionStorage.setItem("email", decoded.email);
+      sessionStorage.setItem("userId", decoded.userId);
+      if (decoded.organizationId != null) {
+        sessionStorage.setItem("organizationId", String(decoded.organizationId));
+      }
+
+      const status = await fetchOnboardingAccessStatus(activeToken);
+      if (cancelled) return;
+      if (status.ok && status.onboardingCompleted) {
+        sessionStorage.removeItem("onboardingToken");
+        toast.info("You have already completed onboarding. Please sign in.");
+        navigate("/login", { replace: true });
+        return;
+      }
+      if (!status.ok && (status.reason === "unauthorized" || status.reason === "not_found")) {
+        sessionStorage.clear();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      const orgType = String(decoded.organizationType ?? "")
+        .trim()
+        .toLowerCase();
+      if (orgType === "buyer") {
+        navigate(`/onBoarding/buyerOnboarding/${activeToken}`, { replace: true });
+        return;
+      }
+      if (orgType === "vendor") {
+        navigate(`/onBoarding/vendorOnboarding/${activeToken}`, { replace: true });
+        return;
+      }
+    } catch (error) {
+      console.error("Invalid token", error);
+      alert("Invalid token. Please login again.");
+      sessionStorage.clear();
+      navigate("/login");
     }
-  } catch (error) {
-    console.error("Invalid token", error);
-    alert("Invalid token. Please login again.");
-    sessionStorage.clear();
-    navigate("/login");
-  }
+  };
+
+  run();
+  return () => {
+    cancelled = true;
+  };
 }, [token, navigate]);
 
 
   const handleSelection = async () => {
     const activeToken = token || sessionStorage.getItem("onboardingToken");
     if (!activeToken) return;
-    const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
+    const BASE_URL = getApiBaseUrl();
     if (role === "buyer") {
       try {
         await fetch(`${BASE_URL}/buyerOnboarding/clear-vendor`, {

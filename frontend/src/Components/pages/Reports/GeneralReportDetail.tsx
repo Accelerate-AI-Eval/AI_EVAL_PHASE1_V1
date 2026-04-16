@@ -421,19 +421,19 @@ function GeneralReportDetail() {
   useEffect(() => {
     if (loading) {
       const loadingTitle = cachedReportTitle || "Report";
-      document.title = `AI Eval | ${loadingTitle}`;
-      return () => { document.title = "AI Eval"; };
+      document.title = `AI-Q | ${loadingTitle}`;
+      return () => { document.title = "AI-Q"; };
     }
     if (notFound || !report) {
-      document.title = "AI Eval | Report not found";
-      return () => { document.title = "AI Eval"; };
+      document.title = "AI-Q | Report not found";
+      return () => { document.title = "AI-Q"; };
     }
     const resolvedTitle = generalReportTabTitle(report);
-    document.title = `AI Eval | ${resolvedTitle}`;
+    document.title = `AI-Q | ${resolvedTitle}`;
     if (cachedTitleKey) {
       sessionStorage.setItem(cachedTitleKey, resolvedTitle);
     }
-    return () => { document.title = "AI Eval"; };
+    return () => { document.title = "AI-Q"; };
   }, [loading, notFound, report, reportTitleFromNavState, cachedReportTitle, cachedTitleKey]);
 
   const handleBack = (e: React.MouseEvent) => {

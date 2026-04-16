@@ -40,12 +40,20 @@ export type FrameworkMappingCertificationGapSourceRow = {
   detail?: string;
 };
 
+/** Serialized risk context for framework / control drill-down from Risk &amp; Controls (optional). */
+export type FrameworkMappingRiskMappingContextPayload = {
+  top5Risks: unknown[];
+  mitigationsByRiskId: Record<string, unknown[]>;
+  assessmentDetail: unknown | null;
+};
+
 export type FrameworkMappingDetailLocationState = {
   row: FrameworkMappingCardRow;
   assessmentLabel?: string;
   certificationGap?: FrameworkMappingDetailCertificationGap;
   frameworkGap?: FrameworkMappingDetailFrameworkGap;
   source?: "organizational_portal";
+  riskMappingContext?: FrameworkMappingRiskMappingContextPayload;
 };
 
 function findCertificationGapForFrameworkRow(
@@ -142,6 +150,8 @@ export interface FrameworkMappingCardGridProps {
   certificationGaps?: FrameworkMappingCertificationGapSourceRow[];
   /** Marks detail navigation as organizational portal source. */
   detailSource?: "organizational_portal";
+  /** When set (Risk &amp; Controls), passed through to framework detail for control → risk drill-down. */
+  riskMappingContext?: FrameworkMappingRiskMappingContextPayload;
 }
 
 /**
@@ -153,6 +163,7 @@ export function FrameworkMappingCardGrid({
   assessmentLabel,
   certificationGaps,
   detailSource,
+  riskMappingContext,
 }: FrameworkMappingCardGridProps) {
   const navigate = useNavigate();
 
@@ -249,6 +260,7 @@ export function FrameworkMappingCardGrid({
                           certificationGap,
                           frameworkGap,
                           source: detailSource,
+                          riskMappingContext,
                         } satisfies FrameworkMappingDetailLocationState,
                       })
                     }

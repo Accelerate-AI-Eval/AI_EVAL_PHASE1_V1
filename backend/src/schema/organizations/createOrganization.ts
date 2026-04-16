@@ -4,11 +4,17 @@ import {
   serial,
   pgTable,
 } from "drizzle-orm/pg-core";
-import { organizationStatusEnum } from "../EnumValues/enumValues.js"
+import {
+  organizationStatusEnum,
+  organizationTypeEnum,
+} from "../EnumValues/enumValues.js";
 
 export const createOrganization = pgTable("organizations", {
   id: serial("id").primaryKey(),
   organizationName: varchar("organizationName").notNull(),
+  organizationType: organizationTypeEnum("organizationType")
+    .notNull()
+    .default("vendor"),
   organizationStatus: organizationStatusEnum("organizationStatus")
     .default("active")
     .notNull(),

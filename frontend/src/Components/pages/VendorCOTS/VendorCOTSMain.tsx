@@ -18,7 +18,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 const VendorCOTSMain = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    document.title = "AI Eval | Vendor COTS";
+    document.title = "AI-Q | Vendor COTS";
   });
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [allStepsFilled, setAllStepsFilled] = useState<boolean>(false);

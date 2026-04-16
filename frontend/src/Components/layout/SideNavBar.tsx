@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { NAVIGATION } from "../../constants/navConfig"; // the list of side navigation bar
 import { NavLink, useLocation, useMatch } from "react-router-dom";
-import { Shield } from "lucide-react";
+import { Shield, User2Icon, UserCircle, UserCircle2 } from "lucide-react";
 import { normalizeSystemRole, isPathAllowedForUserRole } from "../../guards/rbacConfig";
 import type { SystemRole } from "../../guards/rbacConfig";
 import "../../styles/layout/sideNav.css";
+import aiQLogo  from "../../assets/images/mainLogo/new_logo/ai_q_logo_gray.png";
 
 const ASSESSMENT_PATHS = ["/assessments", "/vendorcots", "/buyerAssessment"];
 const isAssessmentArea = (pathname: string) =>
@@ -82,25 +83,25 @@ const SideNavBar = () => {
   return (
     <>
       <div className="side_nav_header">
-        <NavLink to="/">
+         <NavLink to="/">
           <div className="side_nav_logo_icon">
-            <Shield size={24} />
+            <img src={aiQLogo} alt="aiQLogo" />
           </div>
-          <div>
-            <h3 className="side_nav_logo_text">AI EVAL</h3>
+          <div className="side_nav_title">
+            <h3 className="side_nav_logo_text">AI-Q</h3>
             <p className="side_nav_logo_tagline">Enterprise AI Governance Platform</p>
           </div>
         </NavLink>
       </div>
       <div className="side_nav_content">
-      {portalLabel && (
+      {/* {portalLabel && (
         <p
           className="side_nav_portal_label"
           aria-label={`Portal: ${portalLabel}`}
         >
           {portalLabel}
         </p>
-      )}
+      )} */}
       <ul className="side_nav_list">
         {navItemsDeduped.map((item) => {
           const Icon = item.icon;
@@ -130,6 +131,17 @@ const SideNavBar = () => {
           );
         })}
       </ul>
+      {portalLabel && (
+        
+        <p
+        
+          className="side_nav_portal_label"
+          aria-label={`Portal: ${portalLabel}`}
+        >
+              < User2Icon width={16}/>
+          {portalLabel}
+        </p>
+      )}
       {/* <div className="side_nav_footer">
         <p className="side_nav_footer_label" aria-label={`Section: ${footerLabel}`}>
           {footerLabel}

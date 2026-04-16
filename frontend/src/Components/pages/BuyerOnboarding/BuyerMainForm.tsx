@@ -11,7 +11,8 @@ import CurrentAiMaturity from "./CurrentAiMaturity"
 import RegulatoryContext from "./RegulatoryContext"
 import TechnicalEnvironment from "./TechnicalEnvironment"
 import RiskAppetite from "./RiskAppetite"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
+import { jwtDecode } from "jwt-decode"
 import CardOnBoarding from "../../UI/CardOnBoarding"
 import CardContainerOnBoarding from "../../UI/CardContainerOnBoarding"
 import { buyerFormInitialState } from "../../../constants/buyerFormInitialState"
@@ -31,6 +32,16 @@ import {
 } from "../../../schemas/onboarding/buyer.schema"
 import "../../../styles/card.css"
 import "../VendorOnboarding/vendor_onboarding.css"
+import { getApiBaseUrl } from "../../../utils/apiBaseUrl"
+import { fetchOnboardingAccessStatus } from "../../../utils/onboardingAccessStatus"
+import { toast } from "react-toastify"
+
+interface OnboardingJwtPayload {
+  email?: string
+  userId?: string | number
+  organizationId?: string | number
+  exp?: number
+}
 
 /** Per-field errors for inline display. Step 0: assign formErrors (e.g. sector refine) to "sector". */
 function getFieldErrorsFromZod(error: z.ZodError, stepIndex: number): Record<string, string> {
@@ -106,18 +117,73 @@ function getStepData(step: number, form: BuyerDataInterface): Record<string, unk
 }
 
 const BuyerMainForm = ({ type }: { type: string }) => {
+  const { token: tokenFromRoute } = useParams<{ token: string }>()
+
   useEffect(() => {
-    document.title = "AI Eval | Buyer Onboarding"
+    document.title = "AI-Q | Buyer Onboarding"
   }, [])
 
-  const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1"
+  /** JWT is in the URL (`/onBoarding/buyerOnboarding/:token`); keep sessionStorage in sync for refresh/back. */
+  useEffect(() => {
+    const raw = tokenFromRoute?.trim()
+    if (!raw) return
+    sessionStorage.setItem("onboardingToken", raw)
+    try {
+      const decoded = jwtDecode<OnboardingJwtPayload>(raw)
+      if (decoded.email) sessionStorage.setItem("email", String(decoded.email))
+      if (decoded.userId != null) sessionStorage.setItem("userId", String(decoded.userId))
+      if (decoded.organizationId != null) {
+        sessionStorage.setItem("organizationId", String(decoded.organizationId))
+      }
+    } catch {
+      // API still validates Bearer token
+    }
+  }, [tokenFromRoute])
+
+  const BASE_URL = getApiBaseUrl()
   const navigate = useNavigate()
 
   const [currentStep, setCurrentStep] = useState(0)
   const [allStepsFilled, setAllStepsFilled] = useState(false)
   const [formBuyerData, setFormBuyerData] = useState<BuyerDataInterface>(buyerFormInitialState as BuyerDataInterface)
   const [validationError, setValidationError] = useState<z.ZodError | null>(null)
-    const token = sessionStorage.getItem("onboardingToken")
+  /** Inline field errors only after user clicks Continue and validation fails on that step */
+  const [showInlineErrors, setShowInlineErrors] = useState(false)
+  /** False until access-status allows this page (or fails open on network error) */
+  const [onboardingGateReady, setOnboardingGateReady] = useState(false)
+
+  const token =
+    (tokenFromRoute && tokenFromRoute.trim() !== "")
+      ? tokenFromRoute.trim()
+      : sessionStorage.getItem("onboardingToken")
+
+  useEffect(() => {
+    const t = token?.trim()
+    if (!t) {
+      setOnboardingGateReady(true)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const result = await fetchOnboardingAccessStatus(t)
+      if (cancelled) return
+      if (result.ok && result.onboardingCompleted) {
+        sessionStorage.removeItem("onboardingToken")
+        toast.info("You have already completed onboarding. Please sign in.")
+        navigate("/login", { replace: true })
+        return
+      }
+      if (!result.ok && (result.reason === "unauthorized" || result.reason === "not_found")) {
+        sessionStorage.removeItem("onboardingToken")
+        navigate("/login", { replace: true })
+        return
+      }
+      setOnboardingGateReady(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [token, navigate])
 
   const handleContinue = async () => {
     if (currentStep >= 8) return
@@ -125,10 +191,12 @@ const BuyerMainForm = ({ type }: { type: string }) => {
     const stepData = getStepData(currentStep, formBuyerData)
     const result = schema.safeParse(stepData)
     if (!result.success) {
+      setShowInlineErrors(true)
       setValidationError(result.error)
       return
     }
     setValidationError(null)
+    setShowInlineErrors(false)
     const orgId = sessionStorage.getItem("organizationId")
     if (token) {
       try {
@@ -156,23 +224,30 @@ const BuyerMainForm = ({ type }: { type: string }) => {
 
   const handleBack = () => {
     setValidationError(null)
+    setShowInlineErrors(false)
     setCurrentStep((prev) => prev - 1)
   }
 
-  // Re-validate current step when form data changes so field errors disappear as user fixes them
   useEffect(() => {
-    if (validationError == null || currentStep > 7) return
+    setShowInlineErrors(false)
+    setValidationError(null)
+  }, [currentStep])
+
+  // After Continue failed, re-validate on change so errors clear/update as the user edits (no errors before first Continue).
+  useEffect(() => {
+    if (currentStep > 7) return
+    if (!showInlineErrors) return
     const schema = stepSchemas[currentStep]
     const stepData = getStepData(currentStep, formBuyerData)
     const result = schema.safeParse(stepData)
     if (result.success) setValidationError(null)
     else setValidationError(result.error)
-  }, [formBuyerData, currentStep, validationError])
+  }, [formBuyerData, currentStep, showInlineErrors])
 
   const stepFieldErrors = useMemo(() => {
-    if (!validationError || currentStep > 7) return {}
+    if (!showInlineErrors || !validationError || currentStep > 7) return {}
     return getFieldErrorsFromZod(validationError, currentStep)
-  }, [validationError, currentStep])
+  }, [validationError, currentStep, showInlineErrors])
 
   const tabStepsWithContent = useMemo(() => {
     const stepIconNodes = BUYER_ONBOARDING_TAB_STEPS.map((s) =>
@@ -330,25 +405,58 @@ const BuyerMainForm = ({ type }: { type: string }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const token = sessionStorage.getItem("onboardingToken")
-    if (!token) return
+    const url = `${BASE_URL}/buyerOnboarding`
+    const payload = {
+      ...formBuyerData,
+      buyer_Id: sessionStorage.getItem("userId"),
+      organization_Id: sessionStorage.getItem("organizationId") ?? undefined,
+    }
+    console.log("[Buyer onboarding] Submit clicked", {
+      url,
+      hasOnboardingToken: Boolean(token),
+      tokenSource: tokenFromRoute?.trim() ? "route" : "sessionStorage",
+      userId: sessionStorage.getItem("userId"),
+      organizationId: sessionStorage.getItem("organizationId"),
+    })
+    if (!token) {
+      console.warn("[Buyer onboarding] Aborted: no token in URL or sessionStorage")
+      return
+    }
     try {
-      const response = await fetch(`${BASE_URL}/buyerOnboarding`, {
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formBuyerData,
-          buyer_Id: sessionStorage.getItem("userId"),
-          organization_Id: sessionStorage.getItem("organizationId") ?? undefined,
-        }),
+        body: JSON.stringify(payload),
+      })
+      const bodyText = await response.text()
+      let bodyJson: unknown = null
+      try {
+        bodyJson = bodyText ? JSON.parse(bodyText) : null
+      } catch {
+        bodyJson = bodyText
+      }
+      console.log("[Buyer onboarding] Response", {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        body: bodyJson,
       })
       if (response.ok) setAllStepsFilled(true)
+      else console.warn("[Buyer onboarding] Submit failed — see status/body above")
     } catch (err) {
-      console.error(err)
+      console.error("[Buyer onboarding] Submit fetch error", err)
     }
+  }
+
+  if (!onboardingGateReady) {
+    return (
+      <div className="form_card_centered">
+        <p style={{ textAlign: "center", color: "#64748b" }}>Loading…</p>
+      </div>
+    )
   }
 
   return (

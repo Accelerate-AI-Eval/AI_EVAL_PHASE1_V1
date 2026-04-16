@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getOrganizations } from "../../../Context/OrganizationsData";
 import LoadingMessage from "../../UI/LoadingMessage";
 import EditOrganization from "./EditOrganization";
+import { getOrganizationTypeDisplay } from "../../../utils/organizationTypeDisplay";
 
 const LOADER_MIN_MS = 1500;
 
@@ -19,29 +20,6 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
   const { data, status } = useSelector((state) => state.organizations);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedOrgId, setSelectedOrgId] = useState(null);
-  // const getOrganizations = async () => {
-  //   // console.log("here");
-  //   try {
-  //     const response = await fetch(
-  //       "http://localhost:5003/api/v1/allOrganizations",
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //       },
-  //     );
-  //     // console.log(response)
-  //     const result = await response.json()
-  //     console.log(result)
-  //     if(response.ok){
-  //       setTableData(result.data)
-  //     }
-
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  // };
 
   useEffect(() => {
     dispatch(getOrganizations());
@@ -59,72 +37,16 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
     if (status === "loading") setLoading(true);
   }, [status]);
 
-  // const tableData = [
-  //   {
-  //     id: "1",
-  //     organizationName: "Test Organization",
-  //     orgStatus: "Active",
-  //   },
-  //   {
-  //     id: "2",
-  //     organizationName: "Test Organization 2",
-  //     orgStatus: "Inactive",
-  //   },
-  // ];
-
   const filteredItems = (data ?? []).filter(
     (item) =>
       item.organizationName &&
       item.organizationName.toLowerCase().includes(filterText.toLowerCase()),
   );
 
-  const handleClear = () => {
-    if (filterText) {
-      setResetPaginationToggle(!resetPaginationToggle);
-      setFilterText("");
-    }
-  };
-
   const editOrg = (id) => {
     setIsEdit(true);
     setSelectedOrgId(id);
   };
-
-  const FilterComponent = ({ filterText, onFilter, onClear }) => (
-    <>
-      <div className="filterOption">
-        <label htmlFor="">Search</label>{" "}
-        <input
-          className="filterInput"
-          name=""
-          type="text"
-          id="search"
-          placeholder="Filter By Organization"
-          aria-label="Search Input"
-          value={filterText}
-          onChange={onFilter}
-          // autoFocus
-        />
-        {/* <span className="searchCondition">Search by Organization Name</span> */}
-      </div>
-    </>
-  );
-
-  //   const subHeaderComponentMemo = React.useMemo(() => {
-  //     const handleClear = () => {
-  //       if (filterText) {
-  //         setResetPaginationToggle(!resetPaginationToggle);
-  //         setFilterText("");
-  //       }
-  //     };
-  //     return (
-  //       <FilterComponent
-  //         onFilter={(e) => setFilterText(e.target.value)}
-  //         onClear={handleClear}
-  //         filterText={filterText}
-  //       />
-  //     );
-  //   }, [filterText, resetPaginationToggle]);
 
   const customStyles = {
     table: {
@@ -134,18 +56,6 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
         border: "1px solid lightgray",
       },
     },
-    // headCells: {
-    //   style: {
-    //     justifyContent: "left",
-    //     textAlign: "left",
-    //   },
-    // },
-    // cells: {
-    //   style: {
-    //     justifyContent: "center",
-    //     textAlign: "center",
-    //   },
-    // },
   };
 
   const columns = [
@@ -167,6 +77,7 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
 
     {
       name: <div className="tableHeader">Organization Name</div>,
+      selector: (row) => row.organizationName ?? "",
       cell: (row) => (
         <div
           style={{
@@ -189,18 +100,38 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
     },
 
     {
+      name: <div className="tableHeader">Type</div>,
+      selector: (row) => getOrganizationTypeDisplay(row),
+      cell: (row) => (
+        <div style={{ width: "100%", textAlign: "left" }}>
+          <p style={{ textTransform: "none" }}>{getOrganizationTypeDisplay(row)}</p>
+        </div>
+      ),
+      sortable: true,
+    },
+
+    {
       name: <div className="tableHeader">Status</div>,
-      selector: (row) => (
-        <p
-          style={{ textTransform: "capitalize" }}
-          className={
-            row.organizationStatus === "active"
-              ? "activeStatus"
-              : "inactiveStatus"
-          }
+      selector: (row) => row.organizationStatus ?? "",
+      cell: (row) => (
+        <div
+          style={{
+            width: "100%",
+            justifyContent: "center",
+            display: "flex",
+          }}
         >
-          {row.organizationStatus}
-        </p>
+          <p
+            style={{ textTransform: "capitalize" }}
+            className={
+              row.organizationStatus === "active"
+                ? "activeStatus"
+                : "inactiveStatus"
+            }
+          >
+            {row.organizationStatus}
+          </p>
+        </div>
       ),
       sortable: true,
     },

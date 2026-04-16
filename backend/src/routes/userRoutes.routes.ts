@@ -11,9 +11,12 @@ import authenticateToken from "../middlewares/routesProtection.js";
 import updatesUsers from "../controllers/user_managemnt_controller/updateUsers.controllers.js";
 import forgotPassword from "../controllers/user_managemnt_controller/forgotPassword.js";
 import resetPassword from "../controllers/user_managemnt_controller/resetPassword.js";
+import getOnboardingAccessStatus from "../controllers/onboarding/getOnboardingAccessStatus.controller.js";
+
 const router = express.Router();
 
 router
+.get("/onboarding/access-status", getOnboardingAccessStatus)
 .get("/me", authenticateToken, getMe)
 .put("/me", authenticateToken, updateMyProfile)
 .get("/allUsers",authenticateToken, fetchAllUsers)

@@ -1,16 +1,28 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, LayoutDashboard, Activity, Shield, AlertTriangle, ChevronDown, Sparkles, Send, ClipboardPlus, Building2, Users, ChevronRight } from "lucide-react";
+import { FileText, LayoutDashboard, Activity, Shield, AlertTriangle, ChevronDown, ClipboardPlus, Building2, Users, ChevronRight } from "lucide-react";
 import { MetricCard } from "../../UI/Card";
 import LoadingMessage from "../../UI/LoadingMessage";
 import type { AssessmentRow } from "./types";
 import { BASE_URL, formatGovDate, getAssessmentLabel } from "./utils";
+import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "./dashboard.css";
 
 type RiskFrequency = { label: string; count: number; riskIds: string[] };
 type DomainShare = { primaryRisk: string; domainName: string; percentage: number };
-type AssessmentReportMeta = { reportId: string; score: number | null; summary: string | null };
-type SelectedAssessmentSnapshot = { score: number | null; executiveSummary: string | null };
+type AssessmentReportMeta = {
+  reportId: string;
+  /** Overall / headline risk score from complete report JSON (0–100). */
+  score: number | null;
+  /** Buyer vendor risk report (assess-3) implementation risk score (0–100). */
+  implementationRiskScore: number | null;
+  summary: string | null;
+};
+type SelectedAssessmentSnapshot = {
+  implementationRiskScore: number | null;
+  overallRiskScore: number | null;
+  executiveSummary: string | null;
+};
 type FrameworkMappingRow = {
   riskId: string;
   riskCategory: string;
@@ -30,6 +42,18 @@ function getStaticFrameworkControl(riskCategory: string): string {
     return "NIST MAP 1.5, EU Art. 15 (Cybersecurity)";
   }
   return "Framework mapping available in risk register";
+}
+
+/** Join distinct framework names from buyer risk-mappings `frameworkMappingRows` (same as org portal / report). */
+function frameworkTypesFromBuyerMappingRows(rows: unknown): string {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const names = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const label = formatFrameworkMappingFrameworkForDisplay((row as Record<string, unknown>).framework);
+    if (label && label !== "—") names.add(label);
+  }
+  return [...names].join(", ");
 }
 
 function toMitigationId(raw: unknown): string {
@@ -116,6 +140,27 @@ function extractOverallRiskScoreFromReportItem(item: unknown): number | null {
   return extractOverallRiskScoreFromCompleteReport(r.report);
 }
 
+function extractImplementationRiskScoreFromCompleteReport(report: unknown): number | null {
+  if (!report || typeof report !== "object" || Array.isArray(report)) return null;
+  const r = report as Record<string, unknown>;
+  const generated =
+    r.generatedAnalysis && typeof r.generatedAnalysis === "object" && !Array.isArray(r.generatedAnalysis)
+      ? (r.generatedAnalysis as Record<string, unknown>)
+      : undefined;
+  const raw = generated?.implementationRiskScore ?? r.implementationRiskScore;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function extractImplementationRiskScoreFromReportItem(item: unknown): number | null {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+  const r = item as Record<string, unknown>;
+  const direct = Number(r.implementationRiskScore ?? r.implementation_risk_score);
+  if (Number.isFinite(direct)) return Math.max(0, Math.min(100, Math.round(direct)));
+  return extractImplementationRiskScoreFromCompleteReport(r.report);
+}
+
 function extractExecutiveSummaryFromCompleteReport(report: unknown): string | null {
   if (!report || typeof report !== "object" || Array.isArray(report)) return null;
   const r = report as Record<string, unknown>;
@@ -147,7 +192,7 @@ const BuyerOverview = () => {
   const [frameworkRowsByAssessment, setFrameworkRowsByAssessment] = useState<Record<string, FrameworkMappingRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [aiSearchQuery, setAiSearchQuery] = useState("");
+  // const [aiSearchQuery, setAiSearchQuery] = useState("");
 
   const fetchAssessments = useCallback(() => {
     const token = sessionStorage.getItem("bearerToken");
@@ -174,8 +219,11 @@ const BuyerOverview = () => {
       .then((res) => res.json())
       .then(async (assessmentsResult) => {
         let completedBuyerIds: string[] = [];
-        if (assessmentsResult?.data?.assessments != null) {
-          const list = assessmentsResult.data.assessments as AssessmentRow[];
+        const list: AssessmentRow[] =
+          assessmentsResult?.data?.assessments != null
+            ? (assessmentsResult.data.assessments as AssessmentRow[])
+            : [];
+        if (list.length > 0) {
           setAssessmentsList(list);
           const buyer = list.filter((a) => (a.type ?? "").toLowerCase() === "cots_buyer");
           const completed = buyer.filter((a) => (a.status ?? "").toLowerCase() !== "draft");
@@ -189,9 +237,25 @@ const BuyerOverview = () => {
           setSelectedAssessmentId("");
         }
 
+        /** Report list APIs require organizationId; session may be unset right after login. */
+        const orgFromSession = String(sessionStorage.getItem("organizationId") ?? "").trim();
+        const buyerRows = list.filter((a) => (a.type ?? "").toLowerCase() === "cots_buyer");
+        const orgFromAssessment = String(
+          buyerRows.find((a) => String(a.organizationId ?? "").trim())?.organizationId ?? "",
+        ).trim();
+        const effectiveOrgId = orgFromSession || orgFromAssessment;
+        const reportsQuery = effectiveOrgId ? `?organizationId=${encodeURIComponent(effectiveOrgId)}` : "";
+        if (effectiveOrgId && !orgFromSession) {
+          try {
+            sessionStorage.setItem("organizationId", effectiveOrgId);
+          } catch {
+            // ignore storage failures
+          }
+        }
+
         const reportsByAssessment: Record<string, AssessmentReportMeta> = {};
         try {
-          const reportsRes = await fetch(`${BASE_URL}/customerRiskReports${query}`, {
+          const reportsRes = await fetch(`${BASE_URL}/customerRiskReports${reportsQuery}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -209,9 +273,11 @@ const BuyerOverview = () => {
             const rid = String(rep?.id ?? "").trim();
             if (!aid || !rid) continue;
             const score = extractOverallRiskScoreFromReportItem(rep);
+            const implementationRiskScore = extractImplementationRiskScoreFromReportItem(rep);
             const nextMeta: AssessmentReportMeta = {
               reportId: rid,
               score,
+              implementationRiskScore,
               summary:
                 rep?.report &&
                 typeof rep.report === "object" &&
@@ -228,11 +294,93 @@ const BuyerOverview = () => {
             }
             const current = reportsByAssessment[aid];
             if (current.score == null && nextMeta.score != null) {
-              reportsByAssessment[aid] = nextMeta;
+              reportsByAssessment[aid] = {
+                ...nextMeta,
+                implementationRiskScore:
+                  nextMeta.implementationRiskScore ?? current.implementationRiskScore ?? null,
+              };
+            } else if (current.implementationRiskScore == null && nextMeta.implementationRiskScore != null) {
+              reportsByAssessment[aid] = {
+                ...current,
+                implementationRiskScore: nextMeta.implementationRiskScore,
+              };
             }
+          }
+          try {
+            const bvrRes = await fetch(`${BASE_URL}/buyerVendorRiskReports${reportsQuery}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            const bvrData = await bvrRes.json().catch(() => ({}));
+            const bvrRows = Array.isArray(bvrData?.data?.reports) ? (bvrData.data.reports as Array<Record<string, unknown>>) : [];
+            for (const row of bvrRows) {
+              const bvrAid = String(row?.assessmentId ?? "").trim();
+              const rawIrs = row?.implementationRiskScore;
+              const n = Number(rawIrs);
+              if (!bvrAid || !Number.isFinite(n)) continue;
+              const irs = Math.max(0, Math.min(100, Math.round(n)));
+              const cur = reportsByAssessment[bvrAid];
+              if (cur) {
+                reportsByAssessment[bvrAid] = { ...cur, implementationRiskScore: irs };
+              } else {
+                reportsByAssessment[bvrAid] = {
+                  reportId: "",
+                  score: null,
+                  implementationRiskScore: irs,
+                  summary: null,
+                };
+              }
+            }
+          } catch {
+            // ignore buyer vendor risk list failure
           }
         } catch {
           // ignore reports fetch failure; cards still render
+        }
+        try {
+          const orgParamEnrich = effectiveOrgId ? `&organizationId=${encodeURIComponent(effectiveOrgId)}` : "";
+          for (const aid of completedBuyerIds) {
+            if (reportsByAssessment[aid]?.reportId) continue;
+            const res = await fetch(
+              `${BASE_URL}/customerRiskReports?assessmentId=${encodeURIComponent(aid)}${orgParamEnrich}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            );
+            const data = await res.json().catch(() => ({}));
+            const rows = Array.isArray(data?.data?.reports) ? (data.data.reports as Array<Record<string, unknown>>) : [];
+            if (rows.length === 0) continue;
+            const row0 = rows[0]!;
+            const rid = String(row0?.id ?? "").trim();
+            if (!rid) continue;
+            const score = extractOverallRiskScoreFromReportItem(row0);
+            const implementationRiskScore = extractImplementationRiskScoreFromReportItem(row0);
+            const summary =
+              row0?.report &&
+              typeof row0.report === "object" &&
+              (row0.report as Record<string, unknown>).generatedAnalysis &&
+              typeof (row0.report as Record<string, unknown>).generatedAnalysis === "object"
+                ? String(
+                    ((row0.report as Record<string, unknown>).generatedAnalysis as Record<string, unknown>).summary ?? "",
+                  ).trim() || null
+                : null;
+            const existing = reportsByAssessment[aid];
+            reportsByAssessment[aid] = {
+              reportId: rid,
+              score: existing?.score ?? score ?? null,
+              implementationRiskScore: existing?.implementationRiskScore ?? implementationRiskScore ?? null,
+              summary: existing?.summary ?? summary ?? null,
+            };
+          }
+        } catch {
+          // ignore per-assessment complete report lookup failures
         }
         setReportsByAssessmentId(reportsByAssessment);
 
@@ -271,6 +419,7 @@ const BuyerOverview = () => {
             data?.data?.mitigationsByRiskId && typeof data.data.mitigationsByRiskId === "object"
               ? (data.data.mitigationsByRiskId as Record<string, unknown>)
               : {};
+          const frameworkTypesForAssessment = frameworkTypesFromBuyerMappingRows(data?.data?.frameworkMappingRows);
           const rowsForAssessment: FrameworkMappingRow[] = [];
 
           if (!riskIdsByAssessment.has(aid)) {
@@ -328,7 +477,10 @@ const BuyerOverview = () => {
             }
 
             const riskCategory = String(risk?.risk_title ?? (rid || "Unknown Risk")).trim();
-            const frameworkControl = getStaticFrameworkControl(riskCategory);
+            const frameworkControl =
+              frameworkTypesForAssessment.trim() !== ""
+                ? frameworkTypesForAssessment
+                : getStaticFrameworkControl(riskCategory);
             const mids = Array.isArray((mitByRisk as Record<string, unknown>)[rid])
               ? ((mitByRisk as Record<string, unknown>)[rid] as Array<Record<string, unknown>>)
                   .map((m) => toMitigationId(m?.mitigation_id ?? m?.mitigation_action_id))
@@ -362,6 +514,14 @@ const BuyerOverview = () => {
               });
             } else {
               row.mitigationIds.forEach((m) => prev._mitSet.add(m));
+              const fwSet = new Set<string>();
+              for (const part of prev.frameworkControl.split(",").map((s) => s.trim())) {
+                if (part) fwSet.add(part);
+              }
+              for (const part of row.frameworkControl.split(",").map((s) => s.trim())) {
+                if (part) fwSet.add(part);
+              }
+              if (fwSet.size > 0) prev.frameworkControl = [...fwSet].join(", ");
             }
           }
         }
@@ -470,7 +630,8 @@ const BuyerOverview = () => {
     }
     let cancelled = false;
     (async () => {
-      let score: number | null = null;
+      let overallRiskScore: number | null = null;
+      let implementationRiskScore: number | null = null;
       let executiveSummary: string | null = null;
       try {
         const orgId = sessionStorage.getItem("organizationId");
@@ -482,13 +643,14 @@ const BuyerOverview = () => {
         const data = await res.json().catch(() => ({}));
         const rows = Array.isArray(data?.data?.reports) ? (data.data.reports as Array<Record<string, unknown>>) : [];
         if (rows.length > 0) {
-          score = extractOverallRiskScoreFromReportItem(rows[0]);
+          overallRiskScore = extractOverallRiskScoreFromReportItem(rows[0]);
+          implementationRiskScore = extractImplementationRiskScoreFromReportItem(rows[0]);
           executiveSummary = extractExecutiveSummaryFromCompleteReport(rows[0]?.report);
         }
       } catch {
         // continue to buyer-vendor fallback
       }
-      if (score == null || !executiveSummary) {
+      if (implementationRiskScore == null || overallRiskScore == null || !executiveSummary) {
         try {
           const bvrRes = await fetch(
             `${BASE_URL.replace(/\/$/, "")}/buyerCotsAssessment/${encodeURIComponent(selectedAssessmentId)}/vendor-risk-report`,
@@ -497,9 +659,15 @@ const BuyerOverview = () => {
           const bvrData = await bvrRes.json().catch(() => ({}));
           if (bvrRes.ok && bvrData?.report && typeof bvrData.report === "object") {
             const rep = bvrData.report as Record<string, unknown>;
-            if (score == null) {
+            if (implementationRiskScore == null) {
+              const irsN = Number(rep.implementationRiskScore);
+              implementationRiskScore = Number.isFinite(irsN)
+                ? Math.max(0, Math.min(100, Math.round(irsN)))
+                : implementationRiskScore;
+            }
+            if (overallRiskScore == null) {
               const n = Number(rep.overallRiskScore);
-              score = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : score;
+              overallRiskScore = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : overallRiskScore;
             }
             if (!executiveSummary) {
               const s = String(rep.executiveSummary ?? "").trim();
@@ -510,7 +678,13 @@ const BuyerOverview = () => {
           // ignore fallback failure
         }
       }
-      if (!cancelled) setSelectedAssessmentSnapshot({ score, executiveSummary });
+      if (!cancelled) {
+        setSelectedAssessmentSnapshot({
+          implementationRiskScore,
+          overallRiskScore,
+          executiveSummary,
+        });
+      }
     })();
     return () => {
       cancelled = true;
@@ -553,12 +727,16 @@ const BuyerOverview = () => {
         { primaryRisk: "Unspecified", domainName: "Unspecified", percentage: 0 },
         { primaryRisk: "Unspecified", domainName: "Unspecified", percentage: 0 },
       ]).slice(0, 3);
-  const selectedAssessmentScore = selectedAssessmentId
-    ? (selectedAssessmentSnapshot?.score ?? reportsByAssessmentId[selectedAssessmentId]?.score ?? null)
+  const selectedAssessmentDashboardScore = selectedAssessmentId
+    ? (selectedAssessmentSnapshot?.implementationRiskScore ??
+        reportsByAssessmentId[selectedAssessmentId]?.implementationRiskScore ??
+        selectedAssessmentSnapshot?.overallRiskScore ??
+        reportsByAssessmentId[selectedAssessmentId]?.score ??
+        null)
     : null;
-  const assessmentMetricTitle = selectedAssessmentId ? "Assessment Score" : "Assessments";
+  const assessmentMetricTitle = selectedAssessmentId ? "Implementation risk score" : "Assessments";
   const assessmentMetricValue = selectedAssessmentId
-    ? (selectedAssessmentScore != null ? selectedAssessmentScore : "")
+    ? (selectedAssessmentDashboardScore != null ? selectedAssessmentDashboardScore : "")
     : buyerAssessments.length;
   const assessmentMetricDescription = selectedAssessmentId ? "" : `${completedCount} completed, ${draftCount} pending`;
 
@@ -674,11 +852,23 @@ const BuyerOverview = () => {
                     reportsByAssessmentId[selectedAssessmentId]?.summary ??
                     "No summary available for this assessment yet. Please open the report for details."}
                 </p>
-                {reportsByAssessmentId[selectedAssessmentId]?.reportId ? (
-                  <Link to={`/reports/${reportsByAssessmentId[selectedAssessmentId].reportId}`} className="governance_assessment_link">
-                    View Report
-                  </Link>
-                ) : null}
+                <div className="governance_summary_actions">
+                  <span className="governance_summary_actions_label">Actions</span>
+                  <div className="governance_summary_actions_value">
+                    {reportsByAssessmentId[selectedAssessmentId]?.reportId ? (
+                      <Link
+                        to={`/reports/${reportsByAssessmentId[selectedAssessmentId].reportId}`}
+                        className="governance_assessment_link governance_assessment_link_table"
+                        title="Open complete assessment report"
+                      >
+                        <FileText size={18} className="governance_assessment_link_icon" aria-hidden />
+                        View report
+                      </Link>
+                    ) : (
+                      <span className="governance_recent_empty">—</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           )}
@@ -862,7 +1052,7 @@ const BuyerOverview = () => {
                     <tr>
                       <th>Vendor</th>
                       <th>Product</th>
-                      <th>Score</th>
+                      <th>Implementation risk</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -880,11 +1070,22 @@ const BuyerOverview = () => {
                           <tr key={a.assessmentId}>
                             <td>{String(a.vendorName ?? "—")}</td>
                             <td>{String(a.productName ?? a.product_in_scope ?? a.productInScope ?? "—")}</td>
-                            <td>{reportMeta?.score != null ? `${reportMeta.score}/100` : "—"}</td>
+                            <td>
+                              {reportMeta?.implementationRiskScore != null
+                                ? `${reportMeta.implementationRiskScore}/100`
+                                : reportMeta?.score != null
+                                  ? `${reportMeta.score}/100`
+                                  : "—"}
+                            </td>
                             <td>
                               {reportMeta?.reportId ? (
-                                <Link to={`/reports/${reportMeta.reportId}`} className="governance_assessment_link">
-                                  View Report
+                                <Link
+                                  to={`/reports/${reportMeta.reportId}`}
+                                  className="governance_assessment_link governance_assessment_link_table"
+                                  title="Open complete assessment report"
+                                >
+                                  <FileText size={18} className="governance_assessment_link_icon" aria-hidden />
+                                  View report
                                 </Link>
                               ) : (
                                 <span className="governance_recent_empty">—</span>
@@ -894,7 +1095,7 @@ const BuyerOverview = () => {
                         );
                       })}
                     {completedBuyerAssessments.length === 0 && (
-                      <tr><td colSpan={5} className="governance_recent_empty">No completed assessments yet.</td></tr>
+                      <tr><td colSpan={4} className="governance_recent_empty">No completed assessments yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -902,6 +1103,7 @@ const BuyerOverview = () => {
             </section>
           )}
 
+          {/* Ask Governance Insight — temporarily disabled
           {!isViewOnlyRole && (
             <div className="governance_risk_search">
               <h3 className="governance_risk_search_title">
@@ -939,6 +1141,7 @@ const BuyerOverview = () => {
               </div>
             </div>
           )}
+          */}
         </>
       )}
     </div>
