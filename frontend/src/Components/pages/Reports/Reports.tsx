@@ -31,6 +31,10 @@ export interface CustomerRiskReportItem {
   source?: "customer" | "buyer_vendor_risk";
   /** Buyer complete report: IRS from assess-3 formula. */
   implementationRiskScore?: number | null;
+  /** Buyer–vendor risk list / stored report: readiness classification (vendor-style meter). */
+  implementationRiskClassification?: string | null;
+  /** Buyer–vendor / org portal: PROCEED / DO NOT PROCEED style decision from assess-3. */
+  implementationRiskDecision?: string | null;
 }
 
 type TabId = "assessment" | "general" | "archived";
@@ -179,6 +183,8 @@ function Reports() {
                 attestationExpiryAt?: string | null;
                 source: string;
                 implementationRiskScore?: number | null;
+                implementationRiskClassification?: string | null;
+                implementationRiskDecision?: string | null;
               }) => ({
                 id: r.id,
                 assessmentId: r.assessmentId,
@@ -190,6 +196,14 @@ function Reports() {
                 implementationRiskScore:
                   r.implementationRiskScore != null && Number.isFinite(Number(r.implementationRiskScore))
                     ? Number(r.implementationRiskScore)
+                    : null,
+                implementationRiskClassification:
+                  r.implementationRiskClassification != null && String(r.implementationRiskClassification).trim() !== ""
+                    ? String(r.implementationRiskClassification).trim()
+                    : null,
+                implementationRiskDecision:
+                  r.implementationRiskDecision != null && String(r.implementationRiskDecision).trim() !== ""
+                    ? String(r.implementationRiskDecision).trim()
                     : null,
               }),
             )

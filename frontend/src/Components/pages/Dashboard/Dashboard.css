@@ -887,6 +887,26 @@
 
 .governance_assessment_link_table {
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #2563eb;
+  vertical-align: middle;
+}
+
+.governance_assessment_link_table:hover {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.governance_assessment_link_table .governance_assessment_link_icon {
+  color: inherit;
 }
 
 .governance_assessment_link_btn {

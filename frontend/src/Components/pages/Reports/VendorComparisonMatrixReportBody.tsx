@@ -59,6 +59,52 @@ export function parseVendorComparisonMatrixJson(
   return j;
 }
 
+const VCM_RING_R = 20;
+const VCM_RING_STROKE = 3.5;
+const VCM_RING_C = 2 * Math.PI * VCM_RING_R;
+
+function VcmPriorityWeightRing({ percent }: { percent: number }) {
+  const raw = Number(percent);
+  const p = Number.isFinite(raw)
+    ? Math.min(100, Math.max(0, Math.round(raw)))
+    : 0;
+  const offset = VCM_RING_C * (1 - p / 100);
+  const vb = 56;
+  const c = vb / 2;
+
+  return (
+    <div
+      className="bvr_vcm_priority_ring_wrap"
+      role="img"
+      aria-label={`${p} percent weight`}
+    >
+      <svg className="bvr_vcm_priority_ring_svg" viewBox={`0 0 ${vb} ${vb}`} width={vb} height={vb}>
+        <circle
+          className="bvr_vcm_ring_track"
+          cx={c}
+          cy={c}
+          r={VCM_RING_R}
+          fill="none"
+          strokeWidth={VCM_RING_STROKE}
+        />
+        <circle
+          className="bvr_vcm_ring_progress"
+          cx={c}
+          cy={c}
+          r={VCM_RING_R}
+          fill="none"
+          strokeWidth={VCM_RING_STROKE}
+          strokeDasharray={VCM_RING_C}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${c} ${c})`}
+        />
+      </svg>
+      <span className="bvr_vcm_ring_pct">{p}%</span>
+    </div>
+  );
+}
+
 export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPayload }) {
   const priorities = data.buyerPrioritiesAndWeights ?? [];
   const ranked = data.rankedEligibleVendors ?? [];
@@ -74,30 +120,24 @@ export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPa
           style={{ marginTop: 0 }}
         >
           <SlidersHorizontal className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Buyer priorities &amp; weights (explicit)</span>
+          <span>Buyer priorities &amp; weights</span>
         </h2>
         <p className="bvr_reco_intro">
           Criteria and weights derived from the complete assessment report.
         </p>
-        <ul className="bvr_warnings_list" style={{ listStyle: "none", padding: 0 }}>
+        <ul
+          className="bvr_warnings_list bvr_buyer_priorities_grid_2col"
+          style={{ listStyle: "none", padding: 0 }}
+        >
           {priorities.map((p, i) => (
-            <li
-              key={i}
-              className="bvr_warning_item"
-              style={{ flexDirection: "column", alignItems: "stretch" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                <strong>{p.priority}</strong>
-                <span>{p.weightPercent}%</span>
+            <li key={i} className="bvr_priority_item bvr_vcm_priority_item">
+              <div className="bvr_vcm_priority_row">
+                <VcmPriorityWeightRing percent={p.weightPercent} />
+                <div className="bvr_vcm_priority_text">
+                  <strong className="bvr_vcm_priority_title">{p.priority}</strong>
+                  {p.notes ? <p className="bvr_vcm_priority_note">{p.notes}</p> : null}
+                </div>
               </div>
-              <div className="bvr_priority_bar" aria-hidden>
-                <span style={{ width: `${Math.min(100, p.weightPercent)}%` }} />
-              </div>
-              {p.notes ? (
-                <p className="bvr_risk_summary" style={{ margin: "0.35rem 0 0" }}>
-                  {p.notes}
-                </p>
-              ) : null}
             </li>
           ))}
         </ul>
@@ -106,7 +146,7 @@ export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPa
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <ListOrdered className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Ranked vendor list (eligible vendors only)</span>
+          <span>Ranked vendor list</span>
         </h2>
         <p className="bvr_reco_intro">Shortlist-ready vendors in rank order.</p>
         {ranked.length > 0 ? (
@@ -138,9 +178,7 @@ export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPa
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <Table2 className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>
-            Side-by-side matrix (trust, risk buckets, key requirements, security/compliance)
-          </span>
+          <span>Side-by-side matrix</span>
         </h2>
         {(matrix ?? []).map((row, ri) => {
           const cells = Array.isArray(row.cells) ? row.cells : [];
@@ -200,7 +238,7 @@ export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPa
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <Lightbulb className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Recommendation summary (2–4 bullets)</span>
+          <span>Recommendation summary</span>
         </h2>
         <p className="bvr_reco_intro">Synthesized from the complete report used for generation.</p>
         <ul className="bvr_warnings_list">

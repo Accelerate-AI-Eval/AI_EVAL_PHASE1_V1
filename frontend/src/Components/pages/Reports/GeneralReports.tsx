@@ -1,9 +1,10 @@
 import React from "react";
-import { useCallback, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "../../UI/Select";
-import { Search, CircleX, Loader2 } from "lucide-react";
+import { CircleX, Loader2 } from "lucide-react";
 import Modal from "../../UI/Modal";
+import LoadingMessage from "../../UI/LoadingMessage";
 import './general_reports.css'
 import GeneralReportsTypesPopup, {
   REPORT_TYPE_ERROR,
@@ -15,6 +16,9 @@ import "../VendorAttestations/vendor_attestation_preview.css";
 
 const BASE_URL =
   import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
+
+/** Same minimum loader duration as Complete Reports on `Reports.tsx`. */
+const LOADER_MIN_MS = 2500;
 
 interface AssessmentRow {
   assessmentId: number;
@@ -139,7 +143,8 @@ interface GeneralReportsProps {
 }
 
 const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, archivedPageSize, renderArchivedListOnly, onArchivedReportsChange, canGenerateReports = true }: GeneralReportsProps) => {
-  const [loading, setLoading] = useState(true);
+  /** Full-page style loader only on Assessment Analysis tab (`showArchivedOnly` false), not on Archived helper instance. */
+  const [loading, setLoading] = useState(() => showArchivedOnly !== true);
   const [assessmentsList, setAssessmentsList] = useState<AssessmentRow[]>([]);
   /** For buyer engineer: list of complete reports (customerRiskReports) so dropdown shows "completed reports" not assessments. */
   const [completeReports, setCompleteReports] = useState<CompleteReportItem[]>([]);
@@ -212,18 +217,43 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
     return `Buyer assessment #${a.assessmentId}`;
   }
 
-  // The below code is to fetch the assessments
-  const fetchAssessments = useCallback(() => {
+  /** Assessments, general reports, and (buyer engineer) complete reports in parallel; tab loader matches Complete Reports. */
+  useEffect(() => {
+    let cancelled = false;
+    let loadEndTimeoutId: ReturnType<typeof window.setTimeout> | undefined;
+    const tabUsesFullLoader = showArchivedOnly !== true;
+
     const token = sessionStorage.getItem("bearerToken");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const organizationId = sessionStorage.getItem("organizationId");
-    const query = organizationId
+    const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim().replace(/_/g, " ");
+    const userRole = (sessionStorage.getItem("userRole") ?? "").toLowerCase().trim();
+    const organizationId = (sessionStorage.getItem("organizationId") ?? "").trim();
+    const isSystemManagerOrViewer = systemRole === "system manager" || systemRole === "system viewer";
+    const grQuery = isSystemManagerOrViewer && organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : "";
+    const assessmentsQuery = organizationId
       ? `?organizationId=${encodeURIComponent(organizationId)}`
       : "";
-    fetch(`${BASE_URL}/assessments${query}`, {
+
+    if (!token) {
+      setAssessmentsList([]);
+      setGeneratedReports([]);
+      setCompleteReports([]);
+      if (tabUsesFullLoader) setLoading(false);
+      return;
+    }
+
+    if (tabUsesFullLoader) setLoading(true);
+    const loadStart = Date.now();
+
+    const finishTabLoading = () => {
+      if (!tabUsesFullLoader || cancelled) return;
+      const elapsed = Date.now() - loadStart;
+      const remaining = Math.max(0, LOADER_MIN_MS - elapsed);
+      loadEndTimeoutId = window.setTimeout(() => {
+        if (!cancelled) setLoading(false);
+      }, remaining);
+    };
+
+    const assessmentsPromise = fetch(`${BASE_URL}/assessments${assessmentsQuery}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -238,78 +268,86 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
           setAssessmentsList([]);
         }
       })
-      .catch(() => setAssessmentsList([]))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => setAssessmentsList([]));
 
-  useEffect(() => {
-    fetchAssessments();
-  }, [fetchAssessments]);
-
-  // Buyer engineer: fetch complete reports (customerRiskReports) so dropdown shows "completed reports" not assessments.
-  useEffect(() => {
-    const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim().replace(/_/g, " ");
-    const userRole = (sessionStorage.getItem("userRole") ?? "").toLowerCase().trim();
-    if (systemRole !== "buyer" || userRole !== "engineer") {
-      setCompleteReports([]);
-      return;
-    }
-    const token = sessionStorage.getItem("bearerToken");
-    if (!token) return;
-    fetch(`${BASE_URL}/customerRiskReports`, {
+    const generalReportsPromise = fetch(`${BASE_URL}/generalReports${grQuery}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && Array.isArray(data?.data?.reports)) {
-          const list = data.data.reports.map((r: { id: string; assessmentId: string; title?: string; createdAt?: string; expiryAt?: string | null; attestationExpiryAt?: string | null }) => ({
-            id: r.id,
-            assessmentId: String(r.assessmentId),
-            title: r.title ?? "",
-            createdAt: r.createdAt ?? "",
-            expiryAt: r.expiryAt ?? null,
-            attestationExpiryAt: r.attestationExpiryAt ?? null,
-          }));
-          setCompleteReports(list);
-        } else {
-          setCompleteReports([]);
-        }
-      })
-      .catch(() => setCompleteReports([]));
-  }, []);
-
-  // Load general reports from DB (stored with assessment_id, created_at, created_by)
-  useEffect(() => {
-    const token = sessionStorage.getItem("bearerToken");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim().replace(/_/g, " ");
-    const organizationId = (sessionStorage.getItem("organizationId") ?? "").trim();
-    const isSystemManagerOrViewer = systemRole === "system manager" || systemRole === "system viewer";
-    const query = isSystemManagerOrViewer && organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : "";
-    fetch(`${BASE_URL}/generalReports${query}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data?.data?.reports)) {
-          const list = data.data.reports.map((r: { id: string; assessmentId: string; assessmentLabel?: string; reportType: string; generatedAt: string; briefContent?: string; expiryAt?: string | null; attestationExpiryAt?: string | null }) => ({
-            id: r.id,
-            assessmentId: r.assessmentId,
-            assessmentLabel: r.assessmentLabel ?? "",
-            reportType: r.reportType,
-            generatedAt: r.generatedAt,
-            briefContent: r.briefContent,
-            expiryAt: r.expiryAt ?? null,
-            attestationExpiryAt: r.attestationExpiryAt ?? null,
-          }));
+          const list = data.data.reports.map(
+            (r: {
+              id: string;
+              assessmentId: string;
+              assessmentLabel?: string;
+              reportType: string;
+              generatedAt: string;
+              briefContent?: string;
+              expiryAt?: string | null;
+              attestationExpiryAt?: string | null;
+            }) => ({
+              id: r.id,
+              assessmentId: r.assessmentId,
+              assessmentLabel: r.assessmentLabel ?? "",
+              reportType: r.reportType,
+              generatedAt: r.generatedAt,
+              briefContent: r.briefContent,
+              expiryAt: r.expiryAt ?? null,
+              attestationExpiryAt: r.attestationExpiryAt ?? null,
+            }),
+          );
           setGeneratedReports(list);
+        } else {
+          setGeneratedReports([]);
         }
       })
       .catch(() => setGeneratedReports([]));
-  }, []);
+
+    const completeReportsPromise =
+      systemRole === "buyer" && userRole === "engineer"
+        ? fetch(`${BASE_URL}/customerRiskReports`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data?.success && Array.isArray(data?.data?.reports)) {
+                const list = data.data.reports.map(
+                  (r: {
+                    id: string;
+                    assessmentId: string;
+                    title?: string;
+                    createdAt?: string;
+                    expiryAt?: string | null;
+                    attestationExpiryAt?: string | null;
+                  }) => ({
+                    id: r.id,
+                    assessmentId: String(r.assessmentId),
+                    title: r.title ?? "",
+                    createdAt: r.createdAt ?? "",
+                    expiryAt: r.expiryAt ?? null,
+                    attestationExpiryAt: r.attestationExpiryAt ?? null,
+                  }),
+                );
+                setCompleteReports(list);
+              } else {
+                setCompleteReports([]);
+              }
+            })
+            .catch(() => setCompleteReports([]))
+        : Promise.resolve().then(() => {
+            setCompleteReports([]);
+          });
+
+    Promise.all([assessmentsPromise, generalReportsPromise, completeReportsPromise]).finally(() => {
+      finishTabLoading();
+    });
+
+    return () => {
+      cancelled = true;
+      if (loadEndTimeoutId != null) window.clearTimeout(loadEndTimeoutId);
+    };
+  }, [showArchivedOnly]);
 
   const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim().replace(/_/g, " ");
   const userRole = (sessionStorage.getItem("userRole") ?? "").toLowerCase().trim();
@@ -945,6 +983,10 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (showArchivedOnly !== true && loading) {
+    return <LoadingMessage message="Loading reports…" />;
+  }
 
   return (
     <>

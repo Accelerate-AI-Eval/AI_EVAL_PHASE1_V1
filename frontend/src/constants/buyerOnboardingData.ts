@@ -230,6 +230,9 @@ export const BUYER_OPERATING_REGIONS = [
   { label: "Global", value: "Global" },
 ];
 
+/** Mutually exclusive with other entries in `BUYER_OPERATING_REGIONS` (see ChipMultiSelect `globalExclusiveValue`). */
+export const BUYER_OPERATING_REGIONS_GLOBAL_VALUE = "Global";
+
 export const BUYER_DATA_RESIDENCY_REQUIREMENTS = [
   { label: "No specific requirements", value: "No specific requirements" },
   {

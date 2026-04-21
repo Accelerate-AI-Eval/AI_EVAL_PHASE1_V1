@@ -4,7 +4,8 @@
   --side-nav-width: 240px;       /* sidebar width - adjust as needed */
   --top-nav-left: var(--side-nav-width); /* start after sidebar so top nav only spans main content */
   --top-nav-width: calc(100% - var(--side-nav-width));
-  --main-dark-color: #2463eb;
+  /* --main-dark-color: #2463eb; */
+  --main-dark-color: #014aad;
   --grey-color: #4b5563;
 }
 
@@ -20,7 +21,8 @@
   flex-shrink: 0;
   padding: 0 0.1em;
   border-bottom: 0.5px solid #dadce0;
-  background-color: #f5f7fa;
+  /* background-color: #f5f7fa; */
+  background-color: #efefef;
   position: fixed;
   top: 0;
   left: var(--top-nav-left);

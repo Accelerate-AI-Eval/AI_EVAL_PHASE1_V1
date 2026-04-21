@@ -27,10 +27,12 @@ export const ATTESTATION_SECTION_FIELDS: Record<string, (AttestationFieldMapping
     { key: "ai_model_types", type: "array" },
     { key: "model_transparency", type: "string" },
     { key: "decision_autonomy", type: "string" },
+    { key: "documented_ai_governance_policy", type: "string" },
   ],
   compliance_certifications: [
     null, // security_certifications — section commented out
     { key: "assessment_completion_level", type: "string" },
+    { key: "audit_frequency", type: "string" },
   ],
   data_handling_privacy: [
     { key: "pii_handling", type: "string" },
@@ -45,6 +47,8 @@ export const ATTESTATION_SECTION_FIELDS: Record<string, (AttestationFieldMapping
   ],
   operations_reliability: [
     { key: "uptime_sla", type: "string" },
+    { key: "support_slas", type: "string" },
+    { key: "change_management", type: "string" },
     { key: "incident_response_plan", type: "string" },
     { key: "rollback_capability", type: "string" },
   ],

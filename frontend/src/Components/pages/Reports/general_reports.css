@@ -111,67 +111,89 @@
   --report-option-color: #be123c;
 }
 
-/* Initial (unselected): accent-tinted border and text – same as previous hover */
-.general_reports_types_popup_options [data-accent] .radio-content {
-  border-color: color-mix(in srgb, var(--report-option-color) 45%, #e5e7eb);
-  color: color-mix(in srgb, var(--report-option-color) 75%, #374151);
+/* Initial / hover / checked: plain hex (no color-mix) so html2canvas / PDF export can parse colors */
+.general_reports_types_popup_options [data-accent="sales"] .radio-content {
+  border-color: #8faceb;
+  color: #2a5bc5;
+}
+.general_reports_types_popup_options [data-accent="sales"] .radio-content:hover {
+  border-color: #7298eb;
+  color: #285ed4;
+}
+.general_reports_types_popup_options
+  [data-accent="sales"]
+  .radio-box
+  input:checked
+  + .radio-content {
+  border-color: var(--report-option-color);
+  background-color: #e5ecfd;
+  color: var(--report-option-color);
+  font-weight: 600;
+}
+
+.general_reports_types_popup_options [data-accent="exec"] .radio-content {
+  border-color: #b699ec;
+  color: #6b3cc6;
+}
+.general_reports_types_popup_options [data-accent="exec"] .radio-content:hover {
+  border-color: #a67fec;
+  color: #723bd6;
+}
+.general_reports_types_popup_options
+  [data-accent="exec"]
+  .radio-box
+  input:checked
+  + .radio-content {
+  border-color: var(--report-option-color);
+  background-color: #efe7fd;
+  color: var(--report-option-color);
+  font-weight: 600;
+}
+
+.general_reports_types_popup_options [data-accent="risk"] .radio-content {
+  border-color: #80c3b1;
+  color: #128163;
+}
+.general_reports_types_popup_options [data-accent="risk"] .radio-content:hover {
+  border-color: #5fb69d;
+  color: #0d8965;
+}
+.general_reports_types_popup_options
+  [data-accent="risk"]
+  .radio-box
+  input:checked
+  + .radio-content {
+  border-color: var(--report-option-color);
+  background-color: #e1f2ed;
+  color: var(--report-option-color);
+  font-weight: 600;
+}
+
+.general_reports_types_popup_options [data-accent="roadmap"] .radio-content {
+  border-color: #d3879c;
+  color: #9c1e41;
+}
+.general_reports_types_popup_options [data-accent="roadmap"] .radio-content:hover {
+  border-color: #ce6782;
+  color: #aa193f;
+}
+.general_reports_types_popup_options
+  [data-accent="roadmap"]
+  .radio-box
+  input:checked
+  + .radio-content {
+  border-color: var(--report-option-color);
+  background-color: #f7e3e8;
+  color: var(--report-option-color);
+  font-weight: 600;
 }
 
 .general_reports_types_popup_options [data-accent] .radio-content .icon {
   color: inherit;
 }
 
-/* Hover (unselected): slightly stronger accent */
-.general_reports_types_popup_options [data-accent] .radio-content:hover {
-  border-color: color-mix(in srgb, var(--report-option-color) 60%, #e5e7eb);
-  color: color-mix(in srgb, var(--report-option-color) 85%, #374151);
-}
-
 .general_reports_types_popup_options [data-accent] .radio-content:hover .icon {
   color: inherit;
-}
-
-.general_reports_types_popup_options
-  [data-accent]
-  .radio-box
-  input:checked
-  + .radio-content {
-  border-color: var(--report-option-color);
-  background-color: color-mix(in srgb, var(--report-option-color) 12%, #fff);
-  color: var(--report-option-color);
-  font-weight: 600;
-}
-
-/* Fallback when color-mix not supported */
-@supports not (background-color: color-mix(in srgb, red 12%, white)) {
-  .general_reports_types_popup_options
-    [data-accent="sales"]
-    .radio-box
-    input:checked
-    + .radio-content {
-    background-color: #eff6ff;
-  }
-  .general_reports_types_popup_options
-    [data-accent="exec"]
-    .radio-box
-    input:checked
-    + .radio-content {
-    background-color: #f5f3ff;
-  }
-  .general_reports_types_popup_options
-    [data-accent="risk"]
-    .radio-box
-    input:checked
-    + .radio-content {
-    background-color: #ecfdf5;
-  }
-  .general_reports_types_popup_options
-    [data-accent="roadmap"]
-    .radio-box
-    input:checked
-    + .radio-content {
-    background-color: #ffe4e6;
-  }
 }
 
 .general_reports_types_popup_options
@@ -622,7 +644,7 @@
   /* background: #d1fae5; */
 
   color: #10b981;
-  background: #d1fae5
+  background-color: #d1fae5;
 }
 
 .complete_rpr_card_status_badge_archived {
@@ -730,16 +752,37 @@
   color: #9ca3af;
 }
 
+.complete_rpr_card_risk_value_wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.35rem 0.5rem;
+  text-align: right;
+  max-width: 70%;
+  flex-shrink: 0;
+}
+
 .complete_rpr_card_risk_value {
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.2;
-  /* color: #16a34a; */
-  color: #10b981;
+  color: #4b5563;
   flex-shrink: 0;
 }
 
-.general_rpr_card_archived .complete_rpr_card_risk_value {
+.complete_rpr_card_risk_subtitle {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: #6b7280;
+  text-align: right;
+  max-width: 100%;
+}
+
+.general_rpr_card_archived .complete_rpr_card_risk_value,
+.general_rpr_card_archived .complete_rpr_card_risk_subtitle {
   color: #6b7280;
 }
 
@@ -753,14 +796,16 @@
 .complete_rpr_card_risk_fill {
   height: 100%;
   border-radius: 999px;
-  /* background: #22c55e; */
-  background: #10b981;
+  /* Longhand so inline `backgroundColor` from React reliably overrides */
+  background-color: #d1d5db;
+  background-image: none;
 
-  transition: width 0.25s ease;
+  transition: width 0.25s ease, background-color 0.25s ease;
 }
 
 .general_rpr_card_archived .complete_rpr_card_risk_fill {
-  background: #9ca3af;
+  background-color: #9ca3af;
+  background-image: none;
 }
 
 .complete_rpr_card_design .general_rpr_card_footer.complete_rpr_card_footer {

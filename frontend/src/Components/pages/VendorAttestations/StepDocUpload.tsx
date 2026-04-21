@@ -1,6 +1,6 @@
 /**
  * Document Upload step: sections 0 and 1 are fixed file uploads (Marketing, Technical).
- * Regulatory and Compliance Certification Material is in the Compliance & Certifications tab.
+ * "Which compliance certifications do you hold? (attach evidence for each)" is in the Compliance & Certifications tab.
  * Heading, subheading, and icon follow Vendor Onboarding UI pattern.
  */
 import type { ReactNode } from "react";

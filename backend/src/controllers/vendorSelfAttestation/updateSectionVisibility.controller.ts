@@ -12,7 +12,9 @@ type SectionKey =
   | "visible_data_practices"
   | "visible_compliance_certifications"
   | "visible_operations_support"
-  | "visible_vendor_management";
+  | "visible_vendor_management"
+  | "visible_company_identity"
+  | "visible_company_reach";
 
 /**
  * PATCH /vendorSelfAttestation/section-visibility
@@ -53,6 +55,8 @@ const updateSectionVisibility = async (req: Request, res: Response): Promise<voi
       "visible_compliance_certifications",
       "visible_operations_support",
       "visible_vendor_management",
+      "visible_company_identity",
+      "visible_company_reach",
     ];
 
     const updates: Record<string, boolean> = {};

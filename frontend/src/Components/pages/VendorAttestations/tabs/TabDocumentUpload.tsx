@@ -12,7 +12,11 @@ export interface TabDocumentUploadProps {
   documentUploadConfig: Record<string, { label: string; placeholder?: string; required?: boolean }>;
   attestationId?: string | null;
   onUploadDocument?: (attestationId: string, file: File) => Promise<string>;
-  onStorePendingFiles?: (slot: "0" | "1" | "evidenceTestingPolicy", files: File[], category?: string) => void;
+  onStorePendingFiles?: (
+    slot: "0" | "1" | "evidenceTestingPolicy" | "aiGovernancePolicy",
+    files: File[],
+    category?: string,
+  ) => void;
   title?: string;
   subTitle?: string;
   icon?: ReactNode;

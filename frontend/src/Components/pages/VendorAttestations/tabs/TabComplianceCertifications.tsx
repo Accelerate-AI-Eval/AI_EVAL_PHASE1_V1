@@ -1,6 +1,6 @@
 /**
  * Vendor Self Attestation – Compliance & Certifications tab content.
- * Includes Regulatory and Compliance Certification Material upload (moved from Document Upload).
+ * Includes "Which compliance certifications do you hold? (attach evidence for each)" upload (moved from Document Upload).
  * Uses standard FileUpload UI per certification (one file, max 10MB).
  */
 import type { ReactNode } from "react";
@@ -30,11 +30,15 @@ export interface TabComplianceCertificationsProps {
   setDocumentUpload?: React.Dispatch<React.SetStateAction<DocumentUploadState>>;
   attestationId?: string | null;
   onUploadDocument?: (attestationId: string, file: File) => Promise<string>;
-  onStorePendingFiles?: (slot: "0" | "1" | "evidenceTestingPolicy", files: File[], category?: string) => void;
+  onStorePendingFiles?: (
+    slot: "0" | "1" | "evidenceTestingPolicy" | "aiGovernancePolicy",
+    files: File[],
+    category?: string,
+  ) => void;
   onOpenDocument?: (fileName: string) => void;
 }
 
-const REGULATORY_LABEL = "Regulatory and Compliance Certification Material";
+const REGULATORY_LABEL = "Which compliance certifications do you hold? (attach evidence for each)";
 const REGULATORY_PLACEHOLDER =
   "Select certification types; for each certificate you can upload one file (max 10MB). Documents are parsed for assessment information.";
 
@@ -123,7 +127,7 @@ function TabComplianceCertifications({
         fieldErrors={fieldErrors}
       />
 
-      {/* Regulatory and Compliance Certification Material (moved from Document Upload) */}
+      {/* Which compliance certifications do you hold? (attach evidence for each) */}
       {documentUpload != null && setDocumentUpload != null && (
         <div className="form_fields_vendor" style={{ marginTop: "1.5rem" }}>
           {fieldErrors?.regulatoryCertificationMaterial && (

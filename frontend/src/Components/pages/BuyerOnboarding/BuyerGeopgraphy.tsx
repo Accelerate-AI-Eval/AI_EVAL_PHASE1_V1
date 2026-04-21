@@ -10,6 +10,7 @@ import {
   BUYER_DATA_RESIDENCY_REQUIREMENTS,
   BUYER_HEADQUARTERS_LOCATION,
   BUYER_OPERATING_REGIONS,
+  BUYER_OPERATING_REGIONS_GLOBAL_VALUE,
   BUYER_HELPTEXT,
 } from "../../../constants/buyerOnboardingData";
 import type { StepPropsBuyerrData } from "../../../types/formDataBuyer";
@@ -29,23 +30,26 @@ const BuyerGeography = ({
   const isOtherSpecify = (v: string) => v === "Other (specify)";
 
   useEffect(() => {
-    const hq = formBuyerData.headquartersLocation || "";
-    if (isOtherSpecify(hq)) {
-      setSelectedHeadquarter("Other (specify)");
-      setIsVisibleInput(true);
-      setCustomHeadquarter("");
-    } else if (hq) {
-      const inOptions = BUYER_HEADQUARTERS_LOCATION.some((o) => o.value === hq);
-      if (inOptions) {
-        setSelectedHeadquarter(hq);
-        setIsVisibleInput(false);
-        setCustomHeadquarter("");
-      } else {
+    const id = window.setTimeout(() => {
+      const hq = formBuyerData.headquartersLocation || "";
+      if (isOtherSpecify(hq)) {
         setSelectedHeadquarter("Other (specify)");
         setIsVisibleInput(true);
-        setCustomHeadquarter(hq);
+        setCustomHeadquarter("");
+      } else if (hq) {
+        const inOptions = BUYER_HEADQUARTERS_LOCATION.some((o) => o.value === hq);
+        if (inOptions) {
+          setSelectedHeadquarter(hq);
+          setIsVisibleInput(false);
+          setCustomHeadquarter("");
+        } else {
+          setSelectedHeadquarter("Other (specify)");
+          setIsVisibleInput(true);
+          setCustomHeadquarter(hq);
+        }
       }
-    }
+    }, 0);
+    return () => clearTimeout(id);
   }, [formBuyerData.headquartersLocation]);
 
   const handleHeadquartersChange = (val: string) => {
@@ -131,6 +135,7 @@ const BuyerGeography = ({
           }
           options={BUYER_OPERATING_REGIONS}
           value={formBuyerData.operatingRegions || []}
+          globalExclusiveValue={BUYER_OPERATING_REGIONS_GLOBAL_VALUE}
           onChange={(selected: string[]) =>
             setFormBuyerData({ ...formBuyerData, operatingRegions: selected })
           }

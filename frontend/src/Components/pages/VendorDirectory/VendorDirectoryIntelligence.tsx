@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Building2, CircleChevronLeft, Plus, Sparkles } from "lucide-react";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
+import { mergeMissingProfileSectionsFromAttestation } from "../../../utils/mergeProductProfileReportFromAttestation";
 import GeneratedProductProfileCards from "../ProductProfile/GeneratedProductProfileCards";
 import "../../../styles/card.css";
 import "./VendorDirectory.css";
@@ -18,11 +19,13 @@ type SectionVisibility = {
   complianceCertifications: boolean;
   operationsSupport: boolean;
   vendorManagement: boolean;
+  companyIdentity: boolean;
+  companyReach: boolean;
 };
 
 const SECTION_ID_TO_VIS_KEY: Record<number, keyof SectionVisibility> = {
   1: "aiGovernance",
-  2: "securityPosture",
+  2: "companyIdentity",
   3: "dataPrivacy",
   4: "compliance",
   5: "modelRisk",
@@ -30,6 +33,9 @@ const SECTION_ID_TO_VIS_KEY: Record<number, keyof SectionVisibility> = {
   7: "complianceCertifications",
   8: "operationsSupport",
   9: "vendorManagement",
+  10: "dataPrivacy",
+  11: "complianceCertifications",
+  12: "companyReach",
 };
 
 function parseGeneratedReport(raw: unknown): GeneratedProductProfileReport | null {
@@ -98,7 +104,9 @@ const VendorDirectoryIntelligence = () => {
         if (!cancelled) {
           if (!vendorName) setVendorName(String(att.organization_name ?? "").trim());
           if (!productName) setProductName(String(att.product_name ?? "Product"));
-          setReport(parsed);
+          setReport(
+            parsed != null ? mergeMissingProfileSectionsFromAttestation(parsed, att) : null,
+          );
           const vis = data.sectionVisibility as Record<string, unknown> | undefined;
           setSectionVisibility(
             vis
@@ -112,6 +120,8 @@ const VendorDirectoryIntelligence = () => {
                   complianceCertifications: vis.complianceCertifications === true,
                   operationsSupport: vis.operationsSupport === true,
                   vendorManagement: vis.vendorManagement === true,
+                  companyIdentity: vis.companyIdentity === true,
+                  companyReach: vis.companyReach === true,
                 }
               : null,
           );
@@ -151,7 +161,7 @@ const VendorDirectoryIntelligence = () => {
   const visibleReport = useMemo(() => {
     if (!report || !sectionVisibility) return report;
     const visibleSectionIds = new Set(
-      [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((id) => {
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((id) => {
         const key = SECTION_ID_TO_VIS_KEY[id];
         return key != null && sectionVisibility[key] === true;
       }),

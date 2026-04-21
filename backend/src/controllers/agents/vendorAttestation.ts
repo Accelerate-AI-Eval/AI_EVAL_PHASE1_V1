@@ -44,7 +44,7 @@ export interface VendorAttestationReport {
 const SECTION_TITLES: Record<number, string> = {
   0: "Trust Score",
   1: "Product Information",
-  2: "Company Overview",
+  2: "Company Identity",
   3: "AI Models & Technology",
   4: "AI Governance",
   5: "Security Posture",
@@ -52,6 +52,9 @@ const SECTION_TITLES: Record<number, string> = {
   7: "Compliance & Certifications",
   8: "Operations & Support",
   9: "Vendor Management",
+  10: "AI Safety & Testing",
+  11: "Evidence & Trust",
+  12: "Company Reach",
 };
 
 const VENDOR_ATTESTATION_PROMPT = `You are a vendor attestation analyst. Using ONLY the vendor data provided below, generate a structured vendor attestation report. For any detail not explicitly stated in the data, infer a reasonable value consistent with the vendor type and product, or write "Not specified" where nothing can be inferred.
@@ -72,12 +75,16 @@ Then continue with the detailed sections below.
 - **Primary Use Case:** [enterprise use cases]
 - **Target Industry:** [industries]
 - **Deployment Model:** [e.g. Cloud-hosted (AWS/Azure/GCP), SaaS]
+- **Hosted / Deployed:** [deployment options supported]
+- **Deployment Scale:** [common deployment size]
+- **Maturity Stage of Testing Data:** [current product maturity stage]
 - **Pricing:** [if stated; otherwise "Contact vendor"]
 - **Customer Base:** [metrics if stated]
 - **Product Description:** [2–3 sentence summary covering security, compliance, and key differentiators]
 
-## 2. Company Overview
+## 2. Company identity and company reach
 - **Legal Name:** [company legal name]
+- **Vendor Type:** [if stated]
 - **Year Founded:** [year]
 - **Employees:** [range or count]
 - **Annual Revenue / Funding Stage:** [if stated]
@@ -87,31 +94,27 @@ Then continue with the detailed sections below.
 ## 3. AI Models & Technology
 - **Model Types:** [e.g. LLM, custom-trained, NLP]
 - **Model Purpose:** [capabilities: understanding, generation, analysis, coding, etc.]
-- **Training Data / Transparency:** [explainability level, documentation]
+- **Model Governance:** [safety framework, staged deployment if any]
 - **Human Oversight:** [advisory vs autonomous, monitoring, alerts, audit logs]
-- **Explainability:** [prompt-level control, citations, custom instructions if any]
+- **Explainability / Transparency:** [prompt-level control, citations, explainability level]
 - **Update Frequency:** [if stated; otherwise "Not specified"]
 
-## 4. AI Governance (Ethics, oversight, and governance)
-- **AI Ethics Policy:** [usage policies, safety guidelines]
+## 4. AI Safety & Testing
+- **Training Data Documentation:** [level of training data documentation]
 - **Bias Detection:** [red team, third-party audits, monitoring, statistical tools]
+- **Penetration Testing:** [frequency and type]
+
+## 5. AI Governance (Ethics, oversight, and governance)
+- **AI Ethics Policy:** [usage policies, safety guidelines]
 - **Bias Audits:** [frequency, external evaluations]
-- **Model Governance:** [safety framework, staged deployment if any]
 - **Human-in-the-Loop:** [admin controls, content filtering, intervention]
 - **Impact Assessment:** [system cards, documentation for releases]
 
-## 5. Security Posture
-- **Encryption at Rest:** [algorithm and infrastructure]
-- **Encryption in Transit:** [e.g. TLS 1.2+]
-- **Access Control:** [SSO, SAML, OIDC, SCIM, domain verification, roles]
-- **MFA Required:** [Yes/No and scope]
-- **Penetration Testing:** [frequency and type]
-- **Bug Bounty:** [Yes/No; program name if any]
-- **Incident Response:** [plan, testing, 24/7 if any]
-- **Disaster Recovery:** [multi-region, failover]
-- **Uptime SLA:** [percentage and service credits if any]
+## 6. Security Posture
+- **Incident Response Plan:** [incident response maturity / documentation]
+- **Rollback Capability:** [deployment rollback capability]
 
-## 6. Data Practices
+## 7. Data Practices
 - **Data Types Processed:** [documents, code, communications, etc.]
 - **PII Handling:** [extent and whether customer data is used for training]
 - **Data Collection:** [API, chat interface, retention options]
@@ -121,24 +124,30 @@ Then continue with the detailed sections below.
 - **Data Deletion:** [on request, automated]
 - **Sub-processors:** [infrastructure, payments, auth if known]
 
-## 7. Compliance & Certifications
+## 8. Compliance & Certifications
 - **Certifications:** [SOC 2, ISO, FedRAMP, HIPAA, GDPR, etc.]
+- **Independent Compliance Audit Method:** [how the most recent independent compliance audit was conducted]
 - **Regulatory Frameworks:** [NIST, GDPR, CCPA, EU AI Act readiness]
 - **HIPAA Compliance:** [BAA eligibility]
 - **GDPR Compliance:** [DPA availability]
 - **EU AI Act Readiness:** [engagement, preparation]
 - **Audit Frequency / Last Audit Date / Audit Findings:** [if stated]
 
-## 8. Operations & Support
-- **Support Hours:** [e.g. 24/7 for enterprise]
-- **Support SLAs:** [response times by severity]
-- **Uptime SLA:** [repeat if not above]
-- **Change Management:** [rollouts, version pinning, release notes]
+## 9. Operations & Support
+- **Uptime SLA:** [contractual uptime commitment]
+- **Support Response SLAs (P1 / P2 / P3):** [response targets by severity]
+- **Change Management / Release Cadence:** [release process, frequency, rollback/readiness practices]
 
-## 9. Vendor Management
+## 10. Vendor Management
 - **Critical Vendors:** [infrastructure, payments]
 - **Vendor Assessment:** [frequency of risk assessments]
 - **Vendor SLAs:** [key SLAs from critical vendors]
+
+## 11. Evidence & Trust
+- **Usage / Interaction Telemetry:** [telemetry scope and availability]
+- **Audit Logs (SIEM Export):** [availability and export capability]
+- **Supporting Testing and Policy Documentation:** [uploaded evidence files]
+- **Model / Safety Testing Results (Under NDA):** [availability under NDA]
 
 ---
 Vendor data to use (use only this information; infer only when reasonable):
@@ -156,6 +165,56 @@ function parseBulletItems(text: string): Record<string, string> {
     if (label && value) items[label] = value;
   }
   return items;
+}
+
+function trimProductDisplayName(v: unknown): string | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  if (/^not specified$/i.test(s)) return null;
+  return s;
+}
+
+function productNameForMaturityQuestionFromPayload(payload: Record<string, unknown>): string | null {
+  const cp =
+    payload.companyProfile && typeof payload.companyProfile === "object"
+      ? (payload.companyProfile as Record<string, unknown>)
+      : {};
+  const pick = (...vals: unknown[]) => {
+    for (const v of vals) {
+      const t = trimProductDisplayName(v);
+      if (t) return t;
+    }
+    return null;
+  };
+  return pick(payload.product_name, payload.productName, cp.productName);
+}
+
+function maturityStageQuestionLabelFromProductName(productName: string | null): string {
+  const name = productName?.trim() ?? "";
+  return name.length > 0
+    ? `What maturity stage is ${name} at?`
+    : "What maturity stage is this product at?";
+}
+
+function productNameForMaturityQuestionFromVendorDataString(vendorData: string): string | null {
+  const raw = (vendorData ?? "").trim();
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return productNameForMaturityQuestionFromPayload(parsed as Record<string, unknown>);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function vendorAttestationPromptWithProductName(vendorData: string): string {
+  const pn = productNameForMaturityQuestionFromVendorDataString(vendorData);
+  const tokenName = pn && pn.trim().length > 0 ? pn.trim() : "this product";
+  return VENDOR_ATTESTATION_PROMPT.replaceAll("{{PRODUCT_MATURITY_NAME}}", tokenName);
 }
 
 const TRUST_SCORE_KNOWN_CATEGORIES = [
@@ -568,7 +627,7 @@ export async function generateVendorAttestationReport(
     };
   }
 
-  const userInput = VENDOR_ATTESTATION_PROMPT + (vendorData || "");
+  const userInput = vendorAttestationPromptWithProductName(vendorData || "") + (vendorData || "");
   const messages: {
     role: string;
     content: { type: string; text: string }[];
@@ -861,6 +920,12 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       : (payload.documentUpload && typeof payload.documentUpload === "object"
           ? (payload.documentUpload as Record<string, unknown>)
           : null);
+  const aiGovernanceUploadNames: string[] = [];
+  if (docUploads && Array.isArray(docUploads.aiGovernancePolicy)) {
+    for (const name of docUploads.aiGovernancePolicy as unknown[]) {
+      if (typeof name === "string" && name.trim()) aiGovernanceUploadNames.push(name.trim());
+    }
+  }
   const complianceUploadNames: string[] = [];
   if (docUploads && docUploads["2"] && typeof docUploads["2"] === "object" && !Array.isArray(docUploads["2"])) {
     const slot2 = docUploads["2"] as Record<string, unknown>;
@@ -874,6 +939,12 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       }
     });
   }
+  const evidenceTestingPolicyNames: string[] =
+    docUploads && Array.isArray(docUploads.evidenceTestingPolicy)
+      ? (docUploads.evidenceTestingPolicy as unknown[])
+          .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+          .map((x) => x.trim())
+      : [];
   const explicitCerts = get("security_certifications") ?? get("security_compliance_certificates");
   const certificationsDisplay =
     explicitCerts != null && String(json(explicitCerts)).trim() !== "Not specified"
@@ -881,6 +952,10 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       : (complianceUploadNames.length > 0
           ? Array.from(new Set(complianceUploadNames.map(certNameFromFile))).join(", ")
           : "Not specified");
+
+  const maturityStageQuestionLabel = maturityStageQuestionLabelFromProductName(
+    productNameForMaturityQuestionFromPayload(payload),
+  );
 
   return [
     {
@@ -892,6 +967,13 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
         "Primary Use Case": text(get("pain_points_solved") ?? get("pain_points")),
         "Target Industry": targetIndustry,
         "Deployment Model": json(get("hosting_deployment") ?? get("solution_hosted")),
+        "How is your solution hosted / deployed?": json(
+          get("hosting_deployment") ?? get("solution_hosted"),
+        ),
+        "What is your typical deployment scale?": text(get("deployment_scale")),
+        [maturityStageQuestionLabel]: text(
+          get("product_stage") ?? get("stage_product"),
+        ),
         Pricing: text(get("pricing") ?? "Contact vendor"),
         "Product Description": text(
           get("product_description") ??
@@ -903,10 +985,16 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
     },
     {
       id: 2,
-      title: "Company Overview",
+      title: "Company identity",
       items: {
         "Legal Name": text(cp.vendorName ?? get("vendor_name")),
         "Vendor Type": text(cp.vendorType ?? get("vendorType")),
+      },
+    },
+    {
+      id: 12,
+      title: "Company reach",
+      items: {
         "Year Founded": text(cp.yearFounded ?? get("yearFounded") ?? get("year_founded")),
         Employees: text(cp.employeeCount ?? get("employeeCount") ?? get("no_of_employees")),
         "Operating Regions": json(cp.operatingRegions ?? get("operatingRegions") ?? get("operate_regions")),
@@ -918,17 +1006,41 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       items: {
         "Model Types": json(get("ai_model_types") ?? get("ai_models_usage")),
         "Model Purpose": json(get("ai_capabilities") ?? get("product_capabilities")),
-        "Training Data / Transparency": text(get("model_transparency") ?? get("ai_model_transparency")),
+        "Model Governance": text(get("ai_autonomy_level") ?? get("decision_autonomy")),
+        "Explainability / Transparency": text(get("model_transparency") ?? get("ai_model_transparency")),
         "Human Oversight": json(get("human_oversight")),
+      },
+    },
+    {
+      id: 10,
+      title: "AI Safety & Testing",
+      items: {
+        "Training Data Documentation": text(
+          get("training_data_documentation") ?? get("training_data_document"),
+        ),
+        "Bias Detection": json(get("bias_testing_approach") ?? get("bias_ai")),
+        "Penetration Testing": text(get("adversarial_security_testing") ?? get("security_testing")),
       },
     },
     {
       id: 4,
       title: "AI Governance",
       items: {
-        "AI Ethics Policy": text(get("aiEthicsPolicy") ? "Available" : "Not specified"),
-        "Bias Detection": json(get("bias_testing_approach") ?? get("bias_ai")),
-        "Model Governance": text(get("ai_autonomy_level") ?? get("decision_autonomy")),
+        "AI Ethics Policy": (() => {
+          const answered = get("documented_ai_governance_policy");
+          const answeredStr =
+            answered != null && String(answered).trim() !== "" ? String(answered).trim() : "";
+          if (answeredStr === "Yes") {
+            const files =
+              aiGovernanceUploadNames.length > 0
+                ? aiGovernanceUploadNames.join(", ")
+                : "";
+            return text(files ? `Yes — uploaded: ${files}` : "Yes (documented)");
+          }
+          if (answeredStr === "No") return "No";
+          if (get("aiEthicsPolicy")) return "Available";
+          return "Not specified";
+        })(),
         "Human-in-the-Loop": json(get("human_oversight")),
       },
     },
@@ -936,10 +1048,12 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       id: 5,
       title: "Security Posture",
       items: {
-        Certifications: json(get("security_certifications") ?? get("security_compliance_certificates")),
-        "Penetration Testing": text(get("adversarial_security_testing") ?? get("security_testing")),
-        "Incident Response": text(get("incident_response_plan")),
-        "Uptime SLA": text(get("uptime_sla") ?? get("sla_guarantee")),
+        "Incident Response Plan": text(
+          get("incident_response_plan"),
+        ),
+        "Rollback Capability": text(
+          get("rollback_capability") ?? get("rollback_deployment_issues"),
+        ),
       },
     },
     {
@@ -956,17 +1070,19 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       title: "Compliance & Certifications",
       items: {
         Certifications: certificationsDisplay,
-        "Audit Frequency": text(get("audit_frequency") ?? get("assessment_completion_level") ?? get("assessment_feedback")),
+        "Independent Compliance Audit Method": text(
+          get("assessment_completion_level") ?? get("assessment_feedback"),
+        ),
+        "Audit Frequency": text(get("audit_frequency")),
       },
     },
     {
       id: 8,
       title: "Operations & Support",
       items: {
-        "Support Hours": text(get("support_hours")),
-        "Support SLAs": text(get("support_slas")),
         "Uptime SLA": text(get("uptime_sla") ?? get("sla_guarantee")),
-        "Change Management": text(get("change_management") ?? get("deployment_scale") ?? get("stage_product")),
+        "Support Response SLAs (P1 / P2 / P3)": text(get("support_slas")),
+        "Change Management / Release Cadence": text(get("change_management")),
       },
     },
     {
@@ -975,6 +1091,24 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
       items: {
         "Critical Vendors": text(get("critical_vendors")),
         "Vendor Assessment": text(get("vendor_assessment_frequency")),
+      },
+    },
+    {
+      id: 11,
+      title: "Evidence & Trust",
+      items: {
+        "Usage / Interaction Telemetry":
+          text(get("interaction_data_available") ?? get("available_usage_data")),
+        "Audit Logs (SIEM Export)":
+          text(get("audit_logs_available") ?? get("audit_logs")),
+        "Supporting Testing and Policy Documentation":
+          text(
+            evidenceTestingPolicyNames.length > 0
+              ? evidenceTestingPolicyNames.join(", ")
+              : "Not uploaded",
+          ),
+        "Model / Safety Testing Results (Under NDA)":
+          text(get("testing_results_available") ?? get("test_results")),
       },
     },
   ];

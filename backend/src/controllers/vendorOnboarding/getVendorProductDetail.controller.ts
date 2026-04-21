@@ -204,6 +204,8 @@ const getVendorProductDetail = async (req: Request, res: Response): Promise<void
       complianceCertifications: rowRecord.visible_compliance_certifications === true,
       operationsSupport: rowRecord.visible_operations_support === true,
       vendorManagement: rowRecord.visible_vendor_management === true,
+      companyIdentity: rowRecord.visible_company_identity === true,
+      companyReach: rowRecord.visible_company_reach === true,
     };
 
     res.status(200).json({

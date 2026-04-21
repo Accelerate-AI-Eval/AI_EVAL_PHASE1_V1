@@ -480,6 +480,10 @@
   background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 100%);
 }
 
+.generated_profile_section_card[data-section-id="12"] .icon_header_product_data {
+  background: linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%);
+}
+
 .generated_profile_section_card[data-section-id="5"] .icon_header_product_data {
   background: linear-gradient(145deg, #f0f9ff 0%, #e0f2fe 100%);
 }
@@ -506,4 +510,21 @@
 
 .generated_profile_section_card[data-section-id="9"] .icon_header_product_data {
   background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.generated_profile_section_card[data-section-id="10"] .icon_header_product_data {
+  background: linear-gradient(145deg, #fefce8 0%, #fef9c3 100%);
+}
+
+.generated_profile_section_card[data-section-id="11"] .icon_header_product_data {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+/* Company identity / reach (vendor profile): same header chrome as section cards, distinct tints — not both blue */
+.product_profile_company_detail_card[data-company-block="identity"] .icon_header_product_data {
+  background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 100%);
+}
+
+.product_profile_company_detail_card[data-company-block="reach"] .icon_header_product_data {
+  background: linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%);
 }

@@ -2,10 +2,9 @@
  * Renders generated product profile report: Trust Score cards on top, then section cards.
  * Data comes from POST /vendorSelfAttestation/generate-profile (no file).
  */
-import { useMemo, type CSSProperties } from "react";
+import { Fragment, useMemo, type CSSProperties, type ReactNode } from "react";
 import {
   Package,
-  Building2,
   Cpu,
   Brain,
   Lock,
@@ -13,13 +12,18 @@ import {
   Phone,
   Award,
   Users,
+  FlaskConical,
+  FileCheck,
+  IdCard,
+  MapPin,
 } from "lucide-react";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
+import { sortReportSectionsForDisplay } from "../../../utils/productProfileSectionDisplayOrder";
 import "./GeneratedProductProfileCards.css";
 
 const SECTION_ICONS: Record<number, React.ReactNode> = {
   1: <Package size={24} aria-hidden />,
-  2: <Building2 size={24} aria-hidden />,
+  2: <IdCard size={24} aria-hidden />,
   3: <Cpu size={24} aria-hidden />,
   4: <Brain size={24} aria-hidden />,
   5: <Lock size={24} aria-hidden />,
@@ -27,6 +31,9 @@ const SECTION_ICONS: Record<number, React.ReactNode> = {
   7: <Award size={24} aria-hidden />,
   8: <Phone size={24} aria-hidden />,
   9: <Users size={24} aria-hidden />,
+  10: <FlaskConical size={24} aria-hidden />,
+  11: <FileCheck size={24} aria-hidden />,
+  12: <MapPin size={24} aria-hidden />,
 };
 
 const SECTION_ICON_CLASS: Record<number, string> = {
@@ -39,12 +46,15 @@ const SECTION_ICON_CLASS: Record<number, string> = {
   7: "generated_profile_icon_green",
   8: "generated_profile_icon_teal",
   9: "generated_profile_icon_red",
+  10: "generated_profile_icon_orange",
+  11: "generated_profile_icon_green",
+  12: "generated_profile_icon_teal",
 };
 
 /** Default subtitles per section to match reference UI when report omits subtitle */
 const SECTION_SUBTITLES: Record<number, string> = {
   1: "Product details, deployment, and market positioning.",
-  2: "Corporate structure and financial profile.",
+  2: "Vendor type and how you present your company.",
   3: "Model architecture, training, and oversight.",
   4: "Ethics, oversight, and governance practices.",
   5: "Security controls and infrastructure.",
@@ -52,6 +62,9 @@ const SECTION_SUBTITLES: Record<number, string> = {
   7: "Regulatory frameworks and audit status.",
   8: "SLAs, support coverage, and change management.",
   9: "Critical vendors and supply chain.",
+  10: "Transparency, explainability, and training-data posture.",
+  11: "Telemetry, audit logs, and evidence availability.",
+  12: "Team size, headquarters, and markets you serve.",
 };
 
 export interface SectionVisibilityControl {
@@ -63,6 +76,25 @@ export interface SectionVisibilityControl {
 function summaryForDisplay(summary: string | null | undefined): string {
   if (!summary || typeof summary !== "string") return "";
   return summary.replace(/\s*-+\s*$/, "").trim();
+}
+
+/** Section 4 (AI governance / ethics): show "Human Oversight" instead of "Human-in-the-Loop" style labels. */
+function displayLabelForGovernanceItem(label: string): string {
+  const t = String(label ?? "").trim();
+  if (/human[-\s]?in[-\s]?the[-\s]?loop/i.test(t)) return "Human Oversight";
+  return label;
+}
+
+/** Section 3 (AI models & technology): omit duplicate Human Oversight row (shown under governance). */
+function shouldOmitHumanOversightFromModelSection(sectionId: number, label: string): boolean {
+  if (sectionId !== 3) return false;
+  return /^human\s*oversight$/i.test(String(label ?? "").trim());
+}
+
+/** Operations & Support: hide legacy "Change Management" row; keep new release-cadence field label. */
+function shouldOmitLegacyOperationsRow(sectionId: number, label: string): boolean {
+  if (sectionId !== 8) return false;
+  return /^change\s*management$/i.test(String(label ?? "").trim());
 }
 
 function pickSectionField(
@@ -79,6 +111,25 @@ function pickSectionField(
     if (usedValues.has(dupKey)) continue;
     usedValues.add(dupKey);
     return normalizedValue;
+  }
+  return null;
+}
+
+/** Same as pickSectionField but returns the report label (e.g. dynamic maturity question). */
+function pickSectionEntry(
+  items: Record<string, string>,
+  hints: string[],
+  usedValues: Set<string>,
+): { label: string; value: string } | null {
+  for (const [label, value] of Object.entries(items)) {
+    const key = label.toLowerCase();
+    const normalizedValue = (value ?? "").trim();
+    if (!normalizedValue) continue;
+    if (!hints.some((h) => key.includes(h))) continue;
+    const dupKey = normalizedValue.toLowerCase();
+    if (usedValues.has(dupKey)) continue;
+    usedValues.add(dupKey);
+    return { label, value: normalizedValue };
   }
   return null;
 }
@@ -175,14 +226,19 @@ export interface GeneratedProductProfileCardsProps {
   sectionVisibility?: (sectionId: number) => SectionVisibilityControl | null;
   /** Show right-side "AT A Glance" card next to trust summary. */
   showAtAGlance?: boolean;
+  /** Full-width block after product information (section id 1), before other sections. */
+  afterProductInformation?: ReactNode;
 }
 
 function GeneratedProductProfileCards({
   report,
   sectionVisibility,
   showAtAGlance = false,
+  afterProductInformation,
 }: GeneratedProductProfileCardsProps) {
   const { trustScore, sections } = report;
+  const orderedSections = useMemo(() => sortReportSectionsForDisplay(sections), [sections]);
+  const hasProductInformationSection = sections.some((s) => s.id === 1);
   const scoreValue =
     typeof trustScore.overallScore === "number" && Number.isFinite(trustScore.overallScore)
       ? Math.max(0, Math.min(100, Math.round(trustScore.overallScore)))
@@ -251,14 +307,14 @@ function GeneratedProductProfileCards({
       {/* Section cards – each can have a "Visible to buyers" toggle when sectionVisibility is provided */}
       <section className="generated_profile_sections" aria-label="Product profile details">
         <div className="generated_profile_sections_grid">
-          {sections.map((sec) => {
+          {orderedSections.map((sec) => {
             const icon = SECTION_ICONS[sec.id];
             const iconClass = SECTION_ICON_CLASS[sec.id] ?? "generated_profile_icon_default";
             const subtitle = sec.subtitle ?? SECTION_SUBTITLES[sec.id];
             const visibility = sectionVisibility?.(sec.id);
             return (
+              <Fragment key={sec.id}>
               <div
-                key={sec.id}
                 className="generated_profile_section_card"
                 data-section-id={sec.id}
               >
@@ -290,8 +346,20 @@ function GeneratedProductProfileCards({
                 </div>
                 {sec.id === 1 ? (() => {
                   const used = new Set<string>();
+                  const productName = pickSectionField(sec.items, ["product name"], used);
+                  const hostedDeployed = pickSectionField(
+                    sec.items,
+                    ["how is your solution hosted", "solution hosted / deployed"],
+                    used,
+                  );
+                  const deploymentScale = pickSectionField(
+                    sec.items,
+                    ["typical deployment scale", "deployment scale"],
+                    used,
+                  );
+                  const maturityEntry = pickSectionEntry(sec.items, ["maturity stage"], used);
                   const primaryUseCase = pickSectionField(sec.items, ["primary use case", "use case", "purpose"], used);
-                  const deploymentModel = pickSectionField(sec.items, ["deployment", "hosting model"], used);
+                  const deploymentModel = pickSectionField(sec.items, ["deployment model"], used);
                   const legalName = pickSectionField(sec.items, ["legal name", "company legal", "entity"], used);
                   const headquarters =
                     pickSectionField(sec.items, ["headquarter", "headquarters", "headquarter location", "headquarters location"], used) ??
@@ -309,8 +377,45 @@ function GeneratedProductProfileCards({
                       used.add(key);
                       return true;
                     });
+                  const hasAnyProductInfoHighlight =
+                    Boolean(productName) ||
+                    Boolean(hostedDeployed) ||
+                    Boolean(deploymentScale) ||
+                    Boolean(maturityEntry) ||
+                    Boolean(primaryUseCase) ||
+                    Boolean(deploymentModel) ||
+                    Boolean(legalName) ||
+                    Boolean(headquarters);
                   return (
                     <div className="generated_profile_product_info">
+                      {productName && (
+                        <div className="generated_profile_product_info_row">
+                          <p className="generated_profile_product_info_k">Product Name</p>
+                          <p className="generated_profile_product_info_v">{productName}</p>
+                        </div>
+                      )}
+                      {hostedDeployed && (
+                        <div className="generated_profile_product_info_row">
+                          <p className="generated_profile_product_info_k">
+                            How is your solution hosted / deployed?
+                          </p>
+                          <p className="generated_profile_product_info_v">{hostedDeployed}</p>
+                        </div>
+                      )}
+                      {deploymentScale && (
+                        <div className="generated_profile_product_info_row">
+                          <p className="generated_profile_product_info_k">
+                            What is your typical deployment scale?
+                          </p>
+                          <p className="generated_profile_product_info_v">{deploymentScale}</p>
+                        </div>
+                      )}
+                      {maturityEntry && (
+                        <div className="generated_profile_product_info_row">
+                          <p className="generated_profile_product_info_k">{maturityEntry.label}</p>
+                          <p className="generated_profile_product_info_v">{maturityEntry.value}</p>
+                        </div>
+                      )}
                       {primaryUseCase && (
                         <div className="generated_profile_product_info_use_case">
                           <p className="generated_profile_product_info_k">Primary Use Case</p>
@@ -335,7 +440,7 @@ function GeneratedProductProfileCards({
                           <p className="generated_profile_product_info_v">{headquarters}</p>
                         </div>
                       )}
-                      {!primaryUseCase && !deploymentModel && !legalName && !headquarters && (
+                      {!hasAnyProductInfoHighlight && (
                         <ul className="generated_profile_section_list">
                           {fallbackPairs.map(([label, value]) => (
                             <li key={label} className="generated_profile_section_item">
@@ -350,29 +455,42 @@ function GeneratedProductProfileCards({
                 })() : (
                   (() => {
                     const seenValues = new Set<string>();
-                    const cleanItems = Object.entries(sec.items).filter(([, value]) => {
-                      const v = (value ?? "").trim();
-                      if (!v) return false;
-                      const key = v.toLowerCase();
-                      if (seenValues.has(key)) return false;
-                      seenValues.add(key);
-                      return true;
-                    });
+                    const cleanItems = Object.entries(sec.items)
+                      .filter(([label]) => {
+                        if (shouldOmitHumanOversightFromModelSection(sec.id, label)) return false;
+                        if (shouldOmitLegacyOperationsRow(sec.id, label)) return false;
+                        return true;
+                      })
+                      .filter(([, value]) => {
+                        const v = (value ?? "").trim();
+                        if (!v) return false;
+                        const key = v.toLowerCase();
+                        if (seenValues.has(key)) return false;
+                        seenValues.add(key);
+                        return true;
+                      });
                     return (
                       <div className="generated_profile_product_info generated_profile_product_info--all_sections">
-                        {cleanItems.map(([label, value]) => (
-                          <div key={label} className="generated_profile_product_info_row">
-                            <p className="generated_profile_product_info_k">{label}</p>
-                            <p className="generated_profile_product_info_v">{value}</p>
-                          </div>
-                        ))}
+                        {cleanItems.map(([label, value]) => {
+                          const displayLabel =
+                            sec.id === 4 ? displayLabelForGovernanceItem(label) : label;
+                          return (
+                            <div key={label} className="generated_profile_product_info_row">
+                              <p className="generated_profile_product_info_k">{displayLabel}</p>
+                              <p className="generated_profile_product_info_v">{value}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })()
                 )}
               </div>
+              {afterProductInformation && sec.id === 1 ? afterProductInformation : null}
+              </Fragment>
             );
           })}
+          {afterProductInformation && !hasProductInformationSection ? afterProductInformation : null}
         </div>
       </section>
     </div>

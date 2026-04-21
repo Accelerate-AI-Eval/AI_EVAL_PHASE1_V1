@@ -68,3 +68,14 @@
 .chip-multi-select-chip--selected:focus {
   box-shadow: 0 0 0 2px rgba(44, 126, 241, 0.5);
 }
+
+.chip-multi-select-chip:disabled,
+.chip-multi-select-chip.chip-multi-select-chip--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip-multi-select-chip--selected:disabled,
+.chip-multi-select-chip--selected.chip-multi-select-chip--disabled {
+  opacity: 0.55;
+}

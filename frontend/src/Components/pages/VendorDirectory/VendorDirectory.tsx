@@ -27,6 +27,8 @@ import {
 } from "../Reports/ReportsPagination";
 import ClickTooltip from "../../UI/ClickTooltip";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
+import { mergeMissingProfileSectionsFromAttestation } from "../../../utils/mergeProductProfileReportFromAttestation";
+import { vendorTrustGradeColorFromTrustScore } from "../../../utils/completeReportGrade";
 
 const BASE_URL =
   import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -41,12 +43,14 @@ const defaultSectionVis = {
   complianceCertifications: false,
   operationsSupport: false,
   vendorManagement: false,
+  companyIdentity: false,
+  companyReach: false,
 };
 
-/** Section id 1–9 map to buyer visibility flags (vendor toggles in View Product). Names match card titles: Data Practices, Compliance & Certifications, Operations & Support, Vendor Management. */
+/** Section ids map to buyer visibility flags (vendor toggles in View Product). */
 const SECTION_ID_TO_VIS_KEY: Record<number, keyof typeof defaultSectionVis> = {
   1: "aiGovernance",
-  2: "securityPosture",
+  2: "companyIdentity",
   3: "dataPrivacy",
   4: "compliance",
   5: "modelRisk",
@@ -54,6 +58,12 @@ const SECTION_ID_TO_VIS_KEY: Record<number, keyof typeof defaultSectionVis> = {
   7: "complianceCertifications",
   8: "operationsSupport",
   9: "vendorManagement",
+  /** AI Safety & Testing — same visibility flag as AI Models & Technology (dataPrivacy) */
+  10: "dataPrivacy",
+  /** Evidence & Trust — same visibility flag as Compliance & Certifications */
+  11: "complianceCertifications",
+  /** Company reach — same toggle as Company reach in product profile */
+  12: "companyReach",
 };
 
 function parseGeneratedReport(
@@ -341,27 +351,35 @@ function trustGradeFromScore(score: number | undefined): {
   letter: string;
   scoreText: string;
   gradeClass: string;
+  /** Trust score tier color for letter + number; null when score unavailable. */
+  letterColor: string | null;
 } {
+  const PRODUCT_PROFILE_GREEN = "#16a34a";
   if (score == null || Number.isNaN(score)) {
-    return { letter: "—", scoreText: "—", gradeClass: "vd_premium_grade_na" };
+    return { letter: "—", scoreText: "—", gradeClass: "vd_premium_grade_na", letterColor: null };
   }
   const rounded = Math.round(score);
+  const letterColor = vendorTrustGradeColorFromTrustScore(rounded);
   if (rounded >= 90)
     return {
       letter: "A",
       scoreText: String(rounded),
       gradeClass: "vd_premium_grade_a",
+      letterColor,
     };
   if (rounded >= 80)
     return {
       letter: "B",
       scoreText: String(rounded),
       gradeClass: "vd_premium_grade_b",
+      // AI Vendor Directory requirement: B grade should use Product Profile green.
+      letterColor: PRODUCT_PROFILE_GREEN,
     };
   return {
     letter: "C",
     scoreText: String(rounded),
     gradeClass: "vd_premium_grade_c",
+    letterColor,
   };
 }
 
@@ -495,6 +513,8 @@ const VendorDirectory = () => {
     complianceCertifications?: boolean;
     operationsSupport?: boolean;
     vendorManagement?: boolean;
+    companyIdentity?: boolean;
+    companyReach?: boolean;
   } | null>(null);
   const [productDetailLoading, setProductDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -692,6 +712,8 @@ const VendorDirectory = () => {
                     vis.complianceCertifications === true,
                   operationsSupport: vis.operationsSupport === true,
                   vendorManagement: vis.vendorManagement === true,
+                  companyIdentity: vis.companyIdentity === true,
+                  companyReach: vis.companyReach === true,
                 }
               : defaultSectionVis,
           );
@@ -972,8 +994,16 @@ const VendorDirectory = () => {
     >
       {items.map((dp) => {
         const canShowBuyerFields = dp.visibleToBuyer === true;
+        const trustNumeric =
+          dp.trustScore != null && Number.isFinite(Number(dp.trustScore))
+            ? Number(dp.trustScore)
+            : undefined;
+        /** My Products (COTS) always shows own trust/grade; directory uses buyer-visibility. */
+        const revealTrustScore =
+          trustNumeric != null &&
+          (vendorTab === "my" || canShowBuyerFields);
         const g = trustGradeFromScore(
-          canShowBuyerFields ? dp.trustScore : undefined,
+          revealTrustScore ? trustNumeric : undefined,
         );
         const descRaw = canShowBuyerFields
           ? dp.summary?.trim() || dp.productDescription?.trim() || ""
@@ -991,16 +1021,26 @@ const VendorDirectory = () => {
               <div
                 className={`vd_premium_grade ${g.gradeClass}`}
                 aria-label={
-                  dp.trustScore != null
+                  revealTrustScore
                     ? `Trust grade ${g.letter}, score ${g.scoreText}`
                     : "Trust score not available"
                 }
               >
                 <div className="vd_premium_grade_row">
-                  <span className="vd_premium_grade_letter">{g.letter}</span>
+                  <span
+                    className="vd_premium_grade_letter"
+                    style={g.letterColor ? { color: g.letterColor } : undefined}
+                  >
+                    {g.letter}
+                  </span>
                   <div className="vd_premium_grade_col">
                     <span className="vd_premium_grade_label">Trust score</span>
-                    <span className="vd_premium_grade_num">{g.scoreText}</span>
+                    <span
+                      className="vd_premium_grade_num"
+                      style={g.letterColor ? { color: g.letterColor } : undefined}
+                    >
+                      {g.scoreText}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1012,6 +1052,7 @@ const VendorDirectory = () => {
                 position="top"
                 showOn="hover"
               >
+                <p className="vd_premium_card_product">{dp.productName}</p>
                 <span
                   className="vd_premium_card_title vd_premium_card_title--sector"
                   role="heading"
@@ -1020,7 +1061,7 @@ const VendorDirectory = () => {
                   {sectorTitle}
                 </span>
               </ClickTooltip>
-              <p className="vd_premium_card_product">{dp.productName}</p>
+              
               {desc ? <p className="vd_premium_card_desc">{desc}</p> : null}
             </div>
             <div className="vd_premium_card_footer">
@@ -1506,14 +1547,18 @@ const VendorDirectory = () => {
                       const rawReport = productDetail.generated_profile_report;
                       const report = parseGeneratedReport(rawReport);
                       if (report) {
+                        const mergedReport = mergeMissingProfileSectionsFromAttestation(
+                          report,
+                          productDetail,
+                        );
                         // Only show sections the vendor has toggled on (visible to buyers) in Product Profile → View Product.
                         const visibleSectionIds = new Set(
-                          [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((id) => {
+                          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((id) => {
                             const key = SECTION_ID_TO_VIS_KEY[id];
                             return key != null && vis[key] === true;
                           }),
                         );
-                        const filteredSections = report.sections.filter((sec) =>
+                        const filteredSections = mergedReport.sections.filter((sec) =>
                           visibleSectionIds.has(sec.id),
                         );
                         if (filteredSections.length === 0) {
@@ -1528,7 +1573,7 @@ const VendorDirectory = () => {
                           <div className="generated_profile_wrap">
                             <GeneratedProductProfileCards
                               report={{
-                                trustScore: report.trustScore,
+                                trustScore: mergedReport.trustScore,
                                 sections: filteredSections,
                               }}
                             />
@@ -1542,7 +1587,13 @@ const VendorDirectory = () => {
                         vis.securityPosture === true ||
                         vis.dataPrivacy === true ||
                         vis.compliance === true ||
-                        vis.modelRisk === true;
+                        vis.modelRisk === true ||
+                        vis.dataPractices === true ||
+                        vis.complianceCertifications === true ||
+                        vis.operationsSupport === true ||
+                        vis.vendorManagement === true ||
+                        vis.companyIdentity === true ||
+                        vis.companyReach === true;
                       const detailItem = (label: string, value: string) => (
                         <li key={label} className="product_profile_detail_item">
                           <span className="product_profile_detail_label">

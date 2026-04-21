@@ -139,6 +139,9 @@ function buildFormStateFromFormData(
       evidenceTestingPolicy: Array.isArray(d.evidenceTestingPolicy)
         ? (d.evidenceTestingPolicy as string[])
         : [],
+      aiGovernancePolicy: Array.isArray(d.aiGovernancePolicy)
+        ? (d.aiGovernancePolicy as string[])
+        : defaultDocumentUpload.aiGovernancePolicy,
     };
   }
   return { companyProfile, attestation, documentUpload };

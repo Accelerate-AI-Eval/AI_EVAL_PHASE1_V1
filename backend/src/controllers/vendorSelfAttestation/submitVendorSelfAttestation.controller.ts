@@ -16,9 +16,10 @@ const MAX_FILENAME_LENGTH = 255;
 
 /**
  * Normalize and validate document_uploads from request.
- * Expected shape: "0": string[], "1": string[], "2": { categories, byCategory }, evidenceTestingPolicy?: string[].
+ * Expected shape: "0": string[], "1": string[], "2": { categories, byCategory }, evidenceTestingPolicy?: string[], aiGovernancePolicy?: string[].
  * Slot 2 can be legacy string[] (then normalized to { categories: [], byCategory: {} }).
  * Returns { ok: true, value } or { ok: false, message }.
+ * Optional keys: evidenceTestingPolicy, aiGovernancePolicy (string[] file names).
  */
 function normalizeDocumentUploads(raw: unknown): { ok: true; value: Record<string, unknown> } | { ok: false; message: string } {
   if (raw == null) return { ok: true, value: {} };
@@ -59,6 +60,9 @@ function normalizeDocumentUploads(raw: unknown): { ok: true; value: Record<strin
   const evidenceTestingPolicy = Array.isArray(o.evidenceTestingPolicy)
     ? (o.evidenceTestingPolicy as unknown[]).filter((c): c is string => typeof c === "string")
     : [];
+  const aiGovernancePolicy = Array.isArray(o.aiGovernancePolicy)
+    ? (o.aiGovernancePolicy as unknown[]).filter((c): c is string => typeof c === "string")
+    : [];
   let err = validateFileNames(slot0);
   if (err) return { ok: false, message: err };
   err = validateFileNames(slot1);
@@ -69,9 +73,11 @@ function normalizeDocumentUploads(raw: unknown): { ok: true; value: Record<strin
   }
   err = validateFileNames(evidenceTestingPolicy);
   if (err) return { ok: false, message: err };
+  err = validateFileNames(aiGovernancePolicy);
+  if (err) return { ok: false, message: err };
   return {
     ok: true,
-    value: { "0": slot0, "1": slot1, "2": slot2, evidenceTestingPolicy },
+    value: { "0": slot0, "1": slot1, "2": slot2, evidenceTestingPolicy, aiGovernancePolicy },
   };
 }
 
@@ -94,6 +100,7 @@ function getAllDocumentFileNames(docUpload: Record<string, unknown> | null): Set
       for (const arr of Object.values(byCat)) add((arr as unknown[]) ?? []);
   }
   add((docUpload.evidenceTestingPolicy as unknown[]) ?? []);
+  add((docUpload.aiGovernancePolicy as unknown[]) ?? []);
   return names;
 }
 
@@ -224,8 +231,13 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
     const ai_models_usage = asJson(get("ai_model_types"));
     const ai_model_transparency = get("model_transparency") != null ? String(get("model_transparency")).slice(0, 100) : null;
     const ai_autonomy_level = get("decision_autonomy") != null ? String(get("decision_autonomy")).slice(0, 100) : null;
+    const documented_ai_governance_policy =
+      get("documented_ai_governance_policy") != null
+        ? String(get("documented_ai_governance_policy")).slice(0, 100)
+        : null;
     const security_compliance_certificates = asJson(get("security_certifications"));
     const assessment_feedback = get("assessment_completion_level") != null ? String(get("assessment_completion_level")).slice(0, 100) : null;
+    const audit_frequency = get("audit_frequency") != null ? String(get("audit_frequency")).slice(0, 100) : null;
     const pii_information = get("pii_handling") != null ? String(get("pii_handling")).slice(0, 100) : null;
     const data_residency_options = asJson(get("data_residency_options"));
     const data_retention_policy = get("data_retention_policy") != null ? String(get("data_retention_policy")) : null;
@@ -234,6 +246,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
     const human_oversight = asJson(get("human_oversight"));
     const training_data_document = get("training_data_documentation") != null ? String(get("training_data_documentation")).slice(0, 100) : null;
     const sla_guarantee = get("uptime_sla") != null ? String(get("uptime_sla")).slice(0, 100) : null;
+    const support_slas = get("support_slas") != null ? String(get("support_slas")) : null;
+    const change_management = get("change_management") != null ? String(get("change_management")) : null;
     const incident_response_plan = get("incident_response_plan") != null ? String(get("incident_response_plan")).slice(0, 100) : null;
     const rollback_deployment_issues = get("rollback_capability") != null ? String(get("rollback_capability")).slice(0, 100) : null;
     const solution_hosted = asJson(get("hosting_deployment"));
@@ -294,8 +308,10 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
       ai_models_usage,
       ai_model_transparency,
       ai_autonomy_level,
+      documented_ai_governance_policy,
       security_compliance_certificates,
       assessment_feedback,
+      audit_frequency,
       pii_information,
       data_residency_options,
       data_retention_policy,
@@ -304,6 +320,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
       human_oversight,
       training_data_document,
       sla_guarantee,
+      support_slas,
+      change_management,
       incident_response_plan,
       rollback_deployment_issues,
       solution_hosted,
@@ -340,8 +358,10 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
       ai_model_types: row.ai_models_usage ?? undefined,
       model_transparency: row.ai_model_transparency ?? undefined,
       decision_autonomy: row.ai_autonomy_level ?? undefined,
+      documented_ai_governance_policy: row.documented_ai_governance_policy ?? undefined,
       security_certifications: row.security_compliance_certificates ?? undefined,
       assessment_completion_level: row.assessment_feedback ?? undefined,
+      audit_frequency: row.audit_frequency ?? undefined,
       pii_handling: row.pii_information ?? undefined,
       data_residency_options: row.data_residency_options ?? undefined,
       data_retention_policy: row.data_retention_policy ?? undefined,
@@ -350,6 +370,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
       human_oversight: row.human_oversight ?? undefined,
       training_data_documentation: row.training_data_document ?? undefined,
       uptime_sla: row.sla_guarantee ?? undefined,
+      support_slas: row.support_slas ?? undefined,
+      change_management: row.change_management ?? undefined,
       incident_response_plan: row.incident_response_plan ?? undefined,
       rollback_capability: row.rollback_deployment_issues ?? undefined,
       hosting_deployment: row.solution_hosted ?? undefined,
@@ -382,8 +404,10 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
           ai_models_usage: vendorSelfAttestations.ai_models_usage,
           ai_model_transparency: vendorSelfAttestations.ai_model_transparency,
           ai_autonomy_level: vendorSelfAttestations.ai_autonomy_level,
+          documented_ai_governance_policy: vendorSelfAttestations.documented_ai_governance_policy,
           security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
           assessment_feedback: vendorSelfAttestations.assessment_feedback,
+          audit_frequency: vendorSelfAttestations.audit_frequency,
           pii_information: vendorSelfAttestations.pii_information,
           data_residency_options: vendorSelfAttestations.data_residency_options,
           data_retention_policy: vendorSelfAttestations.data_retention_policy,
@@ -392,6 +416,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
           human_oversight: vendorSelfAttestations.human_oversight,
           training_data_document: vendorSelfAttestations.training_data_document,
           sla_guarantee: vendorSelfAttestations.sla_guarantee,
+          support_slas: vendorSelfAttestations.support_slas,
+          change_management: vendorSelfAttestations.change_management,
           incident_response_plan: vendorSelfAttestations.incident_response_plan,
           rollback_deployment_issues: vendorSelfAttestations.rollback_deployment_issues,
           solution_hosted: vendorSelfAttestations.solution_hosted,
@@ -438,8 +464,10 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
               ai_models_usage: vendorSelfAttestations.ai_models_usage,
               ai_model_transparency: vendorSelfAttestations.ai_model_transparency,
               ai_autonomy_level: vendorSelfAttestations.ai_autonomy_level,
+              documented_ai_governance_policy: vendorSelfAttestations.documented_ai_governance_policy,
               security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
               assessment_feedback: vendorSelfAttestations.assessment_feedback,
+              audit_frequency: vendorSelfAttestations.audit_frequency,
               pii_information: vendorSelfAttestations.pii_information,
               data_residency_options: vendorSelfAttestations.data_residency_options,
               data_retention_policy: vendorSelfAttestations.data_retention_policy,
@@ -448,6 +476,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
               human_oversight: vendorSelfAttestations.human_oversight,
               training_data_document: vendorSelfAttestations.training_data_document,
               sla_guarantee: vendorSelfAttestations.sla_guarantee,
+              support_slas: vendorSelfAttestations.support_slas,
+              change_management: vendorSelfAttestations.change_management,
               incident_response_plan: vendorSelfAttestations.incident_response_plan,
               rollback_deployment_issues: vendorSelfAttestations.rollback_deployment_issues,
               solution_hosted: vendorSelfAttestations.solution_hosted,
@@ -558,8 +588,10 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
           ai_models_usage: vendorSelfAttestations.ai_models_usage,
           ai_model_transparency: vendorSelfAttestations.ai_model_transparency,
           ai_autonomy_level: vendorSelfAttestations.ai_autonomy_level,
+          documented_ai_governance_policy: vendorSelfAttestations.documented_ai_governance_policy,
           security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
           assessment_feedback: vendorSelfAttestations.assessment_feedback,
+          audit_frequency: vendorSelfAttestations.audit_frequency,
           pii_information: vendorSelfAttestations.pii_information,
           data_residency_options: vendorSelfAttestations.data_residency_options,
           data_retention_policy: vendorSelfAttestations.data_retention_policy,
@@ -568,6 +600,8 @@ const submitVendorSelfAttestation = async (req: Request, res: Response): Promise
           human_oversight: vendorSelfAttestations.human_oversight,
           training_data_document: vendorSelfAttestations.training_data_document,
           sla_guarantee: vendorSelfAttestations.sla_guarantee,
+          support_slas: vendorSelfAttestations.support_slas,
+          change_management: vendorSelfAttestations.change_management,
           incident_response_plan: vendorSelfAttestations.incident_response_plan,
           rollback_deployment_issues: vendorSelfAttestations.rollback_deployment_issues,
           solution_hosted: vendorSelfAttestations.solution_hosted,

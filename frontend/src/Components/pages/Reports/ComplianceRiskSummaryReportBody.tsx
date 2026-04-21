@@ -74,7 +74,7 @@ export default function ComplianceRiskSummaryReportBody({ data }: { data: CrsPay
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon" style={{ marginTop: 0 }}>
           <Scale className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Executive risk summary (inherent → residual) + RAG</span>
+          <span>Executive risk summary</span>
         </h2>
         <div className="crs_rag_row" role="group" aria-label="Risk assessment grades">
           <span className="crs_rag_label">Inherent</span>
@@ -93,7 +93,7 @@ export default function ComplianceRiskSummaryReportBody({ data }: { data: CrsPay
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <ListOrdered className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Top risks list (ranked) with L×I and drivers</span>
+          <span>Top risks list</span>
         </h2>
         {topRisks.length > 0 ? (
           <div className="crs_table_wrap">
@@ -140,7 +140,7 @@ export default function ComplianceRiskSummaryReportBody({ data }: { data: CrsPay
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <FileCheck className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Compliance mapping (framework → requirement → vendor control / evidence)</span>
+          <span>Compliance mapping</span>
         </h2>
         {mapping.length > 0 ? (
           <div className="crs_table_wrap">
@@ -171,7 +171,7 @@ export default function ComplianceRiskSummaryReportBody({ data }: { data: CrsPay
       <section className="bvr_card bvr_warnings_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <ShieldAlert className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Vendor validation notes (buyer-entered findings, if present)</span>
+          <span>Vendor validation notes</span>
         </h2>
         <p className="bvr_exec_text" style={{ margin: 0 }}>
           {data.vendorValidationNotes?.trim() ? data.vendorValidationNotes : "No buyer validation notes were captured for this assessment."}

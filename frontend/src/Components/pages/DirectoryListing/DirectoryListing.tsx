@@ -357,9 +357,9 @@ export const DirectoryListing = () => {
   }, [vendorDataInput, formState, fetchGeneratedReports]);
 
   const handleProductVisibilityToggle = useCallback(
-    async (productId: string, visible: boolean) => {
+    async (productId: string, visible: boolean): Promise<boolean> => {
       const token = sessionStorage.getItem("bearerToken");
-      if (!token) return;
+      if (!token) return false;
       try {
         const res = await fetch(`${BASE_URL}/vendorSelfAttestation/visibility`, {
           method: "PATCH",
@@ -371,11 +371,14 @@ export const DirectoryListing = () => {
         });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
         if (res.ok && data?.success) {
-          await fetchProductProfileData();
+          // Silent refetch: avoid full-page loading (unmounts ProductProfileView and loses open product detail).
+          await fetchProductProfileData({ silent: true });
+          return true;
         }
       } catch {
-        await fetchProductProfileData();
+        await fetchProductProfileData({ silent: true });
       }
+      return false;
     },
     [fetchProductProfileData]
   );
@@ -392,7 +395,9 @@ export const DirectoryListing = () => {
         | "visible_data_practices"
         | "visible_compliance_certifications"
         | "visible_operations_support"
-        | "visible_vendor_management",
+        | "visible_vendor_management"
+        | "visible_company_identity"
+        | "visible_company_reach",
       value: boolean
     ) => {
       const token = sessionStorage.getItem("bearerToken");

@@ -600,7 +600,7 @@
 }
 
 .vd_premium_grade_b .vd_premium_grade_letter {
-  color: #ea580c;
+  color: #16a34a;
 }
 
 .vd_premium_grade_c .vd_premium_grade_letter {
@@ -627,6 +627,8 @@
   line-height: 1.3;
   cursor: default;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  color: var(--main-dark-color);
+  border: 1px solid var(--main-dark-color);
 }
 
 .vd_premium_card .click_tooltip_trigger {
@@ -645,8 +647,11 @@
   .click_tooltip_wrapper:has(.vd_premium_card_title--sector)
   .click_tooltip_trigger {
   text-align: start;
-  display: inline-block;
+  /* display: inline-block; */
+  display: flex;
   max-width: 100%;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .vd_premium_card_title {

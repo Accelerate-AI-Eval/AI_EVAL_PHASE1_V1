@@ -1,5 +1,5 @@
 /**
- * Product Profile view for vendors: summary cards (Trust Score, No of products, Company, Regions),
+ * Product Profile view for vendors: list summary (Trust, products, Company, Operating regions); on product detail, Company identity + reach after generated product information (generated company identity / company reach cards omitted here because they are rendered as the custom blocks below),
  * product cards with trust score and View details; details open on the page (no modal).
  */
 import { useState, useMemo, useEffect } from "react";
@@ -8,6 +8,8 @@ import {
   Shield,
   Building2,
   Globe,
+  IdCard,
+  MapPin,
   Package,
   CircleChevronLeft,
   ChevronRight,
@@ -17,7 +19,9 @@ import type { VendorSelfAttestationFormState } from "../../../types/vendorSelfAt
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import LoadingMessage from "../../UI/LoadingMessage";
 import ProductProfileSummaryCard from "./ProductProfileSummaryCard";
-import GeneratedProductProfileCards from "./GeneratedProductProfileCards";
+import GeneratedProductProfileCards, {
+  type SectionVisibilityControl,
+} from "./GeneratedProductProfileCards";
 import type {
   ProductProfileProduct,
   StoredGeneratedReport,
@@ -183,8 +187,8 @@ export interface ProductProfileViewProps {
   onPublicListingToggle?: () => void;
   publicListingUpdating?: boolean;
   publicListingError?: string | null;
-  /** Toggle product visibility to buyers (only for Completed products) */
-  onProductVisibilityToggle?: (productId: string, visible: boolean) => void;
+  /** Toggle product visibility to buyers (only for Completed products). Resolves true when the API update succeeded. */
+  onProductVisibilityToggle?: (productId: string, visible: boolean) => Promise<boolean>;
   /** Toggle a detail section's visibility to buyers (only for Completed products) */
   onSectionVisibilityChange?: (
     attestationId: string,
@@ -219,7 +223,9 @@ export type SectionVisibilityKey =
   | "visible_data_practices"
   | "visible_compliance_certifications"
   | "visible_operations_support"
-  | "visible_vendor_management";
+  | "visible_vendor_management"
+  | "visible_company_identity"
+  | "visible_company_reach";
 
 interface ProductProfileProductListCardProps {
   product: ProductProfileProduct;
@@ -391,16 +397,104 @@ function ProductProfileView({
     return Math.round(sum / scores.length);
   }, [currentProducts]);
 
-  const company = formState?.companyProfile;
+  /** On product detail, prefer company profile from loaded attestation; otherwise vendor form state. */
+  const company =
+    selectedProductIdForDetail != null
+      ? (viewProductDetail?.companyProfile ?? formState?.companyProfile)
+      : formState?.companyProfile;
   const attestation = formState?.attestation ?? {};
 
-  const vendorType = formatVal(company?.vendorType) || "SaaS Provider";
-  const operatingRegions =
+  /** List summary row: always vendor form state (initial behaviour). */
+  const listCompanyProfile = formState?.companyProfile;
+  const headquarters =
+    formatVal(listCompanyProfile?.headquartersLocation) || "—";
+  const vendorType =
+    formatVal(listCompanyProfile?.vendorType) || "SaaS Provider";
+  const operatingRegionsForList =
+    Array.isArray(listCompanyProfile?.operatingRegions) &&
+    listCompanyProfile.operatingRegions.length > 0
+      ? listCompanyProfile.operatingRegions.join(", ")
+      : "Not specified.";
+
+  const operatingRegionsDetail =
     Array.isArray(company?.operatingRegions) &&
     company.operatingRegions.length > 0
       ? company.operatingRegions.join(", ")
       : "Not specified.";
-  const headquarters = formatVal(company?.headquartersLocation) || "—";
+  const companySectorDisplay = formatSector(company?.sector ?? null);
+  const vendorTypeForIdentity =
+    formatVal(company?.vendorType) === "Not specified."
+      ? "SaaS Provider"
+      : formatVal(company?.vendorType);
+  const yearFoundedForIdentity = formatVal(company?.yearFounded);
+  const yearFoundedDisplay =
+    yearFoundedForIdentity === "Not specified." ? "—" : yearFoundedForIdentity;
+  const websiteForIdentity = formatVal(company?.companyWebsite);
+  const websiteDisplay =
+    websiteForIdentity === "Not specified." ? "—" : websiteForIdentity;
+  const descriptionRaw = formatVal(company?.companyDescription);
+  const descriptionDisplay =
+    descriptionRaw === "Not specified."
+      ? "—"
+      : truncate(descriptionRaw.replace(/\s+/g, " ").trim(), 280);
+  const companyIdentityPrimary = (
+    <div className="product_profile_identity_fields">
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Vendor type</span>
+        <span>{vendorTypeForIdentity}</span>
+      </p>
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Year founded</span>
+        <span>{yearFoundedDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Company website</span>
+        <span>{websiteDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line product_profile_identity_description">
+        <span className="product_profile_identity_label">Company description</span>
+        <span>{descriptionDisplay}</span>
+      </p>
+    </div>
+  );
+  const employeeCountReach = formatVal(company?.employeeCount);
+  const employeeCountReachDisplay =
+    employeeCountReach === "Not specified." ? "—" : employeeCountReach;
+  const headquartersReach = formatVal(company?.headquartersLocation);
+  const headquartersReachDisplay =
+    headquartersReach === "Not specified." ? "—" : headquartersReach;
+  const geographicRegionDisplay =
+    operatingRegionsDetail === "Not specified." ? "—" : operatingRegionsDetail;
+  const maturityReach = formatVal(company?.vendorMaturity);
+  const maturityReachDisplay =
+    maturityReach === "Not specified." ? "—" : maturityReach;
+  const industrySectorsDisplay = companySectorDisplay.trim()
+    ? companySectorDisplay
+    : "—";
+  const companyReachPrimary = (
+    <div className="product_profile_identity_fields">
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">No. of employees</span>
+        <span>{employeeCountReachDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Headquarters</span>
+        <span>{headquartersReachDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Geographic region</span>
+        <span>{geographicRegionDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line">
+        <span className="product_profile_identity_label">Maturity stage</span>
+        <span>{maturityReachDisplay}</span>
+      </p>
+      <p className="product_profile_identity_line product_profile_identity_description">
+        <span className="product_profile_identity_label">Operating Sector</span>
+        <span>{industrySectorsDisplay}</span>
+      </p>
+    </div>
+  );
 
   const handleViewProduct = async (product: ProductProfileProduct) => {
     if (!fetchProductDetail) return;
@@ -434,10 +528,10 @@ function ProductProfileView({
   const attRecord = viewProductDetail?.attestation as
     | Record<string, unknown>
     | undefined;
-  /** Section id (1–9) maps to backend visibility keys. */
+  /** Section id maps to backend visibility keys. */
   const SECTION_VISIBILITY_KEYS: Record<number, SectionVisibilityKey> = {
     1: "visible_ai_governance",
-    2: "visible_security_posture",
+    2: "visible_company_identity",
     3: "visible_data_privacy",
     4: "visible_compliance",
     5: "visible_model_risk",
@@ -445,7 +539,16 @@ function ProductProfileView({
     7: "visible_compliance_certifications",
     8: "visible_operations_support",
     9: "visible_vendor_management",
+    /** AI Safety & Testing (Training Data / Transparency) — same buyer toggle as AI Models & Technology */
+    10: "visible_data_privacy",
+    /** Evidence & Trust — same buyer toggle as Compliance & Certifications */
+    11: "visible_compliance_certifications",
+    /** Generated profile company reach card — same toggle as Company reach block */
+    12: "visible_company_reach",
   };
+  const allSectionVisibilityKeys: SectionVisibilityKey[] = Array.from(
+    new Set(Object.values(SECTION_VISIBILITY_KEYS)),
+  );
   const sectionVisible = (key: SectionVisibilityKey) =>
     attRecord?.[key] === true;
   const handleSectionToggle = async (
@@ -471,6 +574,24 @@ function ProductProfileView({
     return {
       visible: sectionVisible(key),
       onToggle: (next: boolean) => handleSectionToggle(key, next),
+    };
+  };
+
+  const getCompanyBlockVisibility = (
+    key: "visible_company_identity" | "visible_company_reach",
+  ): SectionVisibilityControl | null => {
+    if (
+      !viewProductMeta ||
+      viewProductMeta.status !== "Completed" ||
+      !onSectionVisibilityChange ||
+      !showVisibilityToggle
+    )
+      return null;
+    return {
+      visible: sectionVisible(key),
+      onToggle: (next: boolean) => {
+        void handleSectionToggle(key, next);
+      },
     };
   };
 
@@ -633,7 +754,7 @@ function ProductProfileView({
         <ProductProfileSummaryCard
           title="Operating Regions"
           icon={<Globe size={24} />}
-          primary={operatingRegions}
+          primary={operatingRegionsForList}
           secondary=""
           iconColor="blue"
         />
@@ -688,14 +809,44 @@ function ProductProfileView({
                               className="product_profile_toggle product_profile_product_toggle"
                               aria-pressed={viewProductMeta.visibleToBuyer}
                               onClick={() => {
-                                const next = !viewProductMeta.visibleToBuyer;
-                                onProductVisibilityToggle(
-                                  viewProductMeta.productId,
-                                  next,
-                                );
-                                setViewProductMeta((prev) =>
-                                  prev ? { ...prev, visibleToBuyer: next } : null,
-                                );
+                                void (async () => {
+                                  const next = !viewProductMeta.visibleToBuyer;
+                                  setViewProductMeta((prev) =>
+                                    prev ? { ...prev, visibleToBuyer: next } : null,
+                                  );
+                                  const ok = await onProductVisibilityToggle(
+                                    viewProductMeta.productId,
+                                    next,
+                                  );
+                                  if (!ok) {
+                                    setViewProductMeta((prev) =>
+                                      prev
+                                        ? { ...prev, visibleToBuyer: !next }
+                                        : null,
+                                    );
+                                    return;
+                                  }
+                                  if (
+                                    onSectionVisibilityChange &&
+                                    viewProductMeta.status === "Completed"
+                                  ) {
+                                    await Promise.all(
+                                      allSectionVisibilityKeys.map((key) =>
+                                        onSectionVisibilityChange(
+                                          viewProductMeta.productId,
+                                          key,
+                                          next,
+                                        ),
+                                      ),
+                                    );
+                                    if (fetchProductDetail) {
+                                      const detail = await fetchProductDetail(
+                                        viewProductMeta.productId,
+                                      );
+                                      setViewProductDetail(detail);
+                                    }
+                                  }
+                                })();
                               }}
                               aria-label={`${viewProductMeta.visibleToBuyer ? "Hide" : "Show"} this product to buyers`}
                             />
@@ -722,14 +873,113 @@ function ProductProfileView({
                             >
                           )?.generated_profile_report,
                         );
-                      return pageReport ? (
+                      // Generated company identity / company reach (report ids 2 and 12) are omitted here; custom Company identity + Company reach blocks follow product information (section 1).
+                      const pageReportForDetail =
+                        pageReport == null
+                          ? null
+                          : {
+                              ...pageReport,
+                              sections: pageReport.sections.filter(
+                                (s) => s.id !== 2 && s.id !== 12,
+                              ),
+                            };
+                      const identityVis = getCompanyBlockVisibility("visible_company_identity");
+                      const reachVis = getCompanyBlockVisibility("visible_company_reach");
+                      const companyDetailFragment = (
+                        <>
+                          <div
+                            className="generated_profile_section_card product_profile_company_detail_card"
+                            data-company-block="identity"
+                          >
+                            <div className="generated_profile_section_header">
+                              <div className="icon_header_product_data">
+                                <span
+                                  className="generated_profile_section_icon generated_profile_icon_blue"
+                                  aria-hidden
+                                >
+                                  <IdCard size={24} />
+                                </span>
+                                <div className="generated_profile_section_header_text">
+                                  <h3 className="generated_profile_section_title">Company Identity</h3>
+                                  <p className="generated_profile_section_subtitle">
+                                    Vendor type, sector, and how you present your company.
+                                  </p>
+                                </div>
+                              </div>
+                              {identityVis ? (
+                                <div className="generated_profile_section_toggle">
+                                  <button
+                                    type="button"
+                                    className="product_profile_toggle product_profile_product_toggle"
+                                    aria-pressed={identityVis.visible}
+                                    onClick={() => identityVis.onToggle(!identityVis.visible)}
+                                    aria-label="Toggle Company identity visible to buyers"
+                                  />
+                                  <span className="generated_profile_section_toggle_label">
+                                    Visible to buyers
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                            {companyIdentityPrimary}
+                          </div>
+                          <div
+                            className="generated_profile_section_card product_profile_company_detail_card"
+                            data-company-block="reach"
+                          >
+                            <div className="generated_profile_section_header">
+                              <div className="icon_header_product_data">
+                                <span
+                                  className="generated_profile_section_icon generated_profile_icon_teal"
+                                  aria-hidden
+                                >
+                                  <MapPin size={24} />
+                                </span>
+                                <div className="generated_profile_section_header_text">
+                                  <h3 className="generated_profile_section_title">Company Reach</h3>
+                                  <p className="generated_profile_section_subtitle">
+                                    Team size, headquarters, and markets you serve.
+                                  </p>
+                                </div>
+                              </div>
+                              {reachVis ? (
+                                <div className="generated_profile_section_toggle">
+                                  <button
+                                    type="button"
+                                    className="product_profile_toggle product_profile_product_toggle"
+                                    aria-pressed={reachVis.visible}
+                                    onClick={() => reachVis.onToggle(!reachVis.visible)}
+                                    aria-label="Toggle Company reach visible to buyers"
+                                  />
+                                  <span className="generated_profile_section_toggle_label">
+                                    Visible to buyers
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                            {companyReachPrimary}
+                          </div>
+                        </>
+                      );
+                      if (!pageReportForDetail) {
+                        return (
+                          <div
+                            className="generated_profile_sections_grid product_profile_company_blocks_standalone"
+                            aria-label="Company information"
+                          >
+                            {companyDetailFragment}
+                          </div>
+                        );
+                      }
+                      return (
                         <div className="product_profile_modal_generated_wrap">
                           <GeneratedProductProfileCards
-                            report={pageReport}
+                            report={pageReportForDetail}
                             sectionVisibility={showVisibilityToggle ? getSectionVisibility : undefined}
+                            afterProductInformation={companyDetailFragment}
                           />
                         </div>
-                      ) : null;
+                      );
                     })()}
                   </>
                 )}

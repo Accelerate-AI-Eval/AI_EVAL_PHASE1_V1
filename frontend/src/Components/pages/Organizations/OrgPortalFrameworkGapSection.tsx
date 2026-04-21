@@ -44,6 +44,14 @@ export type BuyerOrganizationalPortal = {
   allDetectedCertifications: { framework: string; points?: number; detail?: string }[];
 };
 
+function isSystemAdminLikeRole(): boolean {
+  const role = (sessionStorage.getItem("systemRole") ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/_/g, " ");
+  return role === "system admin" || role === "system manager" || role === "system viewer";
+}
+
 function formatCell(v: string | undefined): string {
   if (v == null || String(v).trim() === "") return "—";
   return String(v);
@@ -136,6 +144,7 @@ export function OrgPortalFrameworkGapSectionVendor({
   /** Shown on Know More detail (e.g. assessment title from Organizations view). */
   frameworkMappingAssessmentLabel?: string;
 }) {
+  if (isSystemAdminLikeRole()) return null;
   const segmentLabel =
     portal.buyerIndustrySegment && portal.buyerIndustrySegment !== "other"
       ? portal.buyerIndustrySegment
@@ -213,6 +222,7 @@ export function OrgPortalFrameworkGapSectionVendor({
 }
 
 export function OrgPortalFrameworkGapSectionBuyer({ portal }: { portal: BuyerOrganizationalPortal }) {
+  if (isSystemAdminLikeRole()) return null;
   const segmentLabel =
     portal.buyerIndustrySegment && portal.buyerIndustrySegment !== "other"
       ? portal.buyerIndustrySegment

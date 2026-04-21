@@ -77,6 +77,16 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
       const repObj = rep != null && typeof rep === "object" ? (rep as Record<string, unknown>) : null;
       const irsRaw = repObj != null ? Number(repObj.implementationRiskScore) : NaN;
       const implementationRiskScore = Number.isFinite(irsRaw) ? Number(irsRaw.toFixed(2)) : null;
+      const clsRaw =
+        repObj != null
+          ? (repObj.implementationRiskClassification ?? repObj.implementation_risk_classification)
+          : undefined;
+      const decRaw =
+        repObj != null ? (repObj.implementationRiskDecision ?? repObj.implementation_risk_decision) : undefined;
+      const implementationRiskClassification =
+        clsRaw != null && String(clsRaw).trim() !== "" ? String(clsRaw).trim().slice(0, 200) : null;
+      const implementationRiskDecision =
+        decRaw != null && String(decRaw).trim() !== "" ? String(decRaw).trim().slice(0, 200) : null;
       return {
         id: `bvr-${r.assessmentId}`,
         source: "buyer_vendor_risk" as const,
@@ -88,6 +98,8 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
           r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
         attestationExpiryAt: null as string | null,
         implementationRiskScore,
+        implementationRiskClassification,
+        implementationRiskDecision,
       };
     });
 

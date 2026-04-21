@@ -1,4 +1,6 @@
-import { CalendarClock, Download, ListChecks, Table2, Users } from "lucide-react";
+import { ArrowUpDown, CalendarClock, Download, ListChecks, Search, Table2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import "../Assessments/BuyerAssessment/buyer_vendor_risk_report.css";
 
 export type MitigationActionPlanRow = {
@@ -101,6 +103,55 @@ export function parseMitigationActionPlanJson(
 
 export default function MitigationActionPlanReportBody({ data }: { data: MitigationActionPlanParsed }) {
   const { actions, reassessmentTriggers, reassessmentCadence, csvExport } = data;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<"rank" | "score" | "title" | "phase">("rank");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const toggleSort = (field: "rank" | "score" | "title" | "phase") => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortField(field);
+    setSortDirection("asc");
+  };
+
+  const visibleActions = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const filtered =
+      q.length === 0
+        ? actions
+        : actions.filter((row) =>
+            [
+              row.rank,
+              row.score,
+              row.title,
+              row.phase,
+              row.responsible,
+              row.accountable,
+              row.consulted,
+              row.informed,
+              row.successCriteria,
+              row.verification,
+            ]
+              .map((v) => String(v ?? "").toLowerCase())
+              .join(" ")
+              .includes(q),
+          );
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortField === "rank" || sortField === "score") {
+        const delta = Number(a[sortField]) - Number(b[sortField]);
+        return sortDirection === "asc" ? delta : -delta;
+      }
+      const delta = String(a[sortField] ?? "").localeCompare(String(b[sortField] ?? ""), undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+      return sortDirection === "asc" ? delta : -delta;
+    });
+
+    return sorted;
+  }, [actions, searchTerm, sortDirection, sortField]);
 
   const downloadCsv = () => {
     const csv = actionsToCsv(actions);
@@ -115,6 +166,25 @@ export default function MitigationActionPlanReportBody({ data }: { data: Mitigat
     URL.revokeObjectURL(url);
   };
 
+  const downloadExcel = () => {
+    const sheetRows = visibleActions.map((row) => ({
+      Rank: row.rank,
+      Score: row.score,
+      Title: row.title,
+      Phase: row.phase,
+      "R - Responsible": row.responsible,
+      "A - Accountable": row.accountable,
+      "C - Consulted": row.consulted,
+      "I - Informed": row.informed,
+      "Success criteria": row.successCriteria,
+      Verification: row.verification,
+    }));
+    const sheet = XLSX.utils.json_to_sheet(sheetRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Mitigation Action Plan");
+    XLSX.writeFile(workbook, "mitigation-action-plan.xlsx");
+  };
+
   return (
     <div className="report_vcm_wrap map_report_root">
       <section className="bvr_card">
@@ -126,14 +196,51 @@ export default function MitigationActionPlanReportBody({ data }: { data: Mitigat
           Actions are ranked by priority score (0–100, higher = more urgent). Ownership (RACI), phase, success
           criteria, and verification are shown in the table below.
         </p>
+        <div className="map_action_toolbar">
+          <div className="assessment_search_wrap map_action_search_wrap">
+            <Search size={18} className="assessment_search_icon" aria-hidden />
+            <input
+              type="search"
+              className="assessment_search_input"
+              placeholder="Search actions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search mitigation actions"
+            />
+          </div>
+          <button type="button" className="bvr_export_btn map_action_export_btn" onClick={downloadExcel}>
+            <Download size={16} aria-hidden />
+            Export to Excel
+          </button>
+        </div>
         <div className="map_action_table_wrap" role="region" aria-label="Mitigation actions table">
           <table className="bvr_matrix_table map_action_table">
             <thead>
               <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">Score</th>
-                <th scope="col">Title</th>
-                <th scope="col">Phase</th>
+                <th scope="col" aria-sort={sortField === "rank" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                  <button type="button" className="map_action_sort_btn" onClick={() => toggleSort("rank")}>
+                    <span>Rank</span>
+                    <ArrowUpDown size={14} aria-hidden />
+                  </button>
+                </th>
+                <th scope="col" aria-sort={sortField === "score" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                  <button type="button" className="map_action_sort_btn" onClick={() => toggleSort("score")}>
+                    <span>Score</span>
+                    <ArrowUpDown size={14} aria-hidden />
+                  </button>
+                </th>
+                <th scope="col" aria-sort={sortField === "title" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                  <button type="button" className="map_action_sort_btn" onClick={() => toggleSort("title")}>
+                    <span>Title</span>
+                    <ArrowUpDown size={14} aria-hidden />
+                  </button>
+                </th>
+                <th scope="col" aria-sort={sortField === "phase" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                  <button type="button" className="map_action_sort_btn" onClick={() => toggleSort("phase")}>
+                    <span>Phase</span>
+                    <ArrowUpDown size={14} aria-hidden />
+                  </button>
+                </th>
                 <th scope="col">R — Responsible</th>
                 <th scope="col">A — Accountable</th>
                 <th scope="col">C — Consulted</th>
@@ -143,8 +250,8 @@ export default function MitigationActionPlanReportBody({ data }: { data: Mitigat
               </tr>
             </thead>
             <tbody>
-              {actions.map((row) => (
-                <tr key={row.rank}>
+              {visibleActions.map((row, i) => (
+                <tr key={`${row.rank}-${row.title}-${i}`}>
                   <td>{row.rank}</td>
                   <td>{row.score}</td>
                   <td>{row.title}</td>
@@ -157,31 +264,40 @@ export default function MitigationActionPlanReportBody({ data }: { data: Mitigat
                   <td>{row.verification}</td>
                 </tr>
               ))}
+              {visibleActions.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: "center" }}>
+                    No actions match your search.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
       </section>
 
-      <section className="bvr_card">
-        <h2 className="bvr_section_title bvr_title_with_icon">
-          <Users className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Ownership (RACI) and phase</span>
-        </h2>
-        <p className="bvr_exec_text">
-          RACI and phase for each action are listed in the prioritized actions table above (columns Phase, R/A/C/I).
-        </p>
-      </section>
+      <div className="bvr_mid_row">
+        <section className="bvr_card">
+          <h2 className="bvr_section_title bvr_title_with_icon">
+            <Users className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
+            <span>Ownership (RACI) and phase</span>
+          </h2>
+          <p className="bvr_exec_text">
+            RACI and phase for each action are listed in the prioritized actions table above (columns Phase, R/A/C/I).
+          </p>
+        </section>
 
-      <section className="bvr_card">
-        <h2 className="bvr_section_title bvr_title_with_icon">
-          <Table2 className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Success criteria and verification</span>
-        </h2>
-        <p className="bvr_exec_text">
-          Per-action success criteria and verification methods are in the prioritized actions table above (columns
-          Success criteria and Verification).
-        </p>
-      </section>
+        <section className="bvr_card">
+          <h2 className="bvr_section_title bvr_title_with_icon">
+            <Table2 className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
+            <span>Success criteria and verification</span>
+          </h2>
+          <p className="bvr_exec_text">
+            Per-action success criteria and verification methods are in the prioritized actions table above (columns
+            Success criteria and Verification).
+          </p>
+        </section>
+      </div>
 
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">

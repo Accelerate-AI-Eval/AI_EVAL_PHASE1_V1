@@ -13,6 +13,7 @@ export const defaultDocumentUpload: DocumentUploadState = {
   "1": [],
   "2": { categories: [], byCategory: {} },
   evidenceTestingPolicy: [],
+  aiGovernancePolicy: [],
 };
 
 export function mapApiCompanyProfile(api: Record<string, unknown>): AttestationCompanyProfile {
@@ -91,6 +92,9 @@ export function buildFormStateFromApi(result: {
       "2": regulatory2,
       evidenceTestingPolicy: Array.isArray(d.evidenceTestingPolicy)
         ? (d.evidenceTestingPolicy as string[])
+        : [],
+      aiGovernancePolicy: Array.isArray(d.aiGovernancePolicy)
+        ? (d.aiGovernancePolicy as string[])
         : [],
     };
   }

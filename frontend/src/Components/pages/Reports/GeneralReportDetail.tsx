@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   AlertTriangle,
   BarChart2,
@@ -22,6 +23,11 @@ import {
   Workflow,
 } from "lucide-react";
 import LoadingMessage from "../../UI/LoadingMessage";
+import {
+  buildReportPdfFilename,
+  downloadElementAsPdf,
+  splitAssessmentLabelForPdf,
+} from "../../../utils/reportPdfExport";
 import { getReportTypeDisplayLabel } from "./reportTypes";
 import VendorComparisonMatrixReportBody, {
   parseVendorComparisonMatrixJson,
@@ -60,10 +66,6 @@ function formatDate(iso: string): string {
   } catch {
     return "—";
   }
-}
-
-function sanitizeFileName(s: string): string {
-  return s.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, "-").slice(0, 80);
 }
 
 /** Parsed section of the Executive Stakeholder Brief (e.g. "16. 3-sentence business case"). */
@@ -359,6 +361,8 @@ function GeneralReportDetail() {
   const [report, setReport] = useState<GeneratedReportItem | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  const pdfBodyRef = useRef<HTMLDivElement>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
 
   useEffect(() => {
     const id = reportId?.trim();
@@ -441,59 +445,34 @@ function GeneralReportDetail() {
     navigate("/reports", { state: { tab: "general" } });
   };
 
-  const handleDownload = () => {
-    if (!report) return;
-    const dateStr = formatDate(report.generatedAt);
-    const vcm =
-      report.reportType === "Vendor Comparison Matrix"
-        ? parseVendorComparisonMatrixJson(report.briefContent)
-        : null;
-    const ira =
-      report.reportType === "Implementation Risk Assessment"
-        ? parseImplementationRiskAssessmentJson(report.briefContent)
-        : null;
-    const map =
-      report.reportType === "Mitigation Action Plan"
-        ? parseMitigationActionPlanJson(report.briefContent)
-        : null;
-    const crs =
-      report.reportType === "Compliance & Risk Summary"
-        ? parseComplianceRiskSummaryJson(report.briefContent)
-        : null;
-    const bodyContent =
-      ira != null
-        ? JSON.stringify(ira, null, 2)
-        : map != null
-        ? JSON.stringify(map, null, 2)
-        : crs != null
-        ? JSON.stringify(crs, null, 2)
-        : vcm != null
-        ? JSON.stringify(vcm, null, 2)
-        : typeof report.briefContent === "string"
-          ? report.briefContent
-          : report.briefContent != null
-            ? JSON.stringify(report.briefContent, null, 2)
-            : "This report was generated from the Reports Library. Full report content can be viewed in the application.";
+  const handleExportPdf = useCallback(async () => {
+    if (!report || !pdfBodyRef.current) return;
     const reportTypeLabel = getReportTypeDisplayLabel(report.reportType);
-    const content = [
-      "General Report",
-      "—",
-      `Assessment: ${report.assessmentLabel}`,
-      `Report type: ${reportTypeLabel}`,
-      `Generated: ${dateStr}`,
-      "",
-      bodyContent,
-    ].join("\n");
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sanitizeFileName(report.assessmentLabel)}-${sanitizeFileName(reportTypeLabel)}-${dateStr.replace(/\//g, "-")}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+    const split = splitAssessmentLabelForPdf(report.assessmentLabel);
+    let orgName = split.org;
+    let productName = split.product;
+    if (report.reportType === "Vendor Comparison Matrix") {
+      const vcm = parseVendorComparisonMatrixJson(report.briefContent);
+      if (!productName) productName = String(vcm?.productName ?? "").trim();
+      if (!orgName) orgName = String(vcm?.vendorName ?? "").trim();
+    }
+    if (!orgName) orgName = report.assessmentLabel.trim() || "Assessment";
+    if (!productName) productName = "Product";
+    const filename = buildReportPdfFilename({
+      reportName: reportTypeLabel || "General-Report",
+      orgName,
+      productName,
+    });
+    try {
+      setPdfExporting(true);
+      await downloadElementAsPdf(pdfBodyRef.current, filename);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not export PDF. Try again in a moment.");
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [report]);
 
   if (loading) {
     return (
@@ -546,6 +525,7 @@ function GeneralReportDetail() {
     report.reportType === "Vendor Comparison Matrix"
       ? parseVendorComparisonMatrixJson(report.briefContent)
       : null;
+  const isVendorComparisonMatrixReport = report.reportType === "Vendor Comparison Matrix";
 
   const complianceRiskSummaryData =
     report.reportType === "Compliance & Risk Summary"
@@ -563,33 +543,35 @@ function GeneralReportDetail() {
       : null;
 
   return (
-    <div className="sec_user_page org_settings_page reports_page report_detail_page report_detail_full report_detail_type_general">
+    <div
+      className={`sec_user_page org_settings_page reports_page report_detail_page report_detail_full report_detail_type_general${
+        isVendorComparisonMatrixReport ? " report_detail_type_vcm" : ""
+      }`}
+    >
       <header className="report_assessment_header">
-        <a
-          href="/reports"
-          className="report_assessment_back"
-          onClick={handleBack}
-        >
-          <CircleChevronLeft size={20} />
-          Back to Reports
-        </a>
-        <div className="report_assessment_title_row">
-          <h1 className="report_detail_title report_assessment_title">{getReportTypeDisplayLabel(report.reportType)}</h1>
+        <div className="report_assessment_title_row report_assessment_actions_row">
+          <a
+            href="/reports"
+            className="report_assessment_back"
+            onClick={handleBack}
+          >
+            <CircleChevronLeft size={20} />
+            Back to Reports
+          </a>
           {!isArchived && showDownload && (
             <button
               type="button"
               className="report_detail_export_btn"
-              onClick={handleDownload}
-              aria-label="Download report"
+              onClick={() => void handleExportPdf()}
+              disabled={pdfExporting}
+              aria-busy={pdfExporting}
+              aria-label="Export PDF"
             >
               <Download size={18} aria-hidden />
-              Download
+              {pdfExporting ? "Exporting…" : "Export PDF"}
             </button>
           )}
         </div>
-        <p className="report_assessment_subtitle report_detail_subtitle">
-          {report.assessmentLabel} • {generatedDate}
-        </p>
         {isArchived && report.reportType === "Vendor Comparison Matrix" ? (
           <p
             className="report_assessment_subtitle"
@@ -654,8 +636,15 @@ function GeneralReportDetail() {
         </dl>
       </section> */}
 
-      <section className="">
-        {/* <h2 className="report_section_heading">
+      <div ref={pdfBodyRef} className="report_detail_body_shell">
+        <header className="report_assessment_doc_header">
+          <h1 className="report_assessment_title">{getReportTypeDisplayLabel(report.reportType)}</h1>
+          <p className="report_assessment_subtitle">
+            {report.assessmentLabel} • {generatedDate}
+          </p>
+        </header>
+        <section className="">
+          {/* <h2 className="report_section_heading">
           {implementationRiskAssessmentData
             ? "Implementation Risk Assessment"
             : mitigationActionPlanData
@@ -737,7 +726,8 @@ function GeneralReportDetail() {
             the Reports Library.
           </p>
         )}
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

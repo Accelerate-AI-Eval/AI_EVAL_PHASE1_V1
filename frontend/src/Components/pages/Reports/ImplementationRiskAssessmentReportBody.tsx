@@ -79,7 +79,7 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon" style={{ marginTop: 0 }}>
           <Gauge className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Score + recommendation (Proceed / Proceed with conditions / Defer)</span>
+          <span>Score + recommendation</span>
         </h2>
         <div className="ira_score_row">
           <span className="ira_score_label">Score</span>
@@ -96,23 +96,39 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <Layers className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Breakdown: Vendor fit / Org readiness gap / Integration risk</span>
+          <span>Breakdown</span>
         </h2>
-        <div className="ira_breakdown_grid">
-          <div className="ira_breakdown_card">
-            <h3 className="ira_breakdown_title">Vendor fit</h3>
-            <p className="ira_breakdown_score">{bd.vendorFit?.score ?? "—"}/100</p>
-            <p className="bvr_exec_text">{bd.vendorFit?.summary ?? "—"}</p>
+        <div className="bvr_reco_priority_table" role="table" aria-label="Breakdown details">
+          <div className="bvr_reco_priority_head" role="rowgroup">
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_high">Vendor fit</span>
+            </div>
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_med">Org readiness gap</span>
+            </div>
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_low">Integration risk</span>
+            </div>
           </div>
-          <div className="ira_breakdown_card">
-            <h3 className="ira_breakdown_title">Org readiness gap</h3>
-            <p className="ira_breakdown_score">{bd.orgReadinessGap?.score ?? "—"}/100</p>
-            <p className="bvr_exec_text">{bd.orgReadinessGap?.summary ?? "—"}</p>
-          </div>
-          <div className="ira_breakdown_card">
-            <h3 className="ira_breakdown_title">Integration risk</h3>
-            <p className="ira_breakdown_score">{bd.integrationRisk?.score ?? "—"}/100</p>
-            <p className="bvr_exec_text">{bd.integrationRisk?.summary ?? "—"}</p>
+          <div className="bvr_reco_priority_body" role="row">
+            <div className="bvr_reco_priority_col" role="cell">
+              <div className="bvr_reco_priority_item">
+                <p className="ira_breakdown_score">{bd.vendorFit?.score ?? "—"}/100</p>
+                <p className="bvr_exec_text">{bd.vendorFit?.summary ?? "—"}</p>
+              </div>
+            </div>
+            <div className="bvr_reco_priority_col" role="cell">
+              <div className="bvr_reco_priority_item">
+                <p className="ira_breakdown_score">{bd.orgReadinessGap?.score ?? "—"}/100</p>
+                <p className="bvr_exec_text">{bd.orgReadinessGap?.summary ?? "—"}</p>
+              </div>
+            </div>
+            <div className="bvr_reco_priority_col" role="cell">
+              <div className="bvr_reco_priority_item">
+                <p className="ira_breakdown_score">{bd.integrationRisk?.score ?? "—"}/100</p>
+                <p className="bvr_exec_text">{bd.integrationRisk?.summary ?? "—"}</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -120,32 +136,42 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <ListTree className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Readiness gaps (technical, governance, talent)</span>
+          <span>Readiness gaps</span>
         </h2>
-        <div className="ira_gaps_grid">
-          <div>
-            <h3 className="ira_gap_heading">Technical</h3>
-            <ul className="ira_gap_list">
-              {(rg.technical ?? []).length > 0
-                ? (rg.technical ?? []).map((x, i) => <li key={i}>{x}</li>)
-                : <li className="ira_gap_empty">None listed</li>}
-            </ul>
+        <div className="bvr_reco_priority_table" role="table" aria-label="Readiness gaps details">
+          <div className="bvr_reco_priority_head" role="rowgroup">
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_high">Technical</span>
+            </div>
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_med">Governance</span>
+            </div>
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_low">Talent</span>
+            </div>
           </div>
-          <div>
-            <h3 className="ira_gap_heading">Governance</h3>
-            <ul className="ira_gap_list">
-              {(rg.governance ?? []).length > 0
-                ? (rg.governance ?? []).map((x, i) => <li key={i}>{x}</li>)
-                : <li className="ira_gap_empty">None listed</li>}
-            </ul>
-          </div>
-          <div>
-            <h3 className="ira_gap_heading">Talent</h3>
-            <ul className="ira_gap_list">
-              {(rg.talent ?? []).length > 0
-                ? (rg.talent ?? []).map((x, i) => <li key={i}>{x}</li>)
-                : <li className="ira_gap_empty">None listed</li>}
-            </ul>
+          <div className="bvr_reco_priority_body" role="row">
+            <div className="bvr_reco_priority_col" role="cell">
+              <ul className="ira_gap_list">
+                {(rg.technical ?? []).length > 0
+                  ? (rg.technical ?? []).map((x, i) => <li key={i}>{x}</li>)
+                  : <li className="ira_gap_empty">None listed</li>}
+              </ul>
+            </div>
+            <div className="bvr_reco_priority_col" role="cell">
+              <ul className="ira_gap_list">
+                {(rg.governance ?? []).length > 0
+                  ? (rg.governance ?? []).map((x, i) => <li key={i}>{x}</li>)
+                  : <li className="ira_gap_empty">None listed</li>}
+              </ul>
+            </div>
+            <div className="bvr_reco_priority_col" role="cell">
+              <ul className="ira_gap_list">
+                {(rg.talent ?? []).length > 0
+                  ? (rg.talent ?? []).map((x, i) => <li key={i}>{x}</li>)
+                  : <li className="ira_gap_empty">None listed</li>}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -153,24 +179,36 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
       <section className="bvr_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <CalendarClock className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Timeline estimate impact (drivers and assumptions)</span>
+          <span>Timeline estimate impact</span>
         </h2>
-        <div className="ira_two_col">
-          <div>
-            <h3 className="ira_subheading">Drivers</h3>
-            <ul className="ira_gap_list">
-              {(ti.drivers ?? []).length > 0
-                ? (ti.drivers ?? []).map((x, i) => <li key={i}>{x}</li>)
-                : <li className="ira_gap_empty">—</li>}
-            </ul>
+        <div
+          className="bvr_reco_priority_table ira_timeline_table"
+          role="table"
+          aria-label="Timeline estimate impact details"
+        >
+          <div className="bvr_reco_priority_head" role="rowgroup">
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_high">Drivers</span>
+            </div>
+            <div className="bvr_reco_priority_cell" role="columnheader">
+              <span className="bvr_risk_scope_tag bvr_pri_med">Assumptions</span>
+            </div>
           </div>
-          <div>
-            <h3 className="ira_subheading">Assumptions</h3>
-            <ul className="ira_gap_list">
-              {(ti.assumptions ?? []).length > 0
-                ? (ti.assumptions ?? []).map((x, i) => <li key={i}>{x}</li>)
-                : <li className="ira_gap_empty">—</li>}
-            </ul>
+          <div className="bvr_reco_priority_body" role="row">
+            <div className="bvr_reco_priority_col" role="cell">
+              <ul className="ira_gap_list">
+                {(ti.drivers ?? []).length > 0
+                  ? (ti.drivers ?? []).map((x, i) => <li key={i}>{x}</li>)
+                  : <li className="ira_gap_empty">—</li>}
+              </ul>
+            </div>
+            <div className="bvr_reco_priority_col" role="cell">
+              <ul className="ira_gap_list">
+                {(ti.assumptions ?? []).length > 0
+                  ? (ti.assumptions ?? []).map((x, i) => <li key={i}>{x}</li>)
+                  : <li className="ira_gap_empty">—</li>}
+              </ul>
+            </div>
           </div>
         </div>
         <p className="bvr_exec_text" style={{ marginTop: "1rem" }}>
@@ -181,7 +219,7 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
       <section className="bvr_card bvr_impl_card">
         <h2 className="bvr_section_title bvr_title_with_icon">
           <Banknote className="bvr_title_icon" size={22} strokeWidth={2} aria-hidden />
-          <span>Budget impact (rough-order-of-magnitude MVP)</span>
+          <span>Budget impact</span>
         </h2>
         <p className="ira_rom">{bi.roughOrderOfMagnitude ?? "—"}</p>
         <p className="bvr_impl_text">{bi.notes ?? "—"}</p>

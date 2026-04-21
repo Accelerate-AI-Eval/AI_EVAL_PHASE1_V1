@@ -2,13 +2,37 @@ import { ChevronRight, Download, FileText } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import ClickTooltip from "../../UI/ClickTooltip";
 import type { CustomerRiskReportItem } from "./Reports";
-import { reportContextScoreFromListPayload } from "../../../utils/completeReportGrade";
+import {
+  completeReportRiskMeterColor,
+  implementationRiskScoreFromReportPayload,
+  reportContextScoreFromListPayload,
+  resolveScoreSubtitleForCompleteReport,
+  type CompleteReportRiskMeterGrading,
+} from "../../../utils/completeReportGrade";
+import { mixSrgbHex } from "../../../utils/mixSrgbHex";
 import "../VendorDirectory/VendorDirectory.css";
 import "./general_reports.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
 
 const DEFAULT_MODEL_DISPLAY_NAME = "Claude Sonnet 3";
+
+function isVendorPortalSession(): boolean {
+  return (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim() === "vendor";
+}
+
+/** Vendor COTS complete reports are `source: "customer"` but carry IRS; buyer org portal passes `buyer_cots_irs`. */
+function riskMeterGradingForReport(
+  report: CustomerRiskReportItem,
+  riskMeterGrading: CompleteReportRiskMeterGrading,
+): CompleteReportRiskMeterGrading {
+  if (riskMeterGrading === "buyer_cots_irs") return "buyer_cots_irs";
+  if (report.source === "buyer_vendor_risk") return "vendor_cots_irs";
+  if (isVendorPortalSession() && implementationRiskScoreFromReportPayload(report) != null) {
+    return "vendor_cots_irs";
+  }
+  return "default";
+}
 
 function modelNameFromReport(report: CustomerRiskReportItem): string {
   const raw = report.report;
@@ -38,6 +62,11 @@ interface CompleteReportsCardsProps {
   singleCard?: boolean;
   /** Shown directly under the card title; defaults from report JSON when present, else Claude Sonnet 3. */
   getModelName?: (report: CustomerRiskReportItem) => string;
+  /**
+   * Organizational portal vendor COTS: show implementation risk score and buyer COTS grade colors (IRS high = red).
+   * Default: alignment gradient for customer reports; inverted IRS bands for `buyer_vendor_risk`.
+   */
+  riskMeterGrading?: CompleteReportRiskMeterGrading;
 }
 
 function CompleteReportsCards({
@@ -50,18 +79,39 @@ function CompleteReportsCards({
   viewEnabledWhenArchived = false,
   singleCard = false,
   getModelName,
+  riskMeterGrading = "default",
 }: CompleteReportsCardsProps) {
   const [scoreByReportId, setScoreByReportId] = useState<Record<string, number | null>>({});
+  const [reportDetailById, setReportDetailById] = useState<Record<string, Record<string, unknown>>>({});
   const [fetchingReportId, setFetchingReportId] = useState<string | null>(null);
+
+  const rowWithFetchedReport = useCallback(
+    (report: CustomerRiskReportItem): CustomerRiskReportItem => {
+      const fetched = reportDetailById[report.id];
+      if (fetched == null) return report;
+      return { ...report, report: fetched };
+    },
+    [reportDetailById],
+  );
 
   const resolveDisplayScore = useCallback(
     (report: CustomerRiskReportItem): number | null => {
+      const row = rowWithFetchedReport(report);
       if (Object.prototype.hasOwnProperty.call(scoreByReportId, report.id)) {
         return scoreByReportId[report.id] ?? null;
       }
-      return reportContextScoreFromListPayload(report);
+      if (riskMeterGrading === "buyer_cots_irs") {
+        return implementationRiskScoreFromReportPayload(row);
+      }
+      if (report.source === "buyer_vendor_risk") {
+        return reportContextScoreFromListPayload(row);
+      }
+      if (isVendorPortalSession() && implementationRiskScoreFromReportPayload(row) != null) {
+        return implementationRiskScoreFromReportPayload(row);
+      }
+      return reportContextScoreFromListPayload(row);
     },
-    [scoreByReportId],
+    [scoreByReportId, riskMeterGrading, rowWithFetchedReport],
   );
 
   const handleViewReport = useCallback(
@@ -86,10 +136,16 @@ function CompleteReportsCards({
           );
           const data = await res.json().catch(() => ({}));
           if (data?.success && data?.data?.report && typeof data.data.report === "object") {
-            const report_context_score = reportContextScoreFromListPayload({
-              report: data.data.report as Record<string, unknown>,
-              source: "customer",
-            });
+            const rep = data.data.report as Record<string, unknown>;
+            setReportDetailById((prev) => ({ ...prev, [report.id]: rep }));
+            const payload = { report: rep, source: "customer" as const };
+            const irs = implementationRiskScoreFromReportPayload(payload);
+            const report_context_score =
+              riskMeterGrading === "buyer_cots_irs"
+                ? irs
+                : isVendorPortalSession() && irs != null
+                  ? irs
+                  : reportContextScoreFromListPayload(payload);
             setScoreByReportId((prev) => ({ ...prev, [report.id]: report_context_score }));
           }
         }
@@ -100,24 +156,50 @@ function CompleteReportsCards({
       }
       onViewReport(report);
     },
-    [isArchived, onViewReport, viewEnabledWhenArchived],
+    [isArchived, onViewReport, viewEnabledWhenArchived, riskMeterGrading],
   );
 
   const cards = reports.map((report) => {
     const archived = isArchived(report);
+    const rowForMeter = rowWithFetchedReport(report);
     const report_context_score = resolveDisplayScore(report);
     const isFetching = fetchingReportId === report.id;
     const statusLabel = archived ? "ARCHIVED" : "COMPLETED";
+    const meterGrading = riskMeterGradingForReport(report, riskMeterGrading);
+    const meterColor =
+      !archived && report_context_score != null
+        ? completeReportRiskMeterColor(rowForMeter, report_context_score, meterGrading)
+        : undefined;
+    const scoreSubtitle =
+      !archived && report_context_score != null
+        ? resolveScoreSubtitleForCompleteReport(rowForMeter, meterGrading)
+        : null;
+
+    const cardAccentStyle =
+      !archived && meterColor != null
+        ? ({ borderBottom: `3px solid ${meterColor}` } as React.CSSProperties)
+        : undefined;
+
+    const statusBadgeStyle: React.CSSProperties | undefined = archived
+      ? undefined
+      : meterColor != null
+        ? {
+            color: meterColor,
+            backgroundColor: mixSrgbHex(meterColor, "#ffffff", 0.16),
+          }
+        : undefined;
 
     return (
       <article
         key={report.id}
         className={`vendor_directory_card general_rpr_card complete_rpr_card_design${archived ? " general_rpr_card_archived" : ""}`}
         data-accent="risk"
+        style={cardAccentStyle}
       >
         <div className="general_report_card_header complete_rpr_card_top">
           <span
             className={`complete_rpr_card_status_badge${archived ? " complete_rpr_card_status_badge_archived" : ""}`}
+            style={statusBadgeStyle}
           >
             {statusLabel}
           </span>
@@ -161,8 +243,19 @@ function CompleteReportsCards({
         <div className="complete_rpr_card_risk_block">
           <div className="complete_rpr_card_risk_row">
             <span className="complete_rpr_card_risk_label">RISK SCORE</span>
-            <span className="complete_rpr_card_risk_value">
-              {isFetching ? "…" : report_context_score != null ? `${report_context_score}/100` : "—"}
+            <span className="complete_rpr_card_risk_value_wrap">
+              {scoreSubtitle != null && scoreSubtitle !== "" ? (
+                <span className="complete_rpr_card_risk_subtitle" style={meterColor ? { color: meterColor } : undefined}>
+                  {scoreSubtitle}
+                </span>
+              ) : null}
+              <span
+                className="complete_rpr_card_risk_value"
+                style={meterColor ? { color: meterColor } : undefined}
+              >
+                {isFetching ? "…" : report_context_score != null ? `(${report_context_score}/100)` : "—"}
+              </span>
+              
             </span>
           </div>
           <div className="complete_rpr_card_risk_track" aria-hidden>
@@ -170,6 +263,7 @@ function CompleteReportsCards({
               className="complete_rpr_card_risk_fill"
               style={{
                 width: report_context_score != null ? `${Math.min(100, Math.max(0, report_context_score))}%` : "0%",
+                ...(meterColor ? { backgroundColor: meterColor } : {}),
               }}
             />
           </div>

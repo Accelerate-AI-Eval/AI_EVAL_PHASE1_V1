@@ -65,6 +65,7 @@ const defaultDocumentUpload: DocumentUploadState = {
   "1": [],
   "2": { categories: [], byCategory: {} },
   evidenceTestingPolicy: [],
+  aiGovernancePolicy: [],
 };
 
 const defaultFormState: VendorSelfAttestationFormState = {
@@ -108,9 +109,10 @@ function isAttestationStepValid(
   for (let i = 0; i < dataEntries.length; i++) {
     const entry = dataEntries[i];
     if (!entry) continue;
-    const [, fieldConfig] = entry;
+    const [dataIndexStr, fieldConfig] = entry;
     if (fieldConfig.required !== true) continue;
-    const mapping = mappings[i];
+    const dataIndex = Number(dataIndexStr);
+    const mapping = mappings[dataIndex];
     if (!mapping || !mapping.key) continue;
     const value = attestation[mapping.key];
     if (!hasValue(value)) return false;
@@ -162,6 +164,12 @@ function isVendorAttestationStepValid(
   if (sectionKey === "compliance_certifications") {
     const regulatoryCategories = formState.documentUpload?.["2"]?.categories ?? [];
     if (regulatoryCategories.length === 0) return false;
+  }
+  if (sectionKey === "ai_technical_capabilities") {
+    if (formState.attestation.documented_ai_governance_policy === "Yes") {
+      const n = formState.documentUpload?.aiGovernancePolicy?.length ?? 0;
+      if (n < 1) return false;
+    }
   }
   return isAttestationStepValid(
     stepIndex,
@@ -227,14 +235,23 @@ function getStepFieldErrors(
       errors.regulatoryCertificationMaterial = "Select at least one certification type and upload materials";
     }
   }
+  if (sectionKey === "ai_technical_capabilities") {
+    if (
+      formState.attestation.documented_ai_governance_policy === "Yes" &&
+      !(formState.documentUpload?.aiGovernancePolicy?.length ?? 0)
+    ) {
+      errors.aiGovernancePolicy = "Upload your AI governance policy document";
+    }
+  }
   const dataEntries = Object.entries(sectionData).filter(
     ([k]) =>
       k !== "length" && Object.prototype.hasOwnProperty.call(sectionData, k),
   );
   for (let i = 0; i < dataEntries.length; i++) {
-    const [, fieldConfig] = dataEntries[i];
+    const [dataIndexStr, fieldConfig] = dataEntries[i];
     if (fieldConfig.required !== true) continue;
-    const mapping = mappings[i];
+    const dataIndex = Number(dataIndexStr);
+    const mapping = mappings[dataIndex];
     if (!mapping?.key) continue;
     const value = formState.attestation[mapping.key];
     if (!hasValue(value)) errors[mapping.key] = "This field is required";
@@ -329,6 +346,9 @@ function buildFormStateFromFormData(
       evidenceTestingPolicy: Array.isArray(d.evidenceTestingPolicy)
         ? (d.evidenceTestingPolicy as string[])
         : [],
+      aiGovernancePolicy: Array.isArray(d.aiGovernancePolicy)
+        ? (d.aiGovernancePolicy as string[])
+        : [],
     };
   }
   return { companyProfile, attestation, documentUpload };
@@ -384,21 +404,32 @@ const VendorAttestationsMainForm = () => {
     "1": File[];
     "2": Record<string, File[]>;
     evidenceTestingPolicy: File[];
+    aiGovernancePolicy: File[];
   };
   const defaultPending: PendingDocFiles = {
     "0": [],
     "1": [],
     "2": {},
     evidenceTestingPolicy: [],
+    aiGovernancePolicy: [],
   };
   const pendingFilesRef = useRef<PendingDocFiles>({ ...defaultPending });
   const storePendingFiles = useCallback(
-    (slot: "0" | "1" | "evidenceTestingPolicy", files: File[], category?: string) => {
+    (
+      slot: "0" | "1" | "evidenceTestingPolicy" | "aiGovernancePolicy",
+      files: File[],
+      category?: string,
+    ) => {
       if (slot === "2" && category != null) {
         const arr = pendingFilesRef.current["2"][category] ?? [];
         arr.push(...files);
         pendingFilesRef.current["2"][category] = arr;
-      } else if (slot === "0" || slot === "1" || slot === "evidenceTestingPolicy") {
+      } else if (
+        slot === "0" ||
+        slot === "1" ||
+        slot === "evidenceTestingPolicy" ||
+        slot === "aiGovernancePolicy"
+      ) {
         pendingFilesRef.current[slot].push(...files);
       }
     },
@@ -406,7 +437,13 @@ const VendorAttestationsMainForm = () => {
   );
   const hasPendingFiles = useCallback(() => {
     const p = pendingFilesRef.current;
-    if (p["0"].length > 0 || p["1"].length > 0 || p.evidenceTestingPolicy.length > 0) return true;
+    if (
+      p["0"].length > 0 ||
+      p["1"].length > 0 ||
+      p.evidenceTestingPolicy.length > 0 ||
+      p.aiGovernancePolicy.length > 0
+    )
+      return true;
     return Object.values(p["2"]).some((arr) => arr.length > 0);
   }, []);
   const clearPendingFiles = useCallback(() => {
@@ -415,6 +452,7 @@ const VendorAttestationsMainForm = () => {
       "1": [],
       "2": {},
       evidenceTestingPolicy: [],
+      aiGovernancePolicy: [],
     };
   }, []);
 
@@ -683,6 +721,9 @@ const VendorAttestationsMainForm = () => {
               evidenceTestingPolicy: Array.isArray(d.evidenceTestingPolicy)
                 ? (d.evidenceTestingPolicy as string[])
                 : defaultDocumentUpload.evidenceTestingPolicy,
+              aiGovernancePolicy: Array.isArray(d.aiGovernancePolicy)
+                ? (d.aiGovernancePolicy as string[])
+                : defaultDocumentUpload.aiGovernancePolicy,
             };
           }
           setFormState((prev) => ({
@@ -863,6 +904,12 @@ const VendorAttestationsMainForm = () => {
                   title={stepHeaderProps.title}
                   subTitle={stepHeaderProps.subTitle}
                   icon={stepHeaderProps.icon}
+                  documentUpload={formState.documentUpload ?? defaultDocumentUpload}
+                  setDocumentUpload={setDocumentUpload}
+                  attestationId={attestationId}
+                  onUploadDocument={uploadDocument}
+                  onStorePendingFiles={storePendingFiles}
+                  onOpenDocument={handleOpenDocument}
                 />
               );
             }
@@ -1105,7 +1152,8 @@ const VendorAttestationsMainForm = () => {
             categories: documentUpload["2"]?.categories ?? [],
             byCategory: { ...(documentUpload["2"]?.byCategory ?? {}) },
           },
-          evidenceTestingPolicy: [],
+          evidenceTestingPolicy: [...(documentUpload.evidenceTestingPolicy ?? [])],
+          aiGovernancePolicy: [...(documentUpload.aiGovernancePolicy ?? [])],
         };
         for (const file of pending["0"]) {
           try {
@@ -1140,6 +1188,14 @@ const VendorAttestationsMainForm = () => {
             merged.evidenceTestingPolicy.push(name);
           } catch {
             merged.evidenceTestingPolicy.push(file.name);
+          }
+        }
+        for (const file of pending.aiGovernancePolicy) {
+          try {
+            const name = await uploadDocument(currentAttestationId, file);
+            merged.aiGovernancePolicy.push(name);
+          } catch {
+            merged.aiGovernancePolicy.push(file.name);
           }
         }
         clearPendingFiles();

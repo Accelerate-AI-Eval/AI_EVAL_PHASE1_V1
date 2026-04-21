@@ -14,10 +14,9 @@ import {
   HEADQUARTERS_LOCATION,
   OPERATING_REGIONS,
   VENDOR_HELPTEXT,
+  VENDOR_OPERATING_REGIONS_GLOBAL_VALUE,
 } from "../../../constants/vendorOnboardingData";
 import type { AttestationCompanyProfile } from "../../../types/vendorSelfAttestation";
-import { Info } from "lucide-react";
-import ClickTooltip from "../../UI/ClickTooltip";
 
 export interface StepCompanyProfileAttestationProps {
   companyProfile: AttestationCompanyProfile;
@@ -223,6 +222,7 @@ const StepCompanyProfileAttestation = ({
                 description="Select all geographic regions where you actively operate or serve customers"
                 options={OPERATING_REGIONS}
                 value={companyProfile.operatingRegions ?? []}
+                globalExclusiveValue={VENDOR_OPERATING_REGIONS_GLOBAL_VALUE}
                 onChange={(selected) =>
                   setCompanyProfile((prev) => ({ ...prev, operatingRegions: selected }))
                 }

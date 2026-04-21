@@ -18,7 +18,11 @@ export interface TabEvidenceSupportingDocProps {
   setDocumentUpload: React.Dispatch<React.SetStateAction<DocumentUploadState>>;
   attestationId?: string | null;
   onUploadDocument?: (attestationId: string, file: File) => Promise<string>;
-  onStorePendingFiles?: (slot: "0" | "1" | "evidenceTestingPolicy", files: File[], category?: string) => void;
+  onStorePendingFiles?: (
+    slot: "0" | "1" | "evidenceTestingPolicy" | "aiGovernancePolicy",
+    files: File[],
+    category?: string,
+  ) => void;
   data: Record<string, { label: string; placeholder?: string; required?: boolean }>;
   fieldErrors?: Record<string, string>;
   title?: string;

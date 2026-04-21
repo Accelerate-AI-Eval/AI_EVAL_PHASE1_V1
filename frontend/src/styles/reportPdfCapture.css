@@ -1,0 +1,89 @@
+/**
+ * Applied only while html2pdf captures the node.
+ * Uniform scale keeps the same visual hierarchy as the web (sizes, weights, spacing ratios)
+ * while everything reads slightly smaller on A4. Layout fixes (tables, box model) stay minimal.
+ */
+
+.report_pdf_capture {
+  box-sizing: border-box;
+  overflow: visible;
+  color: inherit;
+  /*
+   * Uniform scale vs web: same typography ratios as the report UI.
+   * ~2px smaller than the prior PDF preset (16px × 0.88 − 2px ≈ 12.1px body equivalent).
+   */
+  --report-pdf-uniform-scale: 0.755;
+  transform: scale(var(--report-pdf-uniform-scale));
+  transform-origin: top left;
+  width: calc(100% / var(--report-pdf-uniform-scale));
+  max-width: none;
+}
+
+.report_pdf_capture *,
+.report_pdf_capture *::before,
+.report_pdf_capture *::after {
+  box-sizing: border-box;
+}
+
+/* Clear frame for the PDF; drop shadow does not rasterize reliably */
+.report_pdf_capture.report_detail_body_shell,
+.report_pdf_capture.bvr_document {
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+/* Tables: predictable grid without changing type scale (transform already scales text) */
+.report_pdf_capture table,
+.report_pdf_capture .bvr_matrix_table,
+.report_pdf_capture .map_action_table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.report_pdf_capture .bvr_matrix_table th,
+.report_pdf_capture .bvr_matrix_table td,
+.report_pdf_capture .map_action_table th,
+.report_pdf_capture .map_action_table td,
+.report_pdf_capture table th,
+.report_pdf_capture table td {
+  vertical-align: top;
+}
+
+/* Wide tables: keep content inside capture width for canvas */
+.report_pdf_capture .map_action_table_wrap,
+.report_pdf_capture .map_action_table_wrap .map_action_table {
+  max-width: 100%;
+}
+
+/*
+ * Keep card-like blocks on one PDF page when they fit (html2pdf `css` + `avoid` list).
+ * Very tall sections may still span pages — browser/pdf limits apply.
+ */
+.report_pdf_capture .report_section_card,
+.report_pdf_capture .report_context_panel,
+.report_pdf_capture .report_exec_brief_section,
+.report_pdf_capture .report_approval_summary_banner,
+.report_pdf_capture .bvr_card,
+.report_pdf_capture .report_risk_category_block,
+.report_pdf_capture .report_framework_notice,
+.report_pdf_capture .report_table_wrap,
+.report_pdf_capture .report_appendix_table_wrap,
+.report_pdf_capture .map_action_table_wrap,
+.report_pdf_capture .report_detail_info_grid,
+.report_pdf_capture .report_vcm_wrap > section,
+.report_pdf_capture .report_summary_body > .report_exec_brief_section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Buyer vendor risk — Risk Analysis cards (domain + summary must stay together) */
+.report_pdf_capture .bvr_risk_block {
+  display: flow-root;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  /* Fragmentation: keep the flex card box atomic for html2pdf slicing */
+  -webkit-column-break-inside: avoid;
+  column-break-inside: avoid;
+}
+

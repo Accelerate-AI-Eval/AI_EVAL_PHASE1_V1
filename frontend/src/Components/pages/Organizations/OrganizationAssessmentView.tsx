@@ -377,6 +377,7 @@ export default function OrganizationAssessmentView() {
                     state: { reportTitle: getReportCardTitle(report.title ?? "") },
                   })
                 }
+                riskMeterGrading="buyer_cots_irs"
                 singleCard
               />
               {generalReports.map((report) => {

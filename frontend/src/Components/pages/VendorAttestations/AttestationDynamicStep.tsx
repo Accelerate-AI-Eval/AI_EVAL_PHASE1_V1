@@ -16,6 +16,7 @@ import {
 } from "../../../constants/vendorAttestationFields";
 import { getAttestationFieldOptions } from "../../../constants/vendorAttestationOptions";
 import type { VendorSelfAttestationPayload } from "../../../types/vendorSelfAttestation";
+import { personalizeAttestationFieldLabel } from "../../../utils/attestationFieldLabel";
 
 export interface AttestationDynamicStepProps {
   title: string;
@@ -89,13 +90,17 @@ const AttestationDynamicStep = ({
           const value = getValue(attestation, mapping);
           const options = getAttestationFieldOptions(mapping.key);
           const isArray = mapping.type === "array";
+          const fieldLabel = personalizeAttestationFieldLabel(
+            fieldConfig.label,
+            attestation.product_name,
+          );
 
           if (options && isArray) {
             const arrValue = Array.isArray(value) ? value : [];
             return (
               <div key={dataIndex} className="form_fields_vendor">
                 <FormField
-                  label={fieldConfig.label}
+                  label={fieldLabel}
                   mandatory={fieldConfig.required ?? false}
                   tooltipText={fieldConfig.placeholder}
                   errorText={fieldErrors[mapping.key]}
@@ -119,7 +124,7 @@ const AttestationDynamicStep = ({
             return (
               <div key={dataIndex} className="form_fields_vendor">
                 <FormField
-                  label={fieldConfig.label}
+                  label={fieldLabel}
                   mandatory={fieldConfig.required ?? false}
                   tooltipText={fieldConfig.placeholder}
                   errorText={fieldErrors[mapping.key]}
@@ -147,7 +152,7 @@ const AttestationDynamicStep = ({
           return (
             <div key={dataIndex} className="form_fields_vendor">
               <FormField
-                label={fieldConfig.label}
+                label={fieldLabel}
                 mandatory={fieldConfig.required ?? false}
                 tooltipText={fieldConfig.placeholder}
                 errorText={fieldErrors[mapping.key]}

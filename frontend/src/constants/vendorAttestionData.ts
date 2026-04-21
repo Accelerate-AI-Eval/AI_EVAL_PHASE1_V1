@@ -106,7 +106,7 @@ export const VENDOR_SELF_ATTESTATION = {
   },
   ai_technical_capabilities: {
     0: {
-      label: "What AI capabilities does your product use?",
+      label: "What AI capabilities does your product provide?",
       placeholder: "Select all AI capabilities your product includes",
       required: true,
     },
@@ -116,14 +116,21 @@ export const VENDOR_SELF_ATTESTATION = {
       required: true,
     },
     2: {
-      label: "How transparent is your AI model?",
+      // label: "How transparent is your AI model?",
+      label: "What level of explainability / transparency does your AI provide?",
       placeholder:
         "Select the level that best describes your model transparency",
       required: true,
     },
     3: {
-      label: "What level of autonomy does your AI have?",
+      // label: "What level of autonomy does your AI have?",
+      label: "How much decision-making authority does your AI have without human review?",
       placeholder: "Select the level of human involvement in AI decisions",
+      required: true,
+    },
+    4: {
+      label: "Do you have a documented AI Governance policy? (upload if yes)",
+      placeholder: "Select Yes or No. If Yes, upload your policy document below.",
       required: true,
     },
   },
@@ -134,14 +141,21 @@ export const VENDOR_SELF_ATTESTATION = {
     //   required: true,
     // },
     1: {
-      label: "How was this assessment completed?",
+      // label: "How was this assessment completed?",
+      label: "How was your most recent independent compliance audit conducted?",
       placeholder: "Select the validation level for this assessment",
+      required: true,
+    },
+    2: {
+      label: "How often are you independently audited?",
+      placeholder: "Select your independent audit cadence",
       required: true,
     },
   },
   data_handling_privacy: {
     0: {
-      label: "Does your product handle personal information (PII)?",
+      // label: "Does your product handle personal information (PII)?",
+      label: "What level of personal or sensitive data does your product process?",
       placeholder:
         "Select based on the MOST sensitive PII your product handles",
       required: true,
@@ -152,7 +166,8 @@ export const VENDOR_SELF_ATTESTATION = {
       required: true,
     },
     2: {
-      label: "What is your data retention policy?",
+      // label: "What is your data retention policy?",
+      label: "What is your default customer data retention period? (upload the written policy)",
       placeholder: "Select Yes or No",
       required: true,
     },
@@ -164,7 +179,8 @@ export const VENDOR_SELF_ATTESTATION = {
       required: true,
     },
     1: {
-      label: "Have you completed adversarial/security testing?",
+      // label: "Have you completed adversarial/security testing?",
+      label: "Have you completed security testing (AI adversarial — prompt injection, jailbreak, robustness — and infrastructure penetration)?",
       placeholder:
         "Testing for prompt injection, jailbreaks, data leakage, etc.",
       required: true,
@@ -188,12 +204,24 @@ export const VENDOR_SELF_ATTESTATION = {
       required: true,
     },
     1: {
+      label: "What are your support response SLAs by severity (P1 / P2 / P3)?",
+      placeholder:
+        "Example: P1: within 1 hour, P2: within 4 hours, P3: within 1 business day",
+      required: true,
+    },
+    2: {
+      label: "Describe your change management / release cadence",
+      placeholder:
+        "Example: weekly release train with emergency hotfix process and rollback controls",
+      required: true,
+    },
+    3: {
       label: "Do you have a documented incident response plan?",
       placeholder: "Select your incident response maturity level",
       required: true,
     },
-    2: {
-      label: "Can you rollback deployments if issues occur?",
+    4: {
+      label: "Can you roll back deployments if issues occur?",
       placeholder: "Select your deployment rollback capability",
       required: true,
     },
@@ -201,7 +229,7 @@ export const VENDOR_SELF_ATTESTATION = {
 
   deployment_architecture: {
     0: {
-      label: "How is your solution hosted/deployed?",
+      label: "How is your solution hosted / deployed?",
       placeholder: "Select all deployment options you support",
       required: true,
     },
@@ -211,7 +239,8 @@ export const VENDOR_SELF_ATTESTATION = {
       required: true,
     },
     2: {
-      label: "What stage is your product currently in?",
+      // label: "What stage is your product currently in?",
+      label: "What maturity stage is *this product* at?",
       placeholder: "Select your current product maturity stage",
       required: true,
     },
@@ -219,24 +248,28 @@ export const VENDOR_SELF_ATTESTATION = {
 
   evidence_supporting_documentation: {
     0: {
-      label: "Upload Testing and Policy Documentation (Optional)",
+      // label: "Upload Testing and Policy Documentation (Optional)",
+      label: "Upload supporting testing and policy documentation",
       placeholder:
         "Upload supporting documentation for certifications and security controls",
       required: false
     },
     1: {
-      label: "Do you have interaction/usage data available?",
+      // label: "Do you have interaction/usage data available?",
+      label: "What usage / interaction telemetry do you capture and make available for audit?",
       placeholder: "Can you provide data on how users interact with your AI?",
       required: true,
     },
     2: {
-      label: "Are audit logs available?",
+      // label: "Are audit logs available?",
+      label: "Are customer-accessible audit logs available (exportable to SIEM)?",
       placeholder:
         "Do you maintain detailed audit trails of AI decisions and access?",
       required: true,
     },
     3: {
-      label: "Are testing results available?",
+      // label: "Are testing results available?",
+      label: "Are model / safety testing results made available to customers under NDA?",
       placeholder:
         "Can you provide results from bias, security, or performance testing?",
       required: true,

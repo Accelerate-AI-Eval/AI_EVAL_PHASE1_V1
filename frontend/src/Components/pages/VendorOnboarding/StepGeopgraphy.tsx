@@ -7,6 +7,7 @@ import {
   HEADQUARTERS_LOCATION,
   OPERATING_REGIONS,
   VENDOR_HELPTEXT,
+  VENDOR_OPERATING_REGIONS_GLOBAL_VALUE,
 } from "../../../constants/vendorOnboardingData";
 import type { StepPropsVendorData } from "../../../types/formDataVendor";
 import { Globe, Info } from "lucide-react";
@@ -112,6 +113,7 @@ const StepGeography = ({
           description="Select all geographic regions where you actively operate or serve customers"
           options={OPERATING_REGIONS}
           value={formVendorData.operatingRegions ?? []}
+          globalExclusiveValue={VENDOR_OPERATING_REGIONS_GLOBAL_VALUE}
           onChange={(selected) =>
             setFormVendorData({ ...formVendorData, operatingRegions: selected })
           }

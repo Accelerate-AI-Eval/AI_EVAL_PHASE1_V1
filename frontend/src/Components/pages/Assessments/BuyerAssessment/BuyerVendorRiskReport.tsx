@@ -1,23 +1,31 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   CheckCircle2,
-  AlertTriangle,
+  AlertCircle,
   ClipboardList,
   User,
   Download,
   Loader2,
   CircleChevronLeft,
+  TrendingUp,
 } from "lucide-react";
 import LoadingMessage from "../../../UI/LoadingMessage";
 import {
   frameworkControlsDisplayLinesTopRanked,
   FRAMEWORK_MAPPING_TOP_CONTROLS_MAX,
 } from "../../../../utils/frameworkMappingControlsDisplay";
+import {
+  completeReportRiskMeterColor,
+  type CompleteReportRiskMeterGrading,
+} from "../../../../utils/completeReportGrade";
 import { sanitizeFrameworkMappingNotesForDisplay } from "../../../../utils/frameworkMappingNotesDisplay";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../../utils/frameworkMappingFrameworkDisplay";
 import "../../Reports/reports.css";
 import "./buyer_vendor_risk_report.css";
+import { buildReportPdfFilename, downloadElementAsPdf } from "../../../../utils/reportPdfExport";
+import { mixSrgbHex } from "../../../../utils/mixSrgbHex";
 
 const BASE_URL =
   import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -128,6 +136,8 @@ export default function BuyerVendorRiskReport() {
   const [report, setReport] = useState<ReportPayload | null>(null);
   const [frameworkMappingRows, setFrameworkMappingRows] = useState<FrameworkMappingRow[]>([]);
   const [archived, setArchived] = useState(false);
+  const pdfArticleRef = useRef<HTMLElement>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
 
   const load = useCallback(async () => {
     if (!assessmentId) return;
@@ -253,7 +263,23 @@ export default function BuyerVendorRiskReport() {
         year: "numeric",
       });
 
-  const handleExportPdf = () => window.print();
+  const handleExportPdf = useCallback(async () => {
+    if (!pdfArticleRef.current) return;
+    const filename = buildReportPdfFilename({
+      reportName: "Buyer-Vendor-Risk-Report",
+      orgName: orgName.trim() || vendorName.trim() || "Organization",
+      productName: productName.trim() || "Product",
+    });
+    try {
+      setPdfExporting(true);
+      await downloadElementAsPdf(pdfArticleRef.current, filename);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not export PDF. Try again in a moment.");
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [orgName, productName, vendorName]);
 
   const implementationRiskScore = Number(report?.implementationRiskScore ?? NaN);
   const hasImplementationScore = Number.isFinite(implementationRiskScore);
@@ -335,6 +361,29 @@ export default function BuyerVendorRiskReport() {
     irsClassification.length > 0 &&
     irsDecision.length > 0 &&
     irsClassification !== irsDecision;
+  const recommendations = report.recommendations ?? [];
+  const highRecommendations = recommendations.filter(
+    (rec) => String(rec.priority ?? "").trim().toLowerCase() === "high",
+  );
+  const mediumRecommendations = recommendations.filter(
+    (rec) => String(rec.priority ?? "medium").trim().toLowerCase() === "medium",
+  );
+  const lowRecommendations = recommendations.filter(
+    (rec) => String(rec.priority ?? "").trim().toLowerCase() === "low",
+  );
+  const recommendationGrading: CompleteReportRiskMeterGrading = hasImplementationScore
+    ? "vendor_cots_irs"
+    : "default";
+  const recommendationAccentColor = completeReportRiskMeterColor(
+    { source: hasImplementationScore ? "buyer_vendor_risk" : "customer" },
+    Math.round(score),
+    recommendationGrading,
+  );
+  const recommendationAccentStyle = {
+    "--bvr-reco-accent": recommendationAccentColor,
+    /* html2canvas cannot parse color-mix / color(); use blended hex for PDF export */
+    "--bvr-reco-accent-soft": mixSrgbHex(recommendationAccentColor, "#ffffff", 0.14),
+  } as Record<string, string>;
 
   return (
     <div className="bvr_page">
@@ -346,13 +395,19 @@ export default function BuyerVendorRiskReport() {
         >
           <CircleChevronLeft size={20} aria-hidden /> Back to Reports
         </Link>
-        <button type="button" className="bvr_export_btn" onClick={handleExportPdf}>
+        <button
+          type="button"
+          className="bvr_export_btn"
+          onClick={() => void handleExportPdf()}
+          disabled={pdfExporting}
+          aria-busy={pdfExporting}
+        >
           <Download size={18} aria-hidden />
-          Export PDF
+          {pdfExporting ? "Exporting…" : "Export PDF"}
         </button>
       </header>
 
-      <article className="bvr_document">
+      <article ref={pdfArticleRef} className="bvr_document">
         <header className="bvr_doc_header">
           <div>
             <h1 className="bvr_doc_title">{title}</h1>
@@ -370,76 +425,110 @@ export default function BuyerVendorRiskReport() {
           </div>
         ) : null}
 
-        <section className={`bvr_card bvr_recommendation ${scoreClass}`}>
-          <div className="bvr_score_circle" aria-label={`Score ${Math.round(score)} out of 100`}>
-            {Math.round(score)}
-          </div>
-          <div className="bvr_recommendation_body">
-            <h2 className="bvr_recommendation_title">{recommendationHeading}</h2>
-            {showIrsDecisionSubline ? (
-              <p className="bvr_recommendation_decision">{irsDecision}</p>
-            ) : null}
-            <p className="bvr_recommendation_sub">
-              {hasImplementationScore
-                ? `Implementation risk score: ${Math.round(score)}/100`
-                : `Overall risk score: ${Math.round(score)}/100 (higher indicates stronger alignment / lower residual risk)`}
-            </p>
-          </div>
-        </section>
+        <div className="bvr_top_row">
+          <section
+            className={`bvr_card bvr_recommendation ${scoreClass}`}
+            style={recommendationAccentStyle}
+          >
+            <div className="bvr_score_circle" aria-label={`Score ${Math.round(score)} out of 100`}>
+              {Math.round(score)}
+            </div>
+            <div className="bvr_recommendation_body">
+              <h2 className="bvr_recommendation_title">{recommendationHeading}</h2>
+              {showIrsDecisionSubline ? (
+                <p className="bvr_recommendation_decision">{irsDecision}</p>
+              ) : null}
+              <p className="bvr_recommendation_sub">
+                {hasImplementationScore
+                  ? `Implementation risk score: ${Math.round(score)}/100`
+                  : `Overall risk score: ${Math.round(score)}/100 (higher indicates stronger alignment / lower residual risk)`}
+              </p>
+            </div>
+          </section>
 
-        <section className="bvr_card">
-          <h2 className="bvr_section_title">Executive Summary</h2>
-          <p className="bvr_exec_text">{report.executiveSummary}</p>
-        </section>
+          <section className="bvr_card">
+            <h2 className="bvr_section_title">Executive Summary</h2>
+            <p className="bvr_exec_text">{report.executiveSummary}</p>
+          </section>
+        </div>
 
-        <section className="bvr_card">
-          <h2 className="bvr_section_title">Key Strengths</h2>
-          <div className="bvr_strengths_grid">
-            {(report.keyStrengths ?? []).map((s, i) => (
-              <div key={i} className="bvr_strength_item">
-                <CheckCircle2 className="bvr_strength_icon" size={20} aria-hidden />
-                <span>{s}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        <div className="bvr_mid_row">
+          <section className="bvr_card">
+            <h2 className="bvr_section_title">Key Strengths</h2>
+            <ul className="bvr_strengths_list">
+              {(report.keyStrengths ?? []).map((s, i) => (
+                <li key={i} className="bvr_strength_item">
+                  <CheckCircle2 className="bvr_strength_icon" size={20} aria-hidden />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-        <section className="bvr_card bvr_warnings_card">
-          <h2 className="bvr_section_title">Areas for Improvement</h2>
-          <ul className="bvr_warnings_list">
-            {(report.areasForImprovement ?? []).map((w, i) => (
-              <li key={i} className="bvr_warning_item">
-                <AlertTriangle className="bvr_warning_icon" size={20} aria-hidden />
-                <span>{w}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+          <section className="bvr_card bvr_warnings_card">
+            <h2 className="bvr_section_title">Areas for Improvement</h2>
+            <ul className="bvr_warnings_list">
+              {(report.areasForImprovement ?? []).map((w, i) => (
+                <li key={i} className="bvr_warning_item">
+                  <TrendingUp className="bvr_warning_icon" size={20} aria-hidden />
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
 
         <section className="bvr_card">
           <h2 className="bvr_section_title">Risk Analysis</h2>
-          {riskAnalysisSections.map(({ scope, title, tagClass }) => {
-            const list = riskByScope[scope];
-            if (list.length === 0) return null;
-            return (
-              <div key={scope} className="bvr_risk_scope_block">
-                <div className="bvr_risk_scope_banner">
-                  <span className={`bvr_risk_scope_tag ${tagClass}`}>{title}</span>
-                </div>
-                <div className="bvr_risk_grid">
-                  {list.map((r, i) => (
-                    <div key={`${scope}-${i}-${r.domain}`} className="bvr_risk_block">
-                      <div className="bvr_risk_head">
-                        <h4 className="bvr_risk_domain_title">{r.domain}</h4>
-                        <span className="bvr_risk_badge">Risk: {r.riskScore}/10</span>
-                      </div>
-                      <p className="bvr_risk_summary">{r.summary}</p>
+          {isBuyerOrganizationPortal ? (
+            <div className="bvr_risk_scope_split">
+              {RISK_ANALYSIS_DISPLAY_SECTIONS_BUYER.map(({ scope, title, tagClass }) => {
+                const list = riskByScope[scope];
+                if (list.length === 0) return null;
+                return (
+                  <div key={scope} className="bvr_risk_scope_split_col">
+                    <div className="bvr_risk_scope_banner">
+                      <span className={`bvr_risk_scope_tag ${tagClass}`}>{title}</span>
                     </div>
-                  ))}
+                    <div className="bvr_risk_grid">
+                      {list.map((r, i) => (
+                        <div key={`${scope}-${i}-${r.domain}`} className="bvr_risk_block">
+                          <div className="bvr_risk_head">
+                            <h4 className="bvr_risk_domain_title">{r.domain}</h4>
+                            <span className="bvr_risk_badge">Risk: {r.riskScore}/10</span>
+                          </div>
+                          <p className="bvr_risk_summary">{r.summary}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            riskAnalysisSections.map(({ scope, title, tagClass }) => {
+              const list = riskByScope[scope];
+              if (list.length === 0) return null;
+              return (
+                <div key={scope} className="bvr_risk_scope_block">
+                  <div className="bvr_risk_scope_banner">
+                    <span className={`bvr_risk_scope_tag ${tagClass}`}>{title}</span>
+                  </div>
+                  <div className="bvr_risk_grid">
+                    {list.map((r, i) => (
+                      <div key={`${scope}-${i}-${r.domain}`} className="bvr_risk_block">
+                        <div className="bvr_risk_head">
+                          <h4 className="bvr_risk_domain_title">{r.domain}</h4>
+                          <span className="bvr_risk_badge">Risk: {r.riskScore}/10</span>
+                        </div>
+                        <p className="bvr_risk_summary">{r.summary}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </section>
 
         <section className="bvr_card bvr_recommendations_card">
@@ -453,25 +542,66 @@ export default function BuyerVendorRiskReport() {
             {vendorName ? ` (${vendorName}` : ""}
             {productName ? ` — ${productName})` : vendorName ? ")" : ""}.
           </p>
-          <ul className="bvr_recommendations_list">
-            {(report.recommendations ?? []).map((rec, i) => {
-              const p = (rec.priority ?? "Medium").toLowerCase();
-              const pc =
-                p === "high" ? "bvr_pri_high" : p === "low" ? "bvr_pri_low" : "bvr_pri_med";
-              return (
-                <li key={i} className="bvr_recommendation_row">
-                  <span className={`bvr_priority_pill ${pc}`}>{rec.priority}</span>
-                  <div className="bvr_reco_body">
-                    <h3 className="bvr_reco_title">{rec.title}</h3>
-                    <p className="bvr_reco_desc">{rec.description}</p>
-                    <p className="bvr_reco_time">
-                      <strong>Timeline:</strong> {rec.timeline}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="bvr_reco_priority_table" role="table" aria-label="Recommendations by priority">
+            <div className="bvr_reco_priority_head" role="rowgroup">
+              <div className="bvr_reco_priority_cell" role="columnheader">
+                <span className="bvr_risk_scope_tag bvr_pri_high">High</span>
+              </div>
+              <div className="bvr_reco_priority_cell" role="columnheader">
+                <span className="bvr_risk_scope_tag bvr_pri_med">Medium</span>
+              </div>
+              <div className="bvr_reco_priority_cell" role="columnheader">
+                <span className="bvr_risk_scope_tag bvr_pri_low">Low</span>
+              </div>
+            </div>
+            <div className="bvr_reco_priority_body" role="rowgroup">
+              <div className="bvr_reco_priority_col" role="cell">
+                {highRecommendations.length > 0 ? (
+                  highRecommendations.map((rec, i) => (
+                    <article key={`high-${i}`} className="bvr_reco_priority_item">
+                      <h3 className="bvr_reco_title">{rec.title}</h3>
+                      <p className="bvr_reco_desc">{rec.description}</p>
+                      <p className="bvr_reco_time">
+                        <strong>Timeline:</strong> {rec.timeline}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="bvr_reco_empty">—</p>
+                )}
+              </div>
+              <div className="bvr_reco_priority_col" role="cell">
+                {mediumRecommendations.length > 0 ? (
+                  mediumRecommendations.map((rec, i) => (
+                    <article key={`medium-${i}`} className="bvr_reco_priority_item">
+                      <h3 className="bvr_reco_title">{rec.title}</h3>
+                      <p className="bvr_reco_desc">{rec.description}</p>
+                      <p className="bvr_reco_time">
+                        <strong>Timeline:</strong> {rec.timeline}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="bvr_reco_empty">—</p>
+                )}
+              </div>
+              <div className="bvr_reco_priority_col" role="cell">
+                {lowRecommendations.length > 0 ? (
+                  lowRecommendations.map((rec, i) => (
+                    <article key={`low-${i}`} className="bvr_reco_priority_item">
+                      <h3 className="bvr_reco_title">{rec.title}</h3>
+                      <p className="bvr_reco_desc">{rec.description}</p>
+                      <p className="bvr_reco_time">
+                        <strong>Timeline:</strong> {rec.timeline}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="bvr_reco_empty">—</p>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="bvr_card bvr_impl_card">

@@ -40,6 +40,7 @@ export function buildVendorDataFromFormState(formState: VendorSelfAttestationFor
   lines.push("Decision autonomy: " + formatVal(att.decision_autonomy));
   lines.push("Security certifications: " + formatVal(att.security_certifications));
   lines.push("Assessment completion level: " + formatVal(att.assessment_completion_level));
+  lines.push("Audit frequency: " + formatVal(att.audit_frequency));
   lines.push("PII handling: " + formatVal(att.pii_handling));
   lines.push("Data residency options: " + formatVal(att.data_residency_options));
   lines.push("Data retention policy: " + formatVal(att.data_retention_policy));
@@ -48,6 +49,8 @@ export function buildVendorDataFromFormState(formState: VendorSelfAttestationFor
   lines.push("Human oversight: " + formatVal(att.human_oversight));
   lines.push("Training data documentation: " + formatVal(att.training_data_documentation));
   lines.push("Uptime SLA: " + formatVal(att.uptime_sla));
+  lines.push("Support SLAs by severity: " + formatVal(att.support_slas));
+  lines.push("Change management / release cadence: " + formatVal(att.change_management));
   lines.push("Incident response plan: " + formatVal(att.incident_response_plan));
   lines.push("Rollback capability: " + formatVal(att.rollback_capability));
   lines.push("Hosting deployment: " + formatVal(att.hosting_deployment));

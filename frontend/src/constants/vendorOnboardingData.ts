@@ -207,6 +207,9 @@ export const OPERATING_REGIONS = [
   { label: "Global (All regions)", value: "Global (All regions)" },
 ];
 
+/** Mutually exclusive with other entries in `OPERATING_REGIONS` (see ChipMultiSelect `globalExclusiveValue`). */
+export const VENDOR_OPERATING_REGIONS_GLOBAL_VALUE = "Global (All regions)";
+
 // HELPER TEXT FOR VENDOR ONBOARDING
 export const VENDOR_HELPTEXT = {
   vendorName:

@@ -83,6 +83,11 @@ export const MODEL_TRANSPARENCY_OPTIONS: OptionItem[] = [
   { label: "Proprietary/Closed", value: "Proprietary/Closed" },
 ];
 
+export const DOCUMENTED_AI_GOVERNANCE_POLICY_OPTIONS: OptionItem[] = [
+  { label: "Yes", value: "Yes" },
+  { label: "No", value: "No" },
+];
+
 export const DECISION_AUTONOMY_OPTIONS: OptionItem[] = [
   {
     label: "Advisory (AI suggests, human always decides)",
@@ -142,6 +147,15 @@ export const ASSESSMENT_COMPLETION_LEVEL_OPTIONS: OptionItem[] = [
     label: "Self-reported without verification",
     value: "Self-reported without verification",
   },
+];
+
+export const AUDIT_FREQUENCY_OPTIONS: OptionItem[] = [
+  { label: "Quarterly", value: "Quarterly" },
+  { label: "Bi-annually", value: "Bi-annually" },
+  { label: "Annually", value: "Annually" },
+  { label: "Every 2 years", value: "Every 2 years" },
+  { label: "As required by regulators/customers", value: "As required by regulators/customers" },
+  { label: "Not independently audited", value: "Not independently audited" },
 ];
 
 // ----- Data Handling & Privacy -----
@@ -381,8 +395,10 @@ export const ATTESTATION_FIELD_OPTIONS: Record<string, OptionItem[]> = {
   ai_model_types: AI_MODEL_TYPES_OPTIONS,
   model_transparency: MODEL_TRANSPARENCY_OPTIONS,
   decision_autonomy: DECISION_AUTONOMY_OPTIONS,
+  documented_ai_governance_policy: DOCUMENTED_AI_GOVERNANCE_POLICY_OPTIONS,
   security_certifications: SECURITY_CERTIFICATIONS_OPTIONS,
   assessment_completion_level: ASSESSMENT_COMPLETION_LEVEL_OPTIONS,
+  audit_frequency: AUDIT_FREQUENCY_OPTIONS,
   pii_handling: PII_HANDLING_OPTIONS,
   data_residency_options: DATA_RESIDENCY_OPTIONS_OPTIONS,
   data_retention_policy: DATA_RETENTION_DELETION_OPTIONS,

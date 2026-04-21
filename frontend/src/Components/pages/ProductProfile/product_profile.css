@@ -265,6 +265,72 @@
   margin: 1.25rem 0 1.75rem;
 }
 
+/* Company identity / reach blocks (same grid as generated section cards; optional standalone wrapper) */
+.product_profile_company_blocks_standalone {
+  margin-top: 0.5rem;
+}
+
+.product_profile_company_detail_card .product_profile_identity_fields {
+  gap: 0.65rem;
+}
+
+.product_profile_company_detail_card .product_profile_identity_line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9em;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.product_profile_company_detail_card .product_profile_identity_label {
+  display: block;
+  min-width: unset;
+  margin-right: 0;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.product_profile_company_detail_card
+  .product_profile_identity_line
+  > span:last-child:not(.product_profile_identity_label) {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+/* Company identity summary card — labelled rows */
+.product_profile_identity_fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.product_profile_identity_line {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #111827;
+}
+
+.product_profile_identity_label {
+  display: inline-block;
+  min-width: 9.75rem;
+  font-weight: 600;
+  color: #475569;
+  margin-right: 0.35rem;
+  vertical-align: top;
+}
+
+.product_profile_identity_description span:last-child {
+  display: inline;
+  white-space: normal;
+  word-break: break-word;
+}
+
 @media (max-width: 900px) {
   .product_profile_summary_cards {
     grid-template-columns: repeat(2, 1fr);
@@ -808,10 +874,10 @@
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.product_profile_back_to_products_btn:hover {
+/* .product_profile_back_to_products_btn:hover {
   background: #dbeafe;
   border-color: #bfdbfe;
-}
+} */
 
 .product_profile_detail_on_page_title {
   font-size: 1.35rem;

@@ -37,8 +37,13 @@ export function buildVendorDataFromPayload(body: Record<string, unknown>): strin
   lines.push("AI model types: " + formatVal(get("ai_model_types") ?? get("ai_models_usage")));
   lines.push("Model transparency: " + asStr(get("model_transparency") ?? get("ai_model_transparency")));
   lines.push("Decision autonomy: " + asStr(get("decision_autonomy") ?? get("ai_autonomy_level")));
+  lines.push(
+    "Documented AI governance policy: " +
+      asStr(get("documented_ai_governance_policy")),
+  );
   lines.push("Security certifications: " + formatVal(get("security_certifications") ?? get("security_compliance_certificates")));
   lines.push("Assessment completion level: " + asStr(get("assessment_completion_level") ?? get("assessment_feedback")));
+  lines.push("Audit frequency: " + asStr(get("audit_frequency")));
   lines.push("PII handling: " + asStr(get("pii_handling") ?? get("pii_information")));
   lines.push("Data residency options: " + formatVal(get("data_residency_options")));
   lines.push("Data retention policy: " + asStr(get("data_retention_policy")));
@@ -47,6 +52,8 @@ export function buildVendorDataFromPayload(body: Record<string, unknown>): strin
   lines.push("Human oversight: " + formatVal(get("human_oversight")));
   lines.push("Training data documentation: " + asStr(get("training_data_documentation") ?? get("training_data_document")));
   lines.push("Uptime SLA: " + asStr(get("uptime_sla") ?? get("sla_guarantee")));
+  lines.push("Support SLAs by severity: " + asStr(get("support_slas")));
+  lines.push("Change management / release cadence: " + asStr(get("change_management")));
   lines.push("Incident response plan: " + asStr(get("incident_response_plan")));
   lines.push("Rollback capability: " + asStr(get("rollback_capability") ?? get("rollback_deployment_issues")));
   lines.push("Hosting deployment: " + formatVal(get("hosting_deployment") ?? get("solution_hosted")));

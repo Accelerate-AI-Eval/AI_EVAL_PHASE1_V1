@@ -6,6 +6,7 @@ import LoadingMessage from "../../UI/LoadingMessage";
 import type { AssessmentRow } from "./types";
 import { BASE_URL, formatGovDate, getAssessmentLabel } from "./utils";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
+import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay";
 import "./dashboard.css";
 
 type RiskFrequency = { label: string; count: number; riskIds: string[] };
@@ -54,6 +55,29 @@ function frameworkTypesFromBuyerMappingRows(rows: unknown): string {
     if (label && label !== "—") names.add(label);
   }
   return [...names].join(", ");
+}
+
+function controlIdFromControlLine(raw: string): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const left = s.includes(":") ? s.split(":")[0].trim() : s;
+  const m = left.match(/[A-Za-z]{1,6}[A-Za-z0-9._-]{0,12}/);
+  return m ? m[0] : "";
+}
+
+/** Control IDs from buyer `frameworkMappingRows.controls` (e.g. PR.DS-1, Art. 10). */
+function frameworkControlIdsFromBuyerMappingRows(rows: unknown): string {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const ids = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const controls = frameworkControlsDisplayLines((row as Record<string, unknown>).controls);
+    for (const line of controls) {
+      const id = controlIdFromControlLine(line);
+      if (id) ids.add(id);
+    }
+  }
+  return [...ids].join(", ");
 }
 
 function toMitigationId(raw: unknown): string {
@@ -420,6 +444,9 @@ const BuyerOverview = () => {
               ? (data.data.mitigationsByRiskId as Record<string, unknown>)
               : {};
           const frameworkTypesForAssessment = frameworkTypesFromBuyerMappingRows(data?.data?.frameworkMappingRows);
+          const frameworkControlIdsForAssessment = frameworkControlIdsFromBuyerMappingRows(
+            data?.data?.frameworkMappingRows,
+          );
           const rowsForAssessment: FrameworkMappingRow[] = [];
 
           if (!riskIdsByAssessment.has(aid)) {
@@ -478,9 +505,11 @@ const BuyerOverview = () => {
 
             const riskCategory = String(risk?.risk_title ?? (rid || "Unknown Risk")).trim();
             const frameworkControl =
-              frameworkTypesForAssessment.trim() !== ""
-                ? frameworkTypesForAssessment
-                : getStaticFrameworkControl(riskCategory);
+              frameworkControlIdsForAssessment.trim() !== ""
+                ? frameworkControlIdsForAssessment
+                : frameworkTypesForAssessment.trim() !== ""
+                  ? frameworkTypesForAssessment
+                  : getStaticFrameworkControl(riskCategory);
             const mids = Array.isArray((mitByRisk as Record<string, unknown>)[rid])
               ? ((mitByRisk as Record<string, unknown>)[rid] as Array<Record<string, unknown>>)
                   .map((m) => toMitigationId(m?.mitigation_id ?? m?.mitigation_action_id))
@@ -720,6 +749,7 @@ const BuyerOverview = () => {
   const displayedFrameworkRows = selectedAssessmentId
     ? (frameworkRowsByAssessment[selectedAssessmentId] ?? [])
     : frameworkRowsAll;
+  const displayedFrameworkRowsTop3 = displayedFrameworkRows.slice(0, 3);
   const displayedTopDomainsForGraph = (displayedTopDomains.length > 0
     ? displayedTopDomains
     : [
@@ -739,10 +769,6 @@ const BuyerOverview = () => {
     ? (selectedAssessmentDashboardScore != null ? selectedAssessmentDashboardScore : "")
     : buyerAssessments.length;
   const assessmentMetricDescription = selectedAssessmentId ? "" : `${completedCount} completed, ${draftCount} pending`;
-
-  const handleViewReport = (assessmentId: number) => {
-    navigate("/reports", { state: { assessmentId } });
-  };
 
   return (
     <div className="vendor_overview_page sec_user_page org_settings_page governance_overview">
@@ -852,13 +878,13 @@ const BuyerOverview = () => {
                     reportsByAssessmentId[selectedAssessmentId]?.summary ??
                     "No summary available for this assessment yet. Please open the report for details."}
                 </p>
-                <div className="governance_summary_actions">
+                {/* <div className="governance_summary_actions">
                   <span className="governance_summary_actions_label">Actions</span>
                   <div className="governance_summary_actions_value">
                     {reportsByAssessmentId[selectedAssessmentId]?.reportId ? (
                       <Link
                         to={`/reports/${reportsByAssessmentId[selectedAssessmentId].reportId}`}
-                        className="governance_assessment_link governance_assessment_link_table"
+                        className="governance_assessment_link"
                         title="Open complete assessment report"
                       >
                         <FileText size={18} className="governance_assessment_link_icon" aria-hidden />
@@ -868,7 +894,7 @@ const BuyerOverview = () => {
                       <span className="governance_recent_empty">—</span>
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             </section>
           )}
@@ -974,64 +1000,31 @@ const BuyerOverview = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedAssessmentId ? (
-                    displayedFrameworkRows.length > 0 ? (
-                      displayedFrameworkRows.map((row) => (
-                        <tr key={row.riskId}>
-                          <td>{row.riskId}</td>
-                          <td>{row.riskCategory}</td>
-                          <td>{row.frameworkControl}</td>
-                          <td>
-                            <div className="governance_mit_chip_list">
-                              {row.mitigationIds.length > 0 ? row.mitigationIds.map((mid) => (
-                                <span className="governance_mit_chip" key={`${row.riskId}-${mid}`}>
-                                  {mid.replace(/^MIT-/i, "M-")}
-                                </span>
-                              )) : <span className="governance_recent_empty">—</span>}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={4} className="governance_recent_empty">No framework mapping rows found for this assessment.</td></tr>
-                    )
+                  {displayedFrameworkRowsTop3.length > 0 ? (
+                    displayedFrameworkRowsTop3.map((row) => (
+                      <tr key={row.riskId}>
+                        <td>{row.riskId}</td>
+                        <td>{row.riskCategory}</td>
+                        <td>{row.frameworkControl}</td>
+                        <td>
+                          <div className="governance_mit_chip_list">
+                            {row.mitigationIds.length > 0 ? row.mitigationIds.map((mid) => (
+                              <span className="governance_mit_chip" key={`${row.riskId}-${mid}`}>
+                                {mid.replace(/^MIT-/i, "M-")}
+                              </span>
+                            )) : <span className="governance_recent_empty">—</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   ) : (
-                    <>
-                      <tr>
-                        <td>RISK-001</td>
-                        <td>Data Privacy & Leakage</td>
-                        <td>NIST PR.DS-1, EU Art. 10 (Data governance)</td>
-                        <td>
-                          <div className="governance_mit_chip_list">
-                            <span className="governance_mit_chip">M-001</span>
-                            <span className="governance_mit_chip">M-004</span>
-                            <span className="governance_mit_chip">M-009</span>
-                            <span className="governance_mit_chip">M-012</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>RISK-002</td>
-                        <td>Algorithmic Bias</td>
-                        <td>NIST MEASURE 2.1, EU Art. 13 (Transparency)</td>
-                        <td>
-                          <div className="governance_mit_chip_list">
-                            <span className="governance_mit_chip">M-003</span>
-                            <span className="governance_mit_chip">M-010</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>RISK-003</td>
-                        <td>Cyber Resilience</td>
-                        <td>NIST MAP 1.5, EU Art. 15 (Cybersecurity)</td>
-                        <td>
-                          <div className="governance_mit_chip_list">
-                            <span className="governance_mit_chip">M-006</span>
-                          </div>
-                        </td>
-                      </tr>
-                    </>
+                    <tr>
+                      <td colSpan={4} className="governance_recent_empty">
+                        {selectedAssessmentId
+                          ? "No framework mapping rows found for this assessment."
+                          : "No framework mapping rows found."}
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -1083,12 +1076,19 @@ const BuyerOverview = () => {
                                   to={`/reports/${reportMeta.reportId}`}
                                   className="governance_assessment_link governance_assessment_link_table"
                                   title="Open complete assessment report"
+                                  aria-label="Open complete assessment report"
                                 >
                                   <FileText size={18} className="governance_assessment_link_icon" aria-hidden />
-                                  View report
                                 </Link>
                               ) : (
-                                <span className="governance_recent_empty">—</span>
+                                <Link
+                                  to={`/buyer-vendor-risk-report/${encodeURIComponent(String(a.assessmentId ?? ""))}`}
+                                  className="governance_assessment_link governance_assessment_link_table"
+                                  title="Open complete assessment report"
+                                  aria-label="Open complete assessment report"
+                                >
+                                  <FileText size={18} className="governance_assessment_link_icon" aria-hidden />
+                                </Link>
                               )}
                             </td>
                           </tr>

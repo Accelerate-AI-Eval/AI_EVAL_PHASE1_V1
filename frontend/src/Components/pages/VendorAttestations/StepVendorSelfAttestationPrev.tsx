@@ -11,11 +11,13 @@ import { formatPreviewValueAsString } from "../../../utils/formatPreviewValue";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
 import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
+import { personalizeAttestationFieldLabel } from "../../../utils/attestationFieldLabel";
 import "../VendorOnboarding/StepVendorOnboardingPreview.css";
 import "./vendor_attestation_preview.css";
 
 /** Step index for Document Upload section; Compliance & Certifications (Regulatory upload); Evidence & Supporting Documentation (Testing and Policy upload). */
 const STEP_DOCUMENT_UPLOAD = 1;
+const STEP_AI_TECHNICAL = 3;
 const STEP_COMPLIANCE_CERTIFICATIONS = 4;
 const STEP_EVIDENCE = 9;
 
@@ -90,6 +92,67 @@ function ComplianceExpiryBesideView({ fileName, expiries }: { fileName: string; 
   );
 }
 
+type VendorAttestationPreviewDocumentRowActionsProps = {
+  step: number;
+  show: boolean;
+  documentNames?: string[];
+  showUpdate?: boolean;
+  onUpdate?: () => void;
+  attestationId?: string | null;
+  onOpenDocument?: (fileName: string) => void;
+  onNavigateToStep?: (step: number) => void;
+};
+
+/** Actions for a document row: View opens document(s) when onOpenDocument is provided (no navigation); otherwise navigates to section. */
+function VendorAttestationPreviewDocumentRowActions({
+  step,
+  show,
+  documentNames = [],
+  showUpdate = false,
+  onUpdate,
+  attestationId,
+  onOpenDocument,
+  onNavigateToStep,
+}: VendorAttestationPreviewDocumentRowActionsProps) {
+  const canOpenDocs = documentNames.length > 0 && Boolean(attestationId && onOpenDocument);
+  const showView = show && (canOpenDocs || onNavigateToStep);
+  const showUpdateBtn = showUpdate && onUpdate;
+  if (!showView && !showUpdateBtn) return null;
+  const handleViewClick = () => {
+    if (canOpenDocs) {
+      documentNames.forEach((name) => onOpenDocument?.(name));
+    } else if (onNavigateToStep) {
+      onNavigateToStep(step);
+    }
+  };
+  return (
+    <span className="preview-doc-actions">
+      {showView && (
+        <button
+          type="button"
+          className="preview-view-btn"
+          onClick={handleViewClick}
+          title={canOpenDocs ? "Open document" : "View section"}
+        >
+          <Eye size={14} aria-hidden />
+          <span style={{ marginLeft: "0.25rem" }}>View</span>
+        </button>
+      )}
+      {showUpdateBtn && (
+        <button
+          type="button"
+          className="preview-update-btn"
+          onClick={onUpdate}
+          title="Replace document"
+        >
+          <CircleArrowUp size={16} aria-hidden />
+          <span style={{ marginLeft: "0.25rem" }}>Update</span>
+        </button>
+      )}
+    </span>
+  );
+}
+
 /** User-friendly preview: multi-select/industry/dependent dropdown as readable text, never raw array or JSON. */
 function formatValue(val: unknown): string {
   return formatPreviewValueAsString(val);
@@ -143,59 +206,6 @@ function StepVendorSelfAttestationPrev({
     };
   };
 
-  /** Actions for a document row: View opens document(s) when onOpenDocument is provided (no navigation); otherwise navigates to section. */
-  const DocumentRowActions = ({
-    step,
-    show,
-    documentNames = [],
-    showUpdate = false,
-    onUpdate,
-  }: {
-    step: number;
-    show: boolean;
-    documentNames?: string[];
-    showUpdate?: boolean;
-    onUpdate?: () => void;
-  }) => {
-    const canOpenDocs = documentNames.length > 0 && Boolean(attestationId && onOpenDocument);
-    const showView = show && (canOpenDocs || onNavigateToStep);
-    const showUpdateBtn = showUpdate && onUpdate;
-    if (!showView && !showUpdateBtn) return null;
-    const handleViewClick = () => {
-      if (canOpenDocs) {
-        documentNames.forEach((name) => onOpenDocument?.(name));
-      } else if (onNavigateToStep) {
-        onNavigateToStep(step);
-      }
-    };
-    return (
-      <span className="preview-doc-actions">
-        {showView && (
-          <button
-            type="button"
-            className="preview-view-btn"
-            onClick={handleViewClick}
-            title={canOpenDocs ? "Open document" : "View section"}
-          >
-            <Eye size={14} aria-hidden />
-            <span style={{ marginLeft: "0.25rem" }}>View</span>
-          </button>
-        )}
-        {showUpdateBtn && (
-          <button
-            type="button"
-            className="preview-update-btn"
-            onClick={onUpdate}
-            title="Replace document"
-          >
-            <CircleArrowUp size={16} aria-hidden />
-            <span style={{ marginLeft: "0.25rem" }}>Update</span>
-          </button>
-        )}
-      </span>
-    );
-  };
-
   const companyProfileRows: { label: string; value: string }[] = [
     { label: "Vendor Name", value: formatValue(companyProfile.vendorName) },
     { label: "Vendor Type", value: formatValue(companyProfile.vendorType) },
@@ -208,7 +218,7 @@ function StepVendorSelfAttestationPrev({
     { label: "Operating Regions", value: formatValue(companyProfile.operatingRegions) },
   ];
 
-  /** Regulatory and Compliance Certification Material — one heading, then list: "1. SOC2 Type 2 document uploaded  verified view update" */
+  /** Compliance certifications evidence — one heading, then list: "1. SOC2 Type 2 document uploaded  verified view update" */
   const categoriesWithDocs =
     documentUpload?.["2"]?.categories?.filter(
       (category) => (documentUpload["2"]?.byCategory?.[category] ?? []).length > 0
@@ -217,7 +227,7 @@ function StepVendorSelfAttestationPrev({
     <div className="vendor_preview_row vendor_preview_row_regulatory">
       <dt className="vendor_preview_label">
         <span className="vendor_preview_doc_label">
-          <span>Regulatory and Compliance Certification Material</span>
+          <span>Which compliance certifications do you hold? (attach evidence for each)</span>
           {categoriesWithDocs.length === 0 && onNavigateToStep && (
             <span className="preview-doc-actions">
               <button
@@ -318,7 +328,14 @@ function StepVendorSelfAttestationPrev({
                   <dt className="vendor_preview_label">
                     <span className="vendor_preview_doc_label">
                       <span>{VENDOR_SELF_ATTESTATION.document_upload["0"]?.label ?? "Marketing and Product Material"}</span>
-                      <DocumentRowActions step={STEP_DOCUMENT_UPLOAD} show={!doc0.isNa} documentNames={names0} />
+                      <VendorAttestationPreviewDocumentRowActions
+                        step={STEP_DOCUMENT_UPLOAD}
+                        show={!doc0.isNa}
+                        documentNames={names0}
+                        attestationId={attestationId}
+                        onOpenDocument={onOpenDocument}
+                        onNavigateToStep={onNavigateToStep}
+                      />
                     </span>
                   </dt>
                   <dd className="vendor_preview_value">{doc0.content}</dd>
@@ -333,7 +350,14 @@ function StepVendorSelfAttestationPrev({
                   <dt className="vendor_preview_label">
                     <span className="vendor_preview_doc_label">
                       <span>{VENDOR_SELF_ATTESTATION.document_upload["1"]?.label ?? "Technical Product Specifications Material"}</span>
-                      <DocumentRowActions step={STEP_DOCUMENT_UPLOAD} show={!doc1.isNa} documentNames={names1} />
+                      <VendorAttestationPreviewDocumentRowActions
+                        step={STEP_DOCUMENT_UPLOAD}
+                        show={!doc1.isNa}
+                        documentNames={names1}
+                        attestationId={attestationId}
+                        onOpenDocument={onOpenDocument}
+                        onNavigateToStep={onNavigateToStep}
+                      />
                     </span>
                   </dt>
                   <dd className="vendor_preview_value">{doc1.content}</dd>
@@ -348,7 +372,14 @@ function StepVendorSelfAttestationPrev({
                   <dt className="vendor_preview_label">
                     <span className="vendor_preview_doc_label">
                       <span>Testing and Policy Documentation</span>
-                      <DocumentRowActions step={STEP_EVIDENCE} show={!evidenceDoc.isNa} documentNames={evidenceNames} />
+                      <VendorAttestationPreviewDocumentRowActions
+                        step={STEP_EVIDENCE}
+                        show={!evidenceDoc.isNa}
+                        documentNames={evidenceNames}
+                        attestationId={attestationId}
+                        onOpenDocument={onOpenDocument}
+                        onNavigateToStep={onNavigateToStep}
+                      />
                     </span>
                   </dt>
                   <dd className="vendor_preview_value">{evidenceDoc.content}</dd>
@@ -376,13 +407,41 @@ function StepVendorSelfAttestationPrev({
                   const mapping = mappings[dataIndex];
                   if (!mapping) return null;
                   const val = attestation[mapping.key];
+                  const rowLabel = personalizeAttestationFieldLabel(
+                    fieldConfig.label,
+                    attestation.product_name,
+                  );
                   return (
                     <div key={mapping.key} className="vendor_preview_row">
-                      <dt className="vendor_preview_label">{fieldConfig.label}</dt>
+                      <dt className="vendor_preview_label">{rowLabel}</dt>
                       <dd className="vendor_preview_value">{formatValue(val)}</dd>
                     </div>
                   );
                 })}
+                {sectionKey === "ai_technical_capabilities" &&
+                  attestation.documented_ai_governance_policy === "Yes" &&
+                  (() => {
+                    const names = documentUpload?.aiGovernancePolicy ?? [];
+                    const doc = renderDocumentValue(names);
+                    return (
+                      <div key="ai-gov-policy-upload" className="vendor_preview_row">
+                        <dt className="vendor_preview_label">
+                          <span className="vendor_preview_doc_label">
+                            <span>AI Governance policy document</span>
+                            <VendorAttestationPreviewDocumentRowActions
+                              step={STEP_AI_TECHNICAL}
+                              show={!doc.isNa}
+                              documentNames={names}
+                              attestationId={attestationId}
+                              onOpenDocument={onOpenDocument}
+                              onNavigateToStep={onNavigateToStep}
+                            />
+                          </span>
+                        </dt>
+                        <dd className="vendor_preview_value">{doc.content}</dd>
+                      </div>
+                    );
+                  })()}
                 {isComplianceCertifications && regulatoryRows}
               </dl>
             </section>

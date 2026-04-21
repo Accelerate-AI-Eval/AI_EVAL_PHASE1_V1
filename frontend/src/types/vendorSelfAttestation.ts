@@ -30,8 +30,11 @@ export interface VendorSelfAttestationPayload {
   ai_model_types?: string[] | null;
   model_transparency?: string | null;
   decision_autonomy?: string | null;
+  /** Yes / No — documented AI governance policy; if Yes, upload file(s) to documentUpload.aiGovernancePolicy */
+  documented_ai_governance_policy?: string | null;
   security_certifications?: string[] | null;
   assessment_completion_level?: string | null;
+  audit_frequency?: string | null;
   pii_handling?: string | null;
   data_residency_options?: string[] | null;
   data_retention_policy?: string | null;
@@ -40,6 +43,8 @@ export interface VendorSelfAttestationPayload {
   human_oversight?: string[] | null;
   training_data_documentation?: string | null;
   uptime_sla?: string | null;
+  support_slas?: string | null;
+  change_management?: string | null;
   incident_response_plan?: string | null;
   rollback_capability?: string | null;
   hosting_deployment?: string[] | null;
@@ -62,14 +67,16 @@ export interface RegulatoryDocumentUpload {
  * Document upload structure stored in backend document_uploads jsonb.
  * - "0": Marketing and Product Material (file names)
  * - "1": Technical Product Specifications Material (file names)
- * - "2": Regulatory and Compliance Certification Material (multi-select categories + files per category)
+ * - "2": "Which compliance certifications do you hold? (attach evidence for each)" (multi-select categories + files per category)
  * - evidenceTestingPolicy: file names for "Upload Testing and Policy Documentation (Optional)"
+ * - aiGovernancePolicy: file names when user answers Yes to documented AI governance policy (AI Technical Capabilities)
  */
 export interface DocumentUploadState {
   "0": string[];
   "1": string[];
   "2": RegulatoryDocumentUpload;
   evidenceTestingPolicy: string[];
+  aiGovernancePolicy: string[];
 }
 
 /**

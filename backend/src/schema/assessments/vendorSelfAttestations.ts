@@ -37,8 +37,11 @@ export const vendorSelfAttestations = pgTable("vendor_self_attestations", {
   ai_models_usage: jsonb("ai_models_usage"),
   ai_model_transparency: varchar("ai_model_transparency", { length: 100 }),
   ai_autonomy_level: varchar("ai_autonomy_level", { length: 100 }),
+  /** Yes / No — documented AI governance policy (AI Technical Capabilities); uploads in document_uploads.aiGovernancePolicy */
+  documented_ai_governance_policy: varchar("documented_ai_governance_policy", { length: 100 }),
   security_compliance_certificates: jsonb("security_compliance_certificates"),
   assessment_feedback: varchar("assessment_feedback", { length: 100 }),
+  audit_frequency: varchar("audit_frequency", { length: 100 }),
   pii_information: varchar("pii_information", { length: 100 }),
   data_residency_options: jsonb("data_residency_options"),
   data_retention_policy: text("data_retention_policy"),
@@ -47,6 +50,8 @@ export const vendorSelfAttestations = pgTable("vendor_self_attestations", {
   human_oversight: jsonb("human_oversight"),
   training_data_document: varchar("training_data_document", { length: 100 }),
   sla_guarantee: varchar("sla_guarantee", { length: 100 }),
+  support_slas: text("support_slas"),
+  change_management: text("change_management"),
   incident_response_plan: varchar("incident_response_plan", { length: 100 }),
   rollback_deployment_issues: varchar("rollback_deployment_issues", { length: 100 }),
   solution_hosted: jsonb("solution_hosted"),
@@ -73,6 +78,9 @@ export const vendorSelfAttestations = pgTable("vendor_self_attestations", {
   visible_compliance_certifications: boolean("visible_compliance_certifications").default(false),
   visible_operations_support: boolean("visible_operations_support").default(false),
   visible_vendor_management: boolean("visible_vendor_management").default(false),
+  /** Product Profile detail: Company identity / Company reach blocks visible to buyers. */
+  visible_company_identity: boolean("visible_company_identity").default(false),
+  visible_company_reach: boolean("visible_company_reach").default(false),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   /** Set when status first becomes COMPLETED; never updated by visibility toggles. */
