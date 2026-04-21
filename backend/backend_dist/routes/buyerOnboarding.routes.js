@@ -1,0 +1,13 @@
+import express from "express";
+import onboardingAccess from "../middlewares/onboarding/onboardingTokenVerify.middleware.js";
+import insertBuyerOnboarding from "../controllers/buyerOnboarding/addBuyer.controllers.js";
+import saveBuyerOnboardingProgress from "../controllers/buyerOnboarding/saveBuyerOnboardingProgress.controller.js";
+import clearVendorOnboarding from "../controllers/vendorOnboarding/clearVendorOnboarding.controller.js";
+import authenticateToken from "../middlewares/routesProtection.js";
+import getBuyerOnboardingMe from "../controllers/buyerOnboarding/getBuyerOnboardingMe.controller.js";
+const buyerRoutes = express.Router();
+buyerRoutes.get("/buyerOnboarding/me", authenticateToken, getBuyerOnboardingMe);
+buyerRoutes.post("/buyerOnboarding", onboardingAccess, insertBuyerOnboarding);
+buyerRoutes.post("/buyerOnboarding/save-progress", onboardingAccess, saveBuyerOnboardingProgress);
+buyerRoutes.post("/buyerOnboarding/clear-vendor", onboardingAccess, clearVendorOnboarding);
+export default buyerRoutes;

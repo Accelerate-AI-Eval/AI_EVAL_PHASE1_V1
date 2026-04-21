@@ -1,0 +1,11 @@
+export { assessments } from "./assessments.js";
+export { assessmentDocuments } from "./assessmentDocuments.js";
+export { assessmentRisks } from "./assessmentRisks.js";
+export { cotsBuyerAssessments } from "./cotsBuyerAssessments.js";
+export { cotsVendorAssessments } from "./cotsVendorAssessments.js";
+export { customAiAssessments } from "./customAiAssessments.js";
+export { vendorSelfAttestations } from "./vendorSelfAttestations.js";
+export { generatedProfileReports } from "./generatedProfileReports.js";
+export { customerRiskAssessmentReports } from "./customerRiskAssessmentReports.js";
+export { generalReports } from "./generalReports.js";
+export { attestations } from "./attestations.js";
