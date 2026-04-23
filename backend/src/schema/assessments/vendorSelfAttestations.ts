@@ -87,6 +87,8 @@ export const vendorSelfAttestations = pgTable("vendor_self_attestations", {
   submitted_at: timestamp("submitted_at", { withTimezone: true }),
   /** Expiry date: 3 months from created_at (set by DB trigger on insert; backfilled by migration). */
   expiry_at: timestamp("expiry_at", { withTimezone: true }),
+  /** User moved a completed (non–time-expired) attestation to the Archived tab; cleared on reactive. */
+  user_archived_at: timestamp("user_archived_at", { withTimezone: true }),
   /** Generated product profile report (trust score + sections) when attestation is submitted as COMPLETED. */
   generated_profile_report: jsonb("generated_profile_report"),
 });

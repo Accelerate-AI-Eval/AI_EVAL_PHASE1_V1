@@ -7,12 +7,20 @@ import updateAttestationVisibility from "../controllers/vendorSelfAttestation/up
 import updateSectionVisibility from "../controllers/vendorSelfAttestation/updateSectionVisibility.controller.js";
 import generateProductProfile from "../controllers/vendorSelfAttestation/generateProductProfile.controller.js";
 import listGeneratedReports from "../controllers/vendorSelfAttestation/listGeneratedReports.controller.js";
+import patchVendorSelfAttestationUserArchive from "../controllers/vendorSelfAttestation/patchVendorSelfAttestationUserArchive.controller.js";
 import authenticateToken from "../middlewares/routesProtection.js";
 
 const router = express.Router();
 
 // GET: Fetch company profile + attestation data for the logged-in vendor
 router.get("/vendorSelfAttestation", authenticateToken, fetchVendorSelfAttestation);
+
+// PATCH: User archive / reactive (same-org access as list)
+router.patch(
+  "/vendorSelfAttestation/:id/user-archive",
+  authenticateToken,
+  patchVendorSelfAttestationUserArchive,
+);
 
 // GET: Serve an uploaded attestation document (for preview "open document")
 router.get("/vendorSelfAttestation/document/:attestationId/:fileName", authenticateToken, getAttestationDocument);

@@ -921,6 +921,11 @@
 .attestation_list_header_row .your_assessments_title {
   margin: 0;
 }
+/* Aligned with Assessments ledger: search + Current / Archived segments */
+.attestation_ledger_toolbar.assessments_ledger_toolbar {
+  width: 100%;
+}
+
 .attestation_page_tabs_inline.page_tabs {
   margin: 0;
   border: none;

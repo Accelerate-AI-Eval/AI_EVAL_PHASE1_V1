@@ -29,7 +29,7 @@ import type {
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import "../UserManagement/user_management.css";
 import "../MyVendors/MyVendors.css";
-import "../../../styles/page_tabs.css";
+import "../Assessments/assessments.css";
 import "./product_profile.css";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
 
@@ -165,6 +165,16 @@ function isAttestationExpired(product: ProductProfileProduct): boolean {
   today.setHours(0, 0, 0, 0);
   expiry.setHours(0, 0, 0, 0);
   return expiry.getTime() < today.getTime();
+}
+
+function isUserProductArchived(product: ProductProfileProduct): boolean {
+  const v = product.userArchivedAt;
+  return v != null && String(v).trim() !== "";
+}
+
+/** Current vs Archived: same as Assessments / Attestation (time-expired and/or user-archived). */
+function isInProductProfileArchivedList(product: ProductProfileProduct): boolean {
+  return isAttestationExpired(product) || isUserProductArchived(product);
 }
 
 export interface ProductProfileViewProps {
@@ -310,27 +320,16 @@ function ProductProfileView({
   onGenerateProfile,
   viewOnly = false,
 }: ProductProfileViewProps) {
-  const currentProducts = products.filter((p) => !isAttestationExpired(p));
-  const archivedProducts = products.filter((p) => isAttestationExpired(p));
+  const currentProducts = products.filter((p) => !isInProductProfileArchivedList(p));
+  const archivedProducts = products.filter((p) => isInProductProfileArchivedList(p));
   const showVisibilityToggle = productTab === "current";
   const [productSearchQuery, setProductSearchQuery] = useState("");
 
-  /** Get trust score number (0–100) for a product for search/filter. */
-  const getProductTrustScore = (product: ProductProfileProduct): number | null => {
-    const report = asGeneratedReport(product.generated_profile_report);
-    const fromReport = report?.trustScore?.overallScore;
-    const fromRaw = getOverallScoreFromReport(product.generated_profile_report);
-    const n = typeof fromReport === "number" ? fromReport : fromRaw;
-    return typeof n === "number" && !Number.isNaN(n) ? Math.min(100, Math.max(0, n)) : null;
-  };
-
+  /** Same as assessments ledger: filter by product name only. */
   const matchesProductSearch = (product: ProductProfileProduct, q: string): boolean => {
     const trim = q.trim().toLowerCase();
     if (!trim) return true;
-    const nameMatch = product.productName.trim().toLowerCase().includes(trim);
-    const score = getProductTrustScore(product);
-    const scoreMatch = score != null && (String(score).includes(trim) || (trim === "0" && score === 0));
-    return nameMatch || scoreMatch;
+    return product.productName.trim().toLowerCase().includes(trim);
   };
 
   const filteredCurrentProducts = currentProducts.filter((p) => matchesProductSearch(p, productSearchQuery));
@@ -352,11 +351,7 @@ function ProductProfileView({
   useEffect(() => {
     setCurrentProductPage(1);
     setArchivedProductPage(1);
-  }, [productSearchQuery]);
-
-  useEffect(() => {
-    setProductSearchQuery("");
-  }, [productTab]);
+  }, [productSearchQuery, productTab]);
 
   /** When set, product details are shown on the page instead of in a modal. */
   const [selectedProductIdForDetail, setSelectedProductIdForDetail] = useState<string | null>(null);
@@ -722,7 +717,7 @@ function ProductProfileView({
           secondary={
             averageTrustScore != null
               ? (() => {
-                  const currentOnly = products.filter((p) => !isAttestationExpired(p));
+                  const currentOnly = products.filter((p) => !isInProductProfileArchivedList(p));
                   const withScore = currentOnly.filter(
                     (p) =>
                       asGeneratedReport(p.generated_profile_report)?.trustScore?.overallScore != null ||
@@ -1020,51 +1015,61 @@ function ProductProfileView({
           <header className="product_profile_products_intro">
             <h2 className="product_profile_products_section_title">Products</h2>
             <p className="product_profile_products_section_lead">
-              Review trust scores, attestation status, and buyer visibility. Search by name or score, then open a
+              Review trust scores, attestation status, and buyer visibility. Search by product name, then open a
               product for full details.
             </p>
           </header>
-             <div className="product_profile_tabs_section">
-            {onProductTabChange ? (
-              <div className="page_tabs" role="tablist" aria-label="Product list">
+          {onProductTabChange ? (
+            <div
+              className="assessments_ledger_toolbar attestation_ledger_toolbar product_profile_ledger_toolbar"
+            >
+              <div className="assessments_ledger_search">
+                <Search
+                  size={18}
+                  className="assessments_ledger_search_icon"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  placeholder="Search products…"
+                  value={productSearchQuery}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                  className="assessments_ledger_search_input"
+                  aria-label="Search products"
+                />
+              </div>
+              <div
+                className="assessments_ledger_segmented assessments_ledger_segmented_inline"
+                role="group"
+                aria-label="Products scope"
+              >
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={productTab === "current"}
-                  aria-controls="product_profile_current_panel"
-                  id="product_profile_current_tab"
-                  className={`page_tab ${productTab === "current" ? "page_tab_active" : ""}`}
+                  className={
+                    productTab === "current"
+                      ? "assessments_ledger_segment active"
+                      : "assessments_ledger_segment"
+                  }
                   onClick={() => onProductTabChange("current")}
                 >
                   Current
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={productTab === "archived"}
-                  aria-controls="product_profile_archived_panel"
-                  id="product_profile_archived_tab"
-                  className={`page_tab ${productTab === "archived" ? "page_tab_active" : ""}`}
+                  className={
+                    productTab === "archived"
+                      ? "assessments_ledger_segment active"
+                      : "assessments_ledger_segment"
+                  }
                   onClick={() => onProductTabChange("archived")}
                 >
                   Archived
                 </button>
               </div>
-            ) : (
-              <div className="product_profile_tabs_spacer" aria-hidden />
-            )}
-            <div className="product_profile_products_search_wrap">
-              <Search size={18} className="product_profile_products_search_icon" aria-hidden />
-              <input
-                type="search"
-                placeholder="Search by product name or trust score…"
-                className="product_profile_products_search_input"
-                aria-label="Search products by name or trust score"
-                value={productSearchQuery}
-                onChange={(e) => setProductSearchQuery(e.target.value)}
-              />
             </div>
-          </div>
+          ) : (
+            <div className="product_profile_tabs_spacer" aria-hidden />
+          )}
           <div className="product_profile_products_shell">
        
           <div
@@ -1077,12 +1082,10 @@ function ProductProfileView({
             {productTab === "current" && (
               <>
                 {filteredCurrentProducts.length === 0 ? (
-                  <p className="product_profile_no_products" role="status">
+                  <p className="assessment_search_no_results product_profile_no_products" role="status">
                     {currentProducts.length === 0
                       ? "No current products yet."
-                      : productSearchQuery.trim()
-                        ? "No products match your search."
-                        : "No products."}
+                      : "No products match your search."}
                   </p>
                 ) : (
                 <>
@@ -1131,12 +1134,10 @@ function ProductProfileView({
             {productTab === "archived" && (
               <>
                 {filteredArchivedProducts.length === 0 ? (
-                  <p className="product_profile_no_products" role="status">
+                  <p className="assessment_search_no_results product_profile_no_products" role="status">
                     {archivedProducts.length === 0
                       ? "No archived products."
-                      : productSearchQuery.trim()
-                        ? "No products match your search."
-                        : "No products."}
+                      : "No archived products match your search."}
                   </p>
                 ) : (
                 <>

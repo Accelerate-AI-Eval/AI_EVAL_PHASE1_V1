@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, sql } from "drizzle-orm";
 import { db } from "../../database/db.js";
 import { usersTable } from "../../schema/schema.js";
 import { generalReports } from "../../schema/assessments/generalReports.js";
@@ -68,6 +68,7 @@ const listGeneralReports = async (req: Request, res: Response): Promise<void> =>
         created_by: generalReports.created_by,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        assessmentUserArchivedAt: sql`coalesce(${assessments.user_archived_at}, ${vendorSelfAttestations.user_archived_at})`,
       })
       .from(generalReports)
       .innerJoin(assessments, eq(generalReports.assessment_id, assessments.id))
@@ -109,6 +110,10 @@ const listGeneralReports = async (req: Request, res: Response): Promise<void> =>
         createdBy: r.created_by,
         expiryAt: r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
         attestationExpiryAt: r.attestationExpiryAt instanceof Date ? r.attestationExpiryAt.toISOString() : (r.attestationExpiryAt != null ? String(r.attestationExpiryAt) : null),
+        assessmentUserArchivedAt:
+          r.assessmentUserArchivedAt instanceof Date
+            ? r.assessmentUserArchivedAt.toISOString()
+            : (r.assessmentUserArchivedAt != null ? String(r.assessmentUserArchivedAt) : null),
       };
       });
 

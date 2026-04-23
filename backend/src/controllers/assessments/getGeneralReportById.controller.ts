@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import { db } from "../../database/db.js";
 import { usersTable } from "../../schema/schema.js";
 import { generalReports } from "../../schema/assessments/generalReports.js";
@@ -63,6 +63,7 @@ const getGeneralReportById = async (req: Request, res: Response): Promise<void> 
         created_by: generalReports.created_by,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        assessmentUserArchivedAt: sql`coalesce(${assessments.user_archived_at}, ${vendorSelfAttestations.user_archived_at})`,
       })
       .from(generalReports)
       .innerJoin(assessments, eq(generalReports.assessment_id, assessments.id))
@@ -98,6 +99,10 @@ const getGeneralReportById = async (req: Request, res: Response): Promise<void> 
       row.attestationExpiryAt instanceof Date
         ? row.attestationExpiryAt.toISOString()
         : (row.attestationExpiryAt != null ? String(row.attestationExpiryAt) : null);
+    const assessmentUserArchivedAt =
+      row.assessmentUserArchivedAt instanceof Date
+        ? row.assessmentUserArchivedAt.toISOString()
+        : (row.assessmentUserArchivedAt != null ? String(row.assessmentUserArchivedAt) : null);
 
     res.status(200).json({
       success: true,
@@ -111,6 +116,7 @@ const getGeneralReportById = async (req: Request, res: Response): Promise<void> 
         createdBy: row.created_by,
         expiryAt,
         attestationExpiryAt,
+        assessmentUserArchivedAt,
       },
     });
   } catch (error) {

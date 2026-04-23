@@ -27,6 +27,8 @@ export interface CustomerRiskReportItem {
   expiryAt?: string | null;
   /** When set and in the past, report is archived (linked attestation expired). */
   attestationExpiryAt?: string | null;
+  /** Parent assessment is user-archived in the assessments ledger. */
+  assessmentUserArchivedAt?: string | null;
   /** Buyer vendor risk reports use buyer-vendor-risk-report route. */
   source?: "customer" | "buyer_vendor_risk";
   /** Buyer complete report: IRS from assess-3 formula. */
@@ -39,8 +41,14 @@ export interface CustomerRiskReportItem {
 
 type TabId = "assessment" | "general" | "archived";
 
-/** True when report is archived: assessment expiry or attestation expiry has passed. */
+/** True when report is archived: user-archived assessment, or assessment/attestation expiry has passed. */
 function isCustomerReportArchived(report: CustomerRiskReportItem): boolean {
+  if (
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== ""
+  ) {
+    return true;
+  }
   const expiryAt = report.expiryAt;
   const attestationExpiryAt = report.attestationExpiryAt;
   const isAssessmentExpired =
@@ -181,6 +189,7 @@ function Reports() {
                 createdAt: string;
                 expiryAt?: string | null;
                 attestationExpiryAt?: string | null;
+                assessmentUserArchivedAt?: string | null;
                 source: string;
                 implementationRiskScore?: number | null;
                 implementationRiskClassification?: string | null;
@@ -192,6 +201,7 @@ function Reports() {
                 createdAt: r.createdAt,
                 expiryAt: r.expiryAt ?? null,
                 attestationExpiryAt: r.attestationExpiryAt ?? null,
+                assessmentUserArchivedAt: r.assessmentUserArchivedAt ?? null,
                 source: "buyer_vendor_risk" as const,
                 implementationRiskScore:
                   r.implementationRiskScore != null && Number.isFinite(Number(r.implementationRiskScore))

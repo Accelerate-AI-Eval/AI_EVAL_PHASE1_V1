@@ -243,6 +243,12 @@ function mapAttestationRow(attestRow: Record<string, unknown>, completedByName?:
     compliance_document_expiries: attestRow.compliance_document_expiries ?? undefined,
     framework_mapping_rows: attestRow.framework_mapping_rows ?? undefined,
     generated_profile_report: attestRow.generated_profile_report ?? undefined,
+    userArchivedAt:
+      attestRow.user_archived_at != null
+        ? attestRow.user_archived_at instanceof Date
+          ? attestRow.user_archived_at.toISOString()
+          : String(attestRow.user_archived_at)
+        : null,
   };
   if (completedByName != null && completedByName !== "") {
     base.completedBy = { name: completedByName };
@@ -460,6 +466,7 @@ const fetchVendorSelfAttestation = async (req: Request, res: Response): Promise<
       updated_at: vendorSelfAttestations.updated_at,
       submitted_at: vendorSelfAttestations.submitted_at,
       expiry_at: vendorSelfAttestations.expiry_at,
+      user_archived_at: vendorSelfAttestations.user_archived_at,
       compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
       framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
       generated_profile_report: vendorSelfAttestations.generated_profile_report,

@@ -136,6 +136,8 @@ export default function BuyerVendorRiskReport() {
   const [report, setReport] = useState<ReportPayload | null>(null);
   const [frameworkMappingRows, setFrameworkMappingRows] = useState<FrameworkMappingRow[]>([]);
   const [archived, setArchived] = useState(false);
+  /** True when the assessment is user-archived in the ledger but not yet past assessment expiry. */
+  const [assessmentUserOnlyArchived, setAssessmentUserOnlyArchived] = useState(false);
   const pdfArticleRef = useRef<HTMLElement>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
 
@@ -162,6 +164,12 @@ export default function BuyerVendorRiskReport() {
       setProductName(String(data.productName ?? ""));
       setOrgName(String(data.organizationName ?? ""));
       setArchived(Boolean(data.archived));
+      setAssessmentUserOnlyArchived(
+        Boolean(
+          (data as { assessmentUserArchived?: boolean }).assessmentUserArchived,
+        ) &&
+          !(data as { assessmentTimeExpired?: boolean }).assessmentTimeExpired,
+      );
       setFrameworkMappingRows(
         Array.isArray(data.frameworkMappingRows)
           ? (data.frameworkMappingRows as FrameworkMappingRow[])
@@ -421,7 +429,9 @@ export default function BuyerVendorRiskReport() {
 
         {archived ? (
           <div className="bvr_archived_banner no-print" role="status">
-            This assessment has expired. The report below is an archived snapshot for your records.
+            {assessmentUserOnlyArchived
+              ? "This assessment is archived. The report below is for your records."
+              : "This assessment has expired. The report below is an archived snapshot for your records."}
           </div>
         ) : null}
 

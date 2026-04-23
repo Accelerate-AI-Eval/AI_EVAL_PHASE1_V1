@@ -3,8 +3,15 @@
  * - `vendor`: mirrors backend `interpretSalesRiskScore` via dealProbability = 100 - risk.
  * - `buyer`: mirrors backend `buyerImplementationRiskScore` readiness grade via IRS = 100 - risk.
  */
-export type CompleteReportLetterGrade = "A" | "B" | "C" | "D" | "E";
+export type CompleteReportLetterGrade = "A" | "B" | "C" | "D" | "F";
 export type CompleteReportGradingProfile = "vendor" | "buyer";
+
+/** Legacy stored values may use "E" for the lowest band; UI and new logic use "F" (A–D, then F). */
+export function normalizeDisplayLetterGrade(g: string | null | undefined): string {
+  const s = String(g ?? "").trim();
+  if (s.toUpperCase() === "E") return "F";
+  return s;
+}
 
 export function gradeFromOverallRiskScore(
   score: number,
@@ -23,7 +30,7 @@ export function gradeFromOverallRiskScore(
   if (dealProbability >= 80) return "B";
   if (dealProbability >= 70) return "C";
   if (dealProbability >= 60) return "D";
-  return "E";
+  return "F";
 }
 
 /**

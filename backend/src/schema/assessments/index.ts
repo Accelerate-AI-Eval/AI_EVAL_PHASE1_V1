@@ -9,3 +9,5 @@ export { generatedProfileReports } from "./generatedProfileReports.js";
 export { customerRiskAssessmentReports } from "./customerRiskAssessmentReports.js";
 export { generalReports } from "./generalReports.js";
 export { attestations } from "./attestations.js";
+export { assessmentUserArchiveLog } from "./assessmentUserArchiveLog.js";
+export { vendorSelfAttestationUserArchiveLog } from "./vendorSelfAttestationUserArchiveLog.js";

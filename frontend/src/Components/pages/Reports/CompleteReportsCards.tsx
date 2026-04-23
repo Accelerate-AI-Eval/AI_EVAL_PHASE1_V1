@@ -9,6 +9,11 @@ import {
   resolveScoreSubtitleForCompleteReport,
   type CompleteReportRiskMeterGrading,
 } from "../../../utils/completeReportGrade";
+import {
+  isReportTimeExpired,
+  reportArchivedStatusText,
+  reportArchivedStatusBadge,
+} from "../../../utils/reportArchiveStatusLabel";
 import { mixSrgbHex } from "../../../utils/mixSrgbHex";
 import "../VendorDirectory/VendorDirectory.css";
 import "./general_reports.css";
@@ -164,7 +169,9 @@ function CompleteReportsCards({
     const rowForMeter = rowWithFetchedReport(report);
     const report_context_score = resolveDisplayScore(report);
     const isFetching = fetchingReportId === report.id;
-    const statusLabel = archived ? "ARCHIVED" : "COMPLETED";
+    const statusLabel = archived
+      ? reportArchivedStatusBadge(report)
+      : "COMPLETED";
     const meterGrading = riskMeterGradingForReport(report, riskMeterGrading);
     const meterColor =
       !archived && report_context_score != null
@@ -198,8 +205,14 @@ function CompleteReportsCards({
       >
         <div className="general_report_card_header complete_rpr_card_top">
           <span
-            className={`complete_rpr_card_status_badge${archived ? " complete_rpr_card_status_badge_archived" : ""}`}
-            style={statusBadgeStyle}
+            className={
+              archived
+                ? isReportTimeExpired(report)
+                  ? "complete_rpr_card_status_badge complete_rpr_card_status_badge_expired"
+                  : "complete_rpr_card_status_badge complete_rpr_card_status_badge_archived"
+                : "complete_rpr_card_status_badge"
+            }
+            style={archived ? undefined : statusBadgeStyle}
           >
             {statusLabel}
           </span>
@@ -272,7 +285,15 @@ function CompleteReportsCards({
         <div className="general_rpr_card_footer complete_rpr_card_footer">
           <div className="general_rpr_card_dates complete_rpr_card_expiry_col">
             {archived ? (
-              <span className="general_rpr_card_status general_rpr_card_status_archived">Archived</span>
+              <span
+                className={
+                  isReportTimeExpired(report)
+                    ? "general_rpr_card_status general_rpr_card_status_expired"
+                    : "general_rpr_card_status general_rpr_card_status_archived"
+                }
+              >
+                {reportArchivedStatusText(report)}
+              </span>
             ) : (
               <>
                 <span className="complete_rpr_card_expiry_label">EXPIRY DATE</span>

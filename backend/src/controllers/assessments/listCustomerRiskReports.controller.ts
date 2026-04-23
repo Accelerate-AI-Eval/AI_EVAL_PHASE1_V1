@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { eq, desc, or, inArray } from "drizzle-orm";
+import { eq, desc, or, inArray, sql } from "drizzle-orm";
 import { db } from "../../database/db.js";
 import { usersTable } from "../../schema/schema.js";
 import { customerRiskAssessmentReports } from "../../schema/assessments/customerRiskAssessmentReports.js";
@@ -68,6 +68,7 @@ const listCustomerRiskReports = async (req: Request, res: Response): Promise<voi
         createdAt: customerRiskAssessmentReports.created_at,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        assessmentUserArchivedAt: sql`coalesce(${assessments.user_archived_at}, ${vendorSelfAttestations.user_archived_at})`,
         framework_mapping_rows: vendorSelfAttestations.framework_mapping_rows,
         compliance_document_expiries: vendorSelfAttestations.compliance_document_expiries,
       })
@@ -206,6 +207,12 @@ const listCustomerRiskReports = async (req: Request, res: Response): Promise<voi
             ? r.attestationExpiryAt.toISOString()
             : r.attestationExpiryAt != null
               ? String(r.attestationExpiryAt)
+              : null,
+        assessmentUserArchivedAt:
+          r.assessmentUserArchivedAt instanceof Date
+            ? r.assessmentUserArchivedAt.toISOString()
+            : r.assessmentUserArchivedAt != null
+              ? String(r.assessmentUserArchivedAt)
               : null,
         frameworkMappingRows,
       };

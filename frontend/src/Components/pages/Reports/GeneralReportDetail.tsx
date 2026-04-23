@@ -56,6 +56,7 @@ interface GeneratedReportItem {
   briefContent?: string | Record<string, unknown>;
   expiryAt?: string | null;
   attestationExpiryAt?: string | null;
+  assessmentUserArchivedAt?: string | null;
 }
 
 function formatDate(iso: string): string {
@@ -407,6 +408,7 @@ function GeneralReportDetail() {
             briefContent: d.briefContent,
             expiryAt: d.expiryAt ?? null,
             attestationExpiryAt: d.attestationExpiryAt ?? null,
+            assessmentUserArchivedAt: d.assessmentUserArchivedAt ?? null,
           });
           setNotFound(false);
         } else {
@@ -519,7 +521,10 @@ function GeneralReportDetail() {
     String(report.attestationExpiryAt).trim() !== "" &&
     !Number.isNaN(new Date(report.attestationExpiryAt).getTime()) &&
     new Date(report.attestationExpiryAt).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
-  const isArchived = isAssessmentExpired || isAttestationExpired;
+  const isUserAssessArchived =
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== "";
+  const isArchived = isUserAssessArchived || isAssessmentExpired || isAttestationExpired;
 
   const vendorComparisonMatrixData =
     report.reportType === "Vendor Comparison Matrix"

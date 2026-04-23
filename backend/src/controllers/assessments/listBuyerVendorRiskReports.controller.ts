@@ -54,6 +54,7 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
         productName: cotsBuyerAssessments.specific_product,
         updatedAt: assessments.updated_at,
         expiryAt: assessments.expiry_at,
+        userArchivedAt: assessments.user_archived_at,
         vendorRiskReport: cotsBuyerAssessments.vendor_risk_assessment_report,
       })
       .from(cotsBuyerAssessments)
@@ -97,6 +98,10 @@ const listBuyerVendorRiskReports = async (req: Request, res: Response): Promise<
         expiryAt:
           r.expiryAt instanceof Date ? r.expiryAt.toISOString() : (r.expiryAt != null ? String(r.expiryAt) : null),
         attestationExpiryAt: null as string | null,
+        assessmentUserArchivedAt:
+          r.userArchivedAt instanceof Date
+            ? r.userArchivedAt.toISOString()
+            : (r.userArchivedAt != null ? String(r.userArchivedAt) : null),
         implementationRiskScore,
         implementationRiskClassification,
         implementationRiskDecision,

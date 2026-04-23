@@ -535,7 +535,16 @@
   color: lightslategray;
 }
 
-/* Archived state (assessment or attestation expired – same as Complete Reports) */
+/* Archived tab: time-based expiry → "Expired" (stronger). User-only archive → "Archived" (neutral). */
+.general_rpr_card_status_expired {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #fff;
+  background: tomato;
+  padding: 0.25rem 0.5rem;
+  border-radius: 5px;
+}
+
 .general_rpr_card_status_archived {
   font-size: 0.75rem;
   font-weight: 500;
@@ -609,6 +618,11 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+/* Archived: keep bottom accent gray (not green) to match muted archived chrome */
+.complete_rpr_card_design.general_rpr_card_archived {
+  border-bottom: 3px solid #9ca3af;
+}
+
 .vendor_directory_card.complete_rpr_card_design {
   border-radius: 5px;
   box-sizing: border-box;
@@ -650,6 +664,11 @@
 .complete_rpr_card_status_badge_archived {
   background: #f3f4f6;
   color: #6b7280;
+}
+
+.complete_rpr_card_status_badge_expired {
+  background: tomato;
+  color: #fff;
 }
 
 .complete_rpr_card_header_actions {

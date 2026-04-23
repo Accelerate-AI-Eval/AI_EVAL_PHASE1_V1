@@ -54,6 +54,7 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
             specific_product: cotsBuyerAssessments.specific_product,
             organization_name: cotsBuyerAssessments.organization_name,
             assessment_status: assessments.status,
+            user_archived_at: assessments.user_archived_at,
             criticality: cotsBuyerAssessments.critical_of_ai_solution,
             risk_appetite: cotsBuyerAssessments.risk_appetite,
             data_sensitivity: cotsBuyerAssessments.data_sensitivity_level,
@@ -72,6 +73,7 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
             specific_product: cotsBuyerAssessments.specific_product,
             organization_name: cotsBuyerAssessments.organization_name,
             assessment_status: assessments.status,
+            user_archived_at: assessments.user_archived_at,
             criticality: cotsBuyerAssessments.critical_of_ai_solution,
             risk_appetite: cotsBuyerAssessments.risk_appetite,
             data_sensitivity: cotsBuyerAssessments.data_sensitivity_level,
@@ -89,20 +91,25 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const archived = String(row.assessment_status ?? "").toLowerCase() === "expired";
+    const assessmentTimeExpired = String(row.assessment_status ?? "").toLowerCase() === "expired";
+    const aRow = row as { user_archived_at?: Date | null };
+    const assessmentUserArchived = aRow.user_archived_at != null;
+    const reportArchivedForUi = assessmentTimeExpired || assessmentUserArchived;
     const rawReport =
-      hasArchiveCol && archived
+      hasArchiveCol && assessmentTimeExpired
         ? (row as { archived_report?: unknown; report: unknown }).archived_report
         : row.report;
     const vendorName = row.vendor_name ?? "";
     const productName = row.specific_product ?? "";
 
     if (rawReport == null || typeof rawReport !== "object") {
-      if (archived) {
+      if (assessmentTimeExpired) {
         res.status(200).json({
           success: true,
           pending: false,
           archived: true,
+          assessmentUserArchived,
+          assessmentTimeExpired: true,
           reportUnavailable: true,
           message:
             "This assessment has expired. No vendor comparison report was archived (none was stored before expiry).",
@@ -115,7 +122,9 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
       res.status(200).json({
         success: true,
         pending: true,
-        archived: false,
+        archived: assessmentUserArchived,
+        assessmentUserArchived,
+        assessmentTimeExpired: false,
         reportUnavailable: false,
         message: "Report is still being generated or was not available. Refresh shortly.",
         vendorName,
@@ -142,7 +151,9 @@ const getBuyerVendorRiskReport = async (req: Request, res: Response): Promise<vo
     res.status(200).json({
       success: true,
       pending: false,
-      archived,
+      archived: reportArchivedForUi,
+      assessmentTimeExpired,
+      assessmentUserArchived,
       vendorName,
       productName,
       organizationName: row.organization_name ?? "",

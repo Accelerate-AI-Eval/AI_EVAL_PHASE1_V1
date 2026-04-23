@@ -7,6 +7,9 @@ import {
   Clipboard,
   Eye,
   FileText,
+  Pencil,
+  Archive,
+  RotateCcw,
 } from "lucide-react";
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import Button from "../../UI/Button";
@@ -16,13 +19,19 @@ export type LedgerRowVM = {
   title: string;
   /** Under title: draft = drafted date; completed/expired = expiry label (completed styled in tomato). */
   expiryLine: string;
-  statusKind: "completed" | "draft" | "expired";
+  statusKind: "completed" | "draft" | "expired" | "archived";
   progressPct: number | null;
   leadName: string;
   riskDisplay: string;
   dateLine1: string;
   dateLine2: string;
   icon: "building" | "chip";
+  /** Current tab, completed: show Archive (moves to user archive). */
+  canArchive?: boolean;
+  /** Archived tab, user-archived (still in date): show Reactivate. */
+  canUnarchive?: boolean;
+  /** Submitted/complete: report exists in list (risk score present); hide report action if false. */
+  hasReport?: boolean;
 };
 
 export type AssessmentsLedgerPanelProps = {
@@ -43,6 +52,10 @@ export type AssessmentsLedgerPanelProps = {
   onPageSizeChange?: (size: number) => void;
   onRowViewAction: (key: string | number) => void;
   onRowReportAction: (key: string | number) => void;
+  onRowArchiveAction?: (key: string | number) => void;
+  onRowUnarchiveAction?: (key: string | number) => void;
+  /** When true, draft rows show a disabled edit control (cannot continue the assessment). */
+  assessmentViewOnly?: boolean;
   showNewAssessment?: boolean;
   onNewAssessment?: () => void;
   newAssessmentLabel?: string;
@@ -76,6 +89,9 @@ export default function AssessmentsLedgerPanel({
   onPageSizeChange,
   onRowViewAction,
   onRowReportAction,
+  onRowArchiveAction,
+  onRowUnarchiveAction,
+  assessmentViewOnly = false,
   showNewAssessment,
   onNewAssessment,
   newAssessmentLabel = "New assessment",
@@ -264,7 +280,8 @@ export default function AssessmentsLedgerPanel({
                         className={
                           showArchived && row.statusKind === "expired"
                             ? "assessments_ledger_row_expiry assessments_ledger_row_expiry--archived"
-                            : row.statusKind === "completed"
+                            : row.statusKind === "completed" ||
+                                row.statusKind === "archived"
                               ? "assessments_ledger_row_expiry assessments_ledger_row_expiry--completed"
                               : "assessments_ledger_row_expiry"
                         }
@@ -281,6 +298,11 @@ export default function AssessmentsLedgerPanel({
                           aria-hidden
                         />
                         Completed
+                      </span>
+                    )}
+                    {row.statusKind === "archived" && (
+                      <span className="assessments_ledger_badge assessments_ledger_badge_archived_user">
+                        Archived
                       </span>
                     )}
                     {row.statusKind === "expired" && (
@@ -339,24 +361,62 @@ export default function AssessmentsLedgerPanel({
                       >
                         <Eye size={14} aria-hidden />
                       </button>
-                      <button
-                        type="button"
-                        className="assessments_ledger_action_btn"
-                        disabled={row.statusKind === "draft"}
-                        onClick={() => onRowReportAction(row.key)}
-                        title={
-                          row.statusKind === "draft"
-                            ? "Report is available after the assessment is submitted"
-                            : "View report"
-                        }
-                        aria-label={
-                          row.statusKind === "draft"
-                            ? "View report (not available for drafts)"
-                            : "View report"
-                        }
-                      >
-                        <FileText size={14} aria-hidden />
-                      </button>
+                      {row.statusKind === "draft" ? (
+                        <button
+                          type="button"
+                          className="assessments_ledger_action_btn"
+                          disabled={assessmentViewOnly}
+                          onClick={() => onRowReportAction(row.key)}
+                          title={
+                            assessmentViewOnly
+                              ? "You cannot edit assessments with your current access"
+                              : "Continue assessment"
+                          }
+                          aria-label={
+                            assessmentViewOnly
+                              ? "Continue assessment (not available)"
+                              : "Continue assessment"
+                          }
+                        >
+                          <Pencil size={14} aria-hidden />
+                        </button>
+                      ) : (
+                        row.hasReport ? (
+                        <button
+                          type="button"
+                          className="assessments_ledger_action_btn"
+                          onClick={() => onRowReportAction(row.key)}
+                          title="View report"
+                          aria-label="View report"
+                        >
+                          <FileText size={14} aria-hidden />
+                        </button>
+                        ) : null
+                      )}
+                      {row.statusKind === "completed" && row.canArchive && onRowArchiveAction && (
+                        <button
+                          type="button"
+                          className="assessments_ledger_action_btn"
+                          onClick={() => onRowArchiveAction(row.key)}
+                          title="Archive"
+                          aria-label="Archive"
+                        >
+                          <Archive size={14} aria-hidden />
+                        </button>
+                      )}
+                      {(row.statusKind === "completed" || row.statusKind === "archived") &&
+                        row.canUnarchive &&
+                        onRowUnarchiveAction && (
+                        <button
+                          type="button"
+                          className="assessments_ledger_action_btn"
+                          onClick={() => onRowUnarchiveAction(row.key)}
+                          title="Reactive"
+                          aria-label="Reactive: return assessment to the Current list"
+                        >
+                          <RotateCcw size={14} aria-hidden />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </article>

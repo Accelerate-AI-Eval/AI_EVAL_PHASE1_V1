@@ -24,6 +24,7 @@ import {
   customerRiskReportApprovalHeading,
   alignmentScoreFromRiskScore,
   gradeFromOverallRiskScore,
+  normalizeDisplayLetterGrade,
   completeReportRiskMeterColor,
 } from "../../../utils/completeReportGrade"
 import { mixSrgbHex } from "../../../utils/mixSrgbHex"
@@ -940,7 +941,7 @@ function isVendorViewer(): boolean {
   return role === "vendor"
 }
 
-export default function ReportDetail() {
+function ReportDetail() {
   const { reportId } = useParams<{ reportId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -962,6 +963,7 @@ export default function ReportDetail() {
     createdAt: string
     expiryAt?: string | null
     attestationExpiryAt?: string | null
+    assessmentUserArchivedAt?: string | null
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -1010,6 +1012,7 @@ export default function ReportDetail() {
             createdAt: data.data.createdAt ?? "",
             expiryAt: data.data.expiryAt ?? null,
             attestationExpiryAt: data.data.attestationExpiryAt ?? null,
+            assessmentUserArchivedAt: data.data.assessmentUserArchivedAt ?? null,
           })
           setNotFound(false)
         } else {
@@ -1112,7 +1115,10 @@ export default function ReportDetail() {
     String(attestationExpiryAt).trim() !== "" &&
     !Number.isNaN(new Date(attestationExpiryAt).getTime()) &&
     new Date(attestationExpiryAt).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
-  const isArchived = isAssessmentExpired || isAttestationExpired
+  const isUserAssessArchived =
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== ""
+  const isArchived = isUserAssessArchived || isAssessmentExpired || isAttestationExpired
   const orgName = formatReportValue(data.customerOrganizationName)
   const sector = formatReportValue(data.customerSector)
 
@@ -1335,7 +1341,9 @@ export default function ReportDetail() {
                   aria-label="Overall assessment grade and alignment score"
                 >
                   <span className="report_context_grade" style={{ color: contextMeterColor }}>
-                    <span className="report_context_grade_value">{gradeFromOverallRiskScore(overallScore)}</span>
+                    <span className="report_context_grade_value">
+                      {normalizeDisplayLetterGrade(gradeFromOverallRiskScore(overallScore))}
+                    </span>
                   </span>
                   <span className="report_context_score">
                     {renderRiskScoreCircle(`${alignmentScoreDisplay}/100`, {
@@ -2034,3 +2042,5 @@ export default function ReportDetail() {
     </div>
   )
 }
+
+export default ReportDetail

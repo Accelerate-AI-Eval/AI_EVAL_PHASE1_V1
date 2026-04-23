@@ -1256,7 +1256,7 @@ function interpretSalesRiskScore(dealProbability: number) {
         "Executive engagement required; review resource investment before pursuing",
     };
   return {
-    grade: "E",
+    grade: "F",
     classification: "Reassess Opportunity",
     deal_characteristics: "Critical friction; major gaps; intense competition",
     recommended_actions:

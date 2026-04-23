@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../database/db.js";
 import { vendors, usersTable, createOrganization, vendorSelfAttestations } from "../../schema/schema.js";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 /**
  * GET /vendorDirectory
@@ -74,7 +74,8 @@ const listPublicVendors = async (req: Request, res: Response): Promise<void> => 
                 inArray(vendorSelfAttestations.user_id, vendorIds),
                 eq(vendorSelfAttestations.visible_to_buyer, true),
                 sql`upper(${vendorSelfAttestations.status}) = 'COMPLETED'`,
-                sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`
+                sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
+                isNull(vendorSelfAttestations.user_archived_at)
               )
             )
         : [];
@@ -88,7 +89,7 @@ const listPublicVendors = async (req: Request, res: Response): Promise<void> => 
       if (!productNamesByUserId[uid].includes(name)) productNamesByUserId[uid].push(name);
     }
 
-    const list = rows.map((r) => ({
+    let list = rows.map((r) => ({
       id: r.id,
       userId: r.userId,
       organizationId: r.organizationId,
@@ -101,6 +102,11 @@ const listPublicVendors = async (req: Request, res: Response): Promise<void> => 
       sector: r.sector ?? null,
       productNames: (r.userId != null && productNamesByUserId[r.userId]) ? productNamesByUserId[r.userId] : [],
     }));
+    if (!(scopeAll && isSystemAdmin)) {
+      list = list.filter(
+        (v) => Array.isArray(v.productNames) && v.productNames.length > 0,
+      );
+    }
 
     res.status(200).json({
       success: true,

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, and, or, inArray, sql } from "drizzle-orm";
 import { db } from "../../database/db.js";
 import { usersTable } from "../../schema/schema.js";
 import { customerRiskAssessmentReports } from "../../schema/assessments/customerRiskAssessmentReports.js";
@@ -70,6 +70,7 @@ const getCustomerRiskReportById = async (req: Request, res: Response): Promise<v
         createdAt: customerRiskAssessmentReports.created_at,
         expiryAt: assessments.expiry_at,
         attestationExpiryAt: vendorSelfAttestations.expiry_at,
+        assessmentUserArchivedAt: sql`coalesce(${assessments.user_archived_at}, ${vendorSelfAttestations.user_archived_at})`,
         attestationFrameworkRows: vendorSelfAttestations.framework_mapping_rows,
         attestationComplianceExpiries: vendorSelfAttestations.compliance_document_expiries,
       })
@@ -327,6 +328,10 @@ const getCustomerRiskReportById = async (req: Request, res: Response): Promise<v
         createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
         expiryAt: row.expiryAt instanceof Date ? row.expiryAt.toISOString() : (row.expiryAt != null ? String(row.expiryAt) : null),
         attestationExpiryAt: row.attestationExpiryAt instanceof Date ? row.attestationExpiryAt.toISOString() : (row.attestationExpiryAt != null ? String(row.attestationExpiryAt) : null),
+        assessmentUserArchivedAt:
+          row.assessmentUserArchivedAt instanceof Date
+            ? row.assessmentUserArchivedAt.toISOString()
+            : (row.assessmentUserArchivedAt != null ? String(row.assessmentUserArchivedAt) : null),
       },
     });
   } catch (error) {

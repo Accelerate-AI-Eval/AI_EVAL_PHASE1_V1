@@ -36,6 +36,8 @@ interface AssessmentRow {
   expiryAt?: string | null;
   /** When in the past, linked attestation is expired (exclude from dropdown). */
   attestationExpiryAt?: string | null;
+  /** User-archived in assessments ledger; exclude from report generation. */
+  userArchivedAt?: string | null;
   /** User who completed this assessment (buyer: b.user_id; vendor: v.user_id). Used to filter "only his assessments" for buyer engineer. */
   completedByUserId?: string | number | null;
   organizationName?: string | null;
@@ -64,6 +66,11 @@ function isAttestationExpired(row: AssessmentRow): boolean {
   return expiry.getTime() < today.getTime();
 }
 
+function isUserAssessmentLedgerArchived(row: AssessmentRow): boolean {
+  const u = row.userArchivedAt;
+  return u != null && String(u).trim() !== "";
+}
+
 export interface GeneratedReportItem {
   id: string;
   assessmentId: string;
@@ -76,9 +83,17 @@ export interface GeneratedReportItem {
   expiryAt?: string | null;
   /** When in the past, report is archived (linked attestation expired). */
   attestationExpiryAt?: string | null;
+  /** Set when the parent assessment is user-archived in the assessments ledger. */
+  assessmentUserArchivedAt?: string | null;
 }
 
 function isGeneralReportArchived(report: GeneratedReportItem): boolean {
+  if (
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== ""
+  ) {
+    return true;
+  }
   const expiryAt = report.expiryAt;
   const attestationExpiryAt = report.attestationExpiryAt;
   const isAssessmentExpired =
@@ -102,9 +117,16 @@ interface CompleteReportItem {
   createdAt: string;
   expiryAt?: string | null;
   attestationExpiryAt?: string | null;
+  assessmentUserArchivedAt?: string | null;
 }
 
 function isCompleteReportArchived(report: CompleteReportItem): boolean {
+  if (
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== ""
+  ) {
+    return true;
+  }
   const expiryAt = report.expiryAt;
   const attestationExpiryAt = report.attestationExpiryAt;
   const assessmentExpired =
@@ -286,6 +308,7 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
               briefContent?: string;
               expiryAt?: string | null;
               attestationExpiryAt?: string | null;
+              assessmentUserArchivedAt?: string | null;
             }) => ({
               id: r.id,
               assessmentId: r.assessmentId,
@@ -295,6 +318,7 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
               briefContent: r.briefContent,
               expiryAt: r.expiryAt ?? null,
               attestationExpiryAt: r.attestationExpiryAt ?? null,
+              assessmentUserArchivedAt: r.assessmentUserArchivedAt ?? null,
             }),
           );
           setGeneratedReports(list);
@@ -320,6 +344,7 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
                     createdAt?: string;
                     expiryAt?: string | null;
                     attestationExpiryAt?: string | null;
+                    assessmentUserArchivedAt?: string | null;
                   }) => ({
                     id: r.id,
                     assessmentId: String(r.assessmentId),
@@ -327,6 +352,7 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
                     createdAt: r.createdAt ?? "",
                     expiryAt: r.expiryAt ?? null,
                     attestationExpiryAt: r.attestationExpiryAt ?? null,
+                    assessmentUserArchivedAt: r.assessmentUserArchivedAt ?? null,
                   }),
                 );
                 setCompleteReports(list);
@@ -358,7 +384,8 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
       (a.type ?? "").toLowerCase() === "cots_vendor" &&
       (a.status ?? "").toLowerCase() !== "draft" &&
       !isAssessmentExpired(a) &&
-      !isAttestationExpired(a),
+      !isAttestationExpired(a) &&
+      !isUserAssessmentLedgerArchived(a),
   );
 
   const completedBuyerAssessments = assessmentsList.filter(
@@ -366,7 +393,8 @@ const GeneralReports = ({ searchQuery = "", showArchivedOnly, hideDropdown, arch
       (a.type ?? "").toLowerCase() === "cots_buyer" &&
       (a.status ?? "").toLowerCase() !== "draft" &&
       !isAssessmentExpired(a) &&
-      !isAttestationExpired(a),
+      !isAttestationExpired(a) &&
+      !isUserAssessmentLedgerArchived(a),
   );
 
   // Buyer engineer: show only assessments completed by this user (user-scoped dropdown).

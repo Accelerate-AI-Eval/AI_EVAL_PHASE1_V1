@@ -7,7 +7,7 @@ import {
   createOrganization,
   generatedProfileReports,
 } from "../schema/schema.js";
-import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 const joinOrg = sql`${createOrganization.id} = (${vendors.organizationId})::int`;
 
@@ -172,6 +172,7 @@ export async function resolveProductByOrgAndProductName(
         sql`trim(lower(${createOrganization.organizationName})) = trim(lower(${vName}))`,
         sql`trim(lower(coalesce(${vendorSelfAttestations.product_name}, ''))) = trim(lower(${pName}))`,
         sql`upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`,
+        isNull(vendorSelfAttestations.user_archived_at)
       ),
     )
     .orderBy(desc(vendorSelfAttestations.updated_at))
@@ -215,6 +216,7 @@ export async function resolveProductByAttestationForVendorUser(
         eq(vendorSelfAttestations.user_id, vendorUserId),
         or(eq(vendorSelfAttestations.id, ref), eq(vendorSelfAttestations.vendor_self_attestation_id, ref)),
         sql`upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`,
+        isNull(vendorSelfAttestations.user_archived_at)
       ),
     )
     .limit(1);
@@ -289,6 +291,7 @@ export async function canViewDirectoryProductViaAssessment(
       vendor_self_attestation_id: vendorSelfAttestations.vendor_self_attestation_id,
       product_name: vendorSelfAttestations.product_name,
       user_id: vendorSelfAttestations.user_id,
+      user_archived_at: vendorSelfAttestations.user_archived_at,
     })
     .from(vendorSelfAttestations)
     .where(
@@ -300,6 +303,7 @@ export async function canViewDirectoryProductViaAssessment(
     .limit(1);
 
   if (!att || att.user_id !== vendorUserId) return false;
+  if (att.user_archived_at != null) return false;
 
   const altId =
     att.vendor_self_attestation_id != null ? String(att.vendor_self_attestation_id).trim() : "";

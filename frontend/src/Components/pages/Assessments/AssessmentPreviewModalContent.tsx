@@ -7,6 +7,7 @@ import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
 import { formatPreviewValue } from "../../../utils/formatPreviewValue";
 import { BUYER_COTS_FIELD_KEYS } from "../../../constants/buyerCotsAssessmentKeys";
 import LoadingMessage from "../../UI/LoadingMessage";
+import { normalizeDisplayLetterGrade } from "../../../utils/completeReportGrade.js";
 
 function getRowPreviewValue(row, key) {
   if (row == null) return undefined;
@@ -305,7 +306,7 @@ function buyerFormulaReadinessRows(merged: Record<string, unknown>): React.React
   const gradeRaw = merged.implementationReadinessGrade;
   const gradeStr =
     gradeRaw != null && String(gradeRaw).trim() !== ""
-      ? String(gradeRaw).trim()
+      ? normalizeDisplayLetterGrade(String(gradeRaw).trim())
       : "";
   const irsRaw = merged.implementationRiskScore;
   const irsNum = typeof irsRaw === "number" ? irsRaw : Number(irsRaw);

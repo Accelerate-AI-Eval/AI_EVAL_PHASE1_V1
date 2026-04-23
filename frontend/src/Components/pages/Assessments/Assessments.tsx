@@ -19,6 +19,8 @@ import {
   Trash2,
   ChevronRight,
   Landmark,
+  Archive,
+  RotateCcw,
 } from "lucide-react";
 import DataTable from "react-data-table-component";
 import Button from "../../UI/Button";
@@ -39,6 +41,7 @@ import "../VendorDirectory/VendorDirectory.css";
 import "../Reports/general_reports.css";
 import "../../preview/preview_table.css";
 import "./assessments.css";
+import { toast } from "react-toastify";
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import AssessmentPreviewModalContent from "./AssessmentPreviewModalContent";
 import AssessmentsLedgerPanel, {
@@ -158,6 +161,32 @@ function isAssessmentArchived(row) {
   return isAssessmentExpired(row) || isAttestationExpiredForAssessment(row);
 }
 
+/** Effective user-archive: assessment and/or linked attestation (see API `userArchivedAt`). */
+function isUserArchivedAssessment(row) {
+  const v = row?.userArchivedAt;
+  return v != null && String(v).trim() !== "";
+}
+
+/** `assessments.user_archived_at` only; Reactivate applies only here, not when archived solely via attestation. */
+function isAssessmentLedgerUserArchived(row) {
+  const v = row?.assessmentUserArchivedAt;
+  return v != null && String(v).trim() !== "";
+}
+
+/** Archived tab: time-based or user-driven archive. */
+function isInAssessmentsArchivedList(row) {
+  return isAssessmentArchived(row) || isUserArchivedAssessment(row);
+}
+
+function canUnarchiveUserArchivedOnLedger(row) {
+  return (
+    isAssessmentLedgerUserArchived(row) &&
+    !isAssessmentExpired(row) &&
+    !isAttestationExpiredForAssessment(row) &&
+    String(row?.status ?? "").toLowerCase() === "submitted"
+  );
+}
+
 /** Display status: Draft, Expired (when past expiryAt or attestation expired or DB status expired), Completed, or raw status. */
 function getAssessmentStatusLabel(row) {
   if (!row) return "—";
@@ -251,25 +280,46 @@ function getReportRiskScoreFromRow(row) {
 }
 
 /** Map API assessment row to ledger row view model */
-function mapRowToLedgerVM(row, isBuyerRow): LedgerRowVM {
+function mapRowToLedgerVM(
+  row,
+  isBuyerRow,
+  ledgerContext?: { showLedgerArchived: boolean; allowArchiveActions: boolean },
+): LedgerRowVM {
   const isDraft = (row.status || "").toLowerCase() === "draft";
   const statusLabel = getAssessmentStatusLabel(row);
-  const statusKind =
-    statusLabel === "Expired"
-      ? "expired"
-      : statusLabel === "Completed"
-        ? "completed"
-        : "draft";
+  const showArc = Boolean(ledgerContext?.showLedgerArchived);
+  const allowAct = Boolean(ledgerContext?.allowArchiveActions);
+  /** User moved to archive only; not past assessment/attestation expiry. */
+  const isUserOnlyArchivedInLedger =
+    isUserArchivedAssessment(row) && !isAssessmentArchived(row) &&
+    String(row?.status ?? "").toLowerCase() === "submitted";
+  let statusKind: LedgerRowVM["statusKind"];
+  if (isDraft) {
+    statusKind = "draft";
+  } else if (showArc && isUserOnlyArchivedInLedger) {
+    statusKind = "archived";
+  } else if (statusLabel === "Expired" || (String(row?.status ?? "").toLowerCase() === "expired")) {
+    statusKind = "expired";
+  } else if (statusLabel === "Completed") {
+    statusKind = "completed";
+  } else {
+    statusKind = "draft";
+  }
   let progressPct = null;
   if (isDraft) {
     progressPct = isBuyerRow ? getBuyerAssessmentProgress(row) : 40;
   }
   const leadName = getCompletedByDisplay(row) || "—";
   const reportScore = getReportRiskScoreFromRow(row);
+  const hasReport = reportScore != null;
   const riskDisplay =
-    isDraft || reportScore == null
-      ? "Pending"
-      : `${reportScore} /100`;
+    reportScore != null
+      ? `${reportScore} /100`
+      : isDraft
+        ? "Pending"
+        : statusKind === "expired"
+          ? "—"
+          : "Generate report";
   const title = getAssessmentDisplayTitle(row, isBuyerRow);
   const ts = row.updatedAt ?? row.createdAt;
   const dateLine1 =
@@ -304,6 +354,15 @@ function mapRowToLedgerVM(row, isBuyerRow): LedgerRowVM {
     dateLine1,
     dateLine2,
     icon,
+    canArchive:
+      !showArc &&
+      allowAct &&
+      statusLabel === "Completed" &&
+      String(row?.status ?? "").toLowerCase() === "submitted" &&
+      !isAssessmentArchived(row) &&
+      !isUserArchivedAssessment(row),
+    canUnarchive: showArc && allowAct && canUnarchiveUserArchivedOnLedger(row),
+    hasReport,
   };
 }
 
@@ -482,6 +541,12 @@ const Assessments = () => {
   }>({ assessmentId: null, type: null });
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [userArchiveModal, setUserArchiveModal] = useState<{
+    assessmentId: string | number | null;
+    mode: "archive" | "reactive" | null;
+  }>({ assessmentId: null, mode: null });
+  const [userArchiveReason, setUserArchiveReason] = useState("");
+  const [userArchiveSubmitting, setUserArchiveSubmitting] = useState(false);
   /** Pagination for assessment cards (Vendor / Buyer / My tabs). */
   const [vendorCardPage, setVendorCardPage] = useState(1);
   const [buyerCardPage, setBuyerCardPage] = useState(1);
@@ -721,42 +786,42 @@ const Assessments = () => {
 
   const archivedAssessments = (
     isSystemUser ? myAssessments : orgScopedList
-  ).filter((row) => isAssessmentArchived(row));
+  ).filter((row) => isInAssessmentsArchivedList(row));
   const archivedBuyerAssessments = buyerAssessments.filter((row) =>
-    isAssessmentArchived(row),
+    isInAssessmentsArchivedList(row),
   );
   const archivedVendorAssessments = vendorAssessments.filter((row) =>
-    isAssessmentArchived(row),
+    isInAssessmentsArchivedList(row),
   );
   const nonExpiredVendor = vendorAssessments.filter(
-    (row) => !isAssessmentArchived(row),
+    (row) => !isInAssessmentsArchivedList(row),
   );
   const nonExpiredBuyer = buyerAssessments.filter(
-    (row) => !isAssessmentArchived(row),
+    (row) => !isInAssessmentsArchivedList(row),
   );
   const nonExpiredMy = myAssessments.filter(
-    (row) => !isAssessmentArchived(row),
+    (row) => !isInAssessmentsArchivedList(row),
   );
 
   const buyerLedgerInProgress = buyerAssessments.filter(
     (r) =>
-      !isAssessmentArchived(r) &&
+      !isInAssessmentsArchivedList(r) &&
       String(r.status || "").toLowerCase() === "draft",
   ).length;
   const buyerLedgerCompleted = buyerAssessments.filter(
     (r) =>
-      !isAssessmentArchived(r) &&
+      !isInAssessmentsArchivedList(r) &&
       getAssessmentStatusLabel(r) === "Completed",
   ).length;
 
   const vendorLedgerInProgress = vendorAssessments.filter(
     (r) =>
-      !isAssessmentArchived(r) &&
+      !isInAssessmentsArchivedList(r) &&
       String(r.status || "").toLowerCase() === "draft",
   ).length;
   const vendorLedgerCompleted = vendorAssessments.filter(
     (r) =>
-      !isAssessmentArchived(r) &&
+      !isInAssessmentsArchivedList(r) &&
       getAssessmentStatusLabel(r) === "Completed",
   ).length;
 
@@ -781,12 +846,97 @@ const Assessments = () => {
     navigate(`/buyer-vendor-risk-report/${encodeURIComponent(String(row.assessmentId))}`);
   };
 
+  const openUserArchiveModal = (
+    assessmentId: string | number,
+    mode: "archive" | "reactive",
+  ) => {
+    setUserArchiveModal({ assessmentId, mode });
+    setUserArchiveReason("");
+  };
+
+  const closeUserArchiveModal = (force = false) => {
+    if (!force && userArchiveSubmitting) return;
+    setUserArchiveModal({ assessmentId: null, mode: null });
+    setUserArchiveReason("");
+  };
+
+  const patchUserArchive = async (
+    assessmentId: string | number,
+    userArchived: boolean,
+    reason: string,
+  ): Promise<boolean> => {
+    const token = sessionStorage.getItem("bearerToken");
+    if (!token) {
+      alert("Session expired. Please sign in again.");
+      return false;
+    }
+    const res = await fetch(
+      `${BASE_URL}/assessments/${encodeURIComponent(String(assessmentId))}/user-archive`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userArchived, reason: reason.trim() }),
+      },
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(
+        (data && (data as { message?: string }).message) || "Request failed",
+      );
+      return false;
+    }
+    loadAssessments();
+    return true;
+  };
+
+  const submitUserArchiveModal = async () => {
+    const r = (userArchiveReason ?? "").trim();
+    if (!r) {
+      alert("Please provide a reason.");
+      return;
+    }
+    if (userArchiveModal.assessmentId == null || !userArchiveModal.mode) return;
+    setUserArchiveSubmitting(true);
+    try {
+      const okM = userArchiveModal.mode === "archive";
+      const id = userArchiveModal.assessmentId;
+      const success = await patchUserArchive(id, okM, r);
+      if (success) {
+        toast.success(
+          okM ? "Assessment archived." : "Assessment is now active (in Current).",
+        );
+        closeUserArchiveModal(true);
+      }
+    } finally {
+      setUserArchiveSubmitting(false);
+    }
+  };
+
+  const handleBuyerUserArchive = (key: string | number) => {
+    openUserArchiveModal(key, "archive");
+  };
+
+  const handleBuyerUserUnarchive = (key: string | number) => {
+    openUserArchiveModal(key, "reactive");
+  };
+
   const handleVendorLedgerView = (key: string | number) => {
     const row = vendorAssessments.find(
       (a) => String(a.assessmentId) === String(key),
     );
     if (!row) return;
     setPreviewRow(row);
+  };
+
+  const handleVendorUserArchive = (key: string | number) => {
+    openUserArchiveModal(key, "archive");
+  };
+
+  const handleVendorUserUnarchive = (key: string | number) => {
+    openUserArchiveModal(key, "reactive");
   };
 
   const handleVendorLedgerReport = async (key: string | number) => {
@@ -1319,7 +1469,10 @@ const Assessments = () => {
               start + assessmentCardPageSize,
             );
             const ledgerRows = paginated.map((row) =>
-              mapRowToLedgerVM(row, true),
+              mapRowToLedgerVM(row, true, {
+                showLedgerArchived: showArchivedBuyer,
+                allowArchiveActions: !isAssessmentViewOnly,
+              }),
             );
             return (
               <AssessmentsLedgerPanel
@@ -1343,6 +1496,9 @@ const Assessments = () => {
                 }}
                 onRowViewAction={handleBuyerLedgerView}
                 onRowReportAction={handleBuyerLedgerReport}
+                onRowArchiveAction={handleBuyerUserArchive}
+                onRowUnarchiveAction={handleBuyerUserUnarchive}
+                assessmentViewOnly={isAssessmentViewOnly}
                 showNewAssessment={!isAssessmentViewOnly}
                 onNewAssessment={handleNewAssessment}
                 newAssessmentLabel="Assessment"
@@ -1384,7 +1540,10 @@ const Assessments = () => {
               start + assessmentCardPageSize,
             );
             const ledgerRows = paginated.map((row) =>
-              mapRowToLedgerVM(row, false),
+              mapRowToLedgerVM(row, false, {
+                showLedgerArchived: showArchivedVendor,
+                allowArchiveActions: !isAssessmentViewOnly,
+              }),
             );
             return (
               <AssessmentsLedgerPanel
@@ -1408,6 +1567,9 @@ const Assessments = () => {
                 }}
                 onRowViewAction={handleVendorLedgerView}
                 onRowReportAction={handleVendorLedgerReport}
+                onRowArchiveAction={handleVendorUserArchive}
+                onRowUnarchiveAction={handleVendorUserUnarchive}
+                assessmentViewOnly={isAssessmentViewOnly}
                 showNewAssessment={!isAssessmentViewOnly}
                 onNewAssessment={() => navigate("/vendorcots")}
                 newAssessmentLabel="Customer Assessment"
@@ -1578,6 +1740,113 @@ const Assessments = () => {
                   <>
                     <Trash2 size={16} aria-hidden />
                     Delete
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={userArchiveModal.assessmentId != null}
+        onClose={() => closeUserArchiveModal()}
+        overlayClassName="profile_modal_overlay"
+        popupClassName=""
+      >
+        <div className="profile_modal_content settings_modal_content assessment_delete_modal_content">
+          <div className="profile_modal_header">
+            <h2
+              id="assessment_user_archive_modal_title"
+              className="profile_modal_title"
+            >
+              {userArchiveModal.mode === "archive" ? "Archive assessment" : "Reactive (return to Current)"}
+            </h2>
+            <button
+              type="button"
+              className="modal_close_btn"
+              onClick={() => closeUserArchiveModal()}
+              disabled={userArchiveSubmitting}
+              aria-label="Close"
+            >
+              <CircleX size={20} />
+            </button>
+          </div>
+          <div className="profile_modal_body">
+            <p className="assessment_delete_modal_subtitle">
+              {userArchiveModal.assessmentId != null
+                ? (() => {
+                    const row = assessmentsList.find(
+                      (a) =>
+                        String(a.assessmentId) ===
+                        String(userArchiveModal.assessmentId),
+                    );
+                    return row
+                      ? getAssessmentDisplayTitle(
+                          row,
+                          row.type === "cots_buyer",
+                        )
+                      : "Assessment";
+                  })()
+                : ""}
+            </p>
+            <p className="assessment_delete_modal_message">
+              {userArchiveModal.mode === "archive"
+                ? "This will move the assessment to the Archived tab."
+                : "This will return the assessment to the Current list."}
+            </p>
+            <div className="settings_form_row">
+              <div
+                className="settings_form_group"
+                style={{ flex: "1 1 100%" }}
+              >
+                <label htmlFor="assessment_user_archive_reason">
+                  Reason <span className="assessment_delete_required">*</span>
+                </label>
+                <textarea
+                  id="assessment_user_archive_reason"
+                  className="settings_input"
+                  value={userArchiveReason}
+                  onChange={(e) => setUserArchiveReason(e.target.value)}
+                  placeholder="Please provide a reason for this change…"
+                  rows={3}
+                  disabled={userArchiveSubmitting}
+                  style={{ resize: "none", minHeight: "4em" }}
+                />
+              </div>
+            </div>
+            <div className="settings_form_actions">
+              <Button
+                type="button"
+                className="orgCancelBtn"
+                onClick={() => closeUserArchiveModal()}
+                disabled={userArchiveSubmitting}
+              >
+                <Ban size={16} aria-hidden />
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="orgCreateBtn"
+                onClick={() => {
+                  void submitUserArchiveModal();
+                }}
+                disabled={userArchiveSubmitting || !userArchiveReason.trim()}
+              >
+                {userArchiveSubmitting ? (
+                  <>
+                    Saving…
+                    <Loader2 size={18} className="auth_spinner" aria-hidden />
+                  </>
+                ) : userArchiveModal.mode === "archive" ? (
+                  <>
+                    <Archive size={16} aria-hidden />
+                    Archive
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={16} aria-hidden />
+                    Reactive
                   </>
                 )}
               </Button>

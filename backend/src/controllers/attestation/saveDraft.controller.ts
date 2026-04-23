@@ -82,7 +82,7 @@ export default async function saveDraft(req: Request, res: Response): Promise<vo
     if (msg.includes("attestations") && (msg.includes("does not exist") || err?.code === "42P01")) {
       res.status(503).json({
         success: false,
-        message: "Attestations table missing. From backend folder run: npm run db:run-0007",
+        message: "Attestations table missing. From backend folder run: npm run db:migrate:all",
       });
       return;
     }

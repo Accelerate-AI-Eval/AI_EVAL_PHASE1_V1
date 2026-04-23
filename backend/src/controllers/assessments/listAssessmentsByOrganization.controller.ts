@@ -57,6 +57,8 @@ const listAssessmentsByOrganization = async (req: Request, res: Response) => {
         a.created_at AS "createdAt",
         a.updated_at AS "updatedAt",
         a.expiry_at AS "expiryAt",
+        COALESCE(a.user_archived_at, vsa.user_archived_at) AS "userArchivedAt",
+        a.user_archived_at AS "assessmentUserArchivedAt",
         a.organization_id AS "organizationId",
         b.organization_name AS "organizationName",
         b.user_id AS "completedByUserId",
@@ -189,13 +191,28 @@ const listAssessmentsByOrganization = async (req: Request, res: Response) => {
       queryParams
     );
 
-    const list = rows.map((r) => ({
+    const list = rows.map((r) => {
+      const userArchivedAt = r.userArchivedAt;
+      const assessmentUserArchivedAt = r.assessmentUserArchivedAt;
+      return {
       assessmentId: r.assessmentId,
       type: r.type,
       status: r.status,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       expiryAt: r.expiryAt ?? null,
+      userArchivedAt:
+        userArchivedAt instanceof Date
+          ? userArchivedAt.toISOString()
+          : userArchivedAt != null
+            ? String(userArchivedAt)
+            : null,
+      assessmentUserArchivedAt:
+        assessmentUserArchivedAt instanceof Date
+          ? assessmentUserArchivedAt.toISOString()
+          : assessmentUserArchivedAt != null
+            ? String(assessmentUserArchivedAt)
+            : null,
       organizationId: r.organizationId,
       organizationName: r.organizationName ?? null,
       completedByUserId:
@@ -292,7 +309,8 @@ const listAssessmentsByOrganization = async (req: Request, res: Response) => {
         r.reportRiskScore != null && Number.isFinite(Number(r.reportRiskScore))
           ? Number(r.reportRiskScore)
           : null,
-    }));
+    };
+    });
 
     return res.status(200).json({
       message: "Assessments fetched successfully",

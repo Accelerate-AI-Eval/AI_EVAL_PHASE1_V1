@@ -1,6 +1,6 @@
 import { db } from "../database/db.js";
 import { vendors, vendorSelfAttestations, createOrganization } from "../schema/schema.js";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 
 /**
  * Find the vendor's completed buyer-visible attestation row matching directory vendor name + product name.
@@ -30,6 +30,7 @@ export async function findAttestationForBuyerVendorProduct(
         sql`upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`,
         eq(vendorSelfAttestations.visible_to_buyer, true),
         sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
+        isNull(vendorSelfAttestations.user_archived_at),
       ),
     )
     .orderBy(desc(vendorSelfAttestations.updated_at))
@@ -44,6 +45,7 @@ const completedVisibleBuyerAttestation = and(
   sql`upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`,
   eq(vendorSelfAttestations.visible_to_buyer, true),
   sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
+  isNull(vendorSelfAttestations.user_archived_at),
 );
 
 /**

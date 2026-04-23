@@ -9,8 +9,6 @@ import { VENDOR_SELF_ATTESTATION } from "../../../constants/vendorAttestionData"
 import { ATTESTATION_SECTION_FIELDS } from "../../../constants/vendorAttestationFields";
 import { formatPreviewValueAsString } from "../../../utils/formatPreviewValue";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
-import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
-import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import { personalizeAttestationFieldLabel } from "../../../utils/attestationFieldLabel";
 import "../VendorOnboarding/StepVendorOnboardingPreview.css";
 import "./vendor_attestation_preview.css";
@@ -27,13 +25,6 @@ export type ComplianceDocumentExpiryMeta = {
   error?: string;
 };
 
-export type FrameworkMappingPreviewRow = {
-  framework?: unknown;
-  coverage?: unknown;
-  controls?: unknown;
-  notes?: unknown;
-};
-
 interface StepVendorSelfAttestationPrevProps {
   formState: VendorSelfAttestationFormState;
   /** When provided, edit icon navigates to the given step (Document Upload = 1, Evidence = 9). */
@@ -44,14 +35,6 @@ interface StepVendorSelfAttestationPrevProps {
   onOpenDocument?: (fileName: string) => void;
   /** Parsed PDF expiry metadata keyed by file name (from compliance_document_expiries). */
   complianceDocumentExpiries?: Record<string, ComplianceDocumentExpiryMeta> | null;
-  /** Stored or derived framework/control mapping rows for this attestation. */
-  frameworkMappingRows?: FrameworkMappingPreviewRow[] | null;
-}
-
-function formatFrameworkCell(v: unknown): string {
-  if (v == null) return "—";
-  const s = String(v).trim();
-  return s || "—";
 }
 
 function lookupComplianceExpiry(
@@ -164,7 +147,6 @@ function StepVendorSelfAttestationPrev({
   attestationId,
   onOpenDocument,
   complianceDocumentExpiries,
-  frameworkMappingRows,
 }: StepVendorSelfAttestationPrevProps) {
   const { companyProfile, attestation, documentUpload } = formState;
 
@@ -448,35 +430,6 @@ function StepVendorSelfAttestationPrev({
           );
         })}
 
-        {frameworkMappingRows != null && frameworkMappingRows.length > 0 && (
-          <section className="vendor_preview_card vendor_preview_framework_mapping">
-            <h3 className="vendor_preview_card_title">Framework mapping</h3>
-            <div className="vendor_preview_framework_table_wrap">
-              <table className="vendor_preview_framework_table">
-                <thead>
-                  <tr>
-                    <th scope="col">Framework</th>
-                    <th scope="col">Coverage</th>
-                    <th scope="col">Controls</th>
-                    <th scope="col">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {frameworkMappingRows.map((row, i) => (
-                    <tr key={i}>
-                      <td>{formatFrameworkMappingFrameworkForDisplay(row.framework)}</td>
-                      <td>{formatFrameworkCell(row.coverage)}</td>
-                      <td>{formatFrameworkCell(row.controls)}</td>
-                      <td>
-                        {formatFrameworkCell(sanitizeFrameworkMappingNotesForDisplay(row.notes))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );

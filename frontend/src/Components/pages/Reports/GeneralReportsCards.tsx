@@ -3,6 +3,10 @@ import React from "react";
 import ClickTooltip from "../../UI/ClickTooltip";
 import type { GeneratedReportItem } from "./GeneralReports";
 import { getReportTypeAccent, getReportTypeDisplayLabel, getReportTypeIcon } from "./reportTypes";
+import {
+  isReportTimeExpired,
+  reportArchivedStatusText,
+} from "../../../utils/reportArchiveStatusLabel";
 import "../VendorDirectory/VendorDirectory.css";
 
 interface GeneralReportsCardsProps {
@@ -64,8 +68,14 @@ function getExpiryDate(report: GeneratedReportItem): string {
   }
 }
 
-/** Report is archived when assessment or attestation expiry is in the past (same as Complete Reports). */
+/** Report is archived when assessment is user-archived, or assessment/attestation expiry is in the past. */
 function isReportArchived(report: GeneratedReportItem): boolean {
+  if (
+    report.assessmentUserArchivedAt != null &&
+    String(report.assessmentUserArchivedAt).trim() !== ""
+  ) {
+    return true;
+  }
   const expiryAt = report.expiryAt;
   const attestationExpiryAt = report.attestationExpiryAt;
   const isAssessmentExpired =
@@ -152,7 +162,15 @@ function GeneralReportsCards({
               </div> */}
               <div className="general_rpr_card_date_row">
                 {archived ? (
-                  <span className="general_rpr_card_status general_rpr_card_status_archived">Archived</span>
+                  <span
+                    className={
+                      isReportTimeExpired(report)
+                        ? "general_rpr_card_status general_rpr_card_status_expired"
+                        : "general_rpr_card_status general_rpr_card_status_archived"
+                    }
+                  >
+                    {reportArchivedStatusText(report)}
+                  </span>
                 ) : (
                   <>
                     <span className="general_rpr_card_date_label_expiry">

@@ -25,6 +25,7 @@ import { BASE_URL, formatDisplayDate } from "./utils";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate";
 import {
   gradeFromOverallRiskScore,
+  normalizeDisplayLetterGrade,
   type CompleteReportLetterGrade,
 } from "../../../utils/completeReportGrade";
 import "./dashboard.css";
@@ -824,6 +825,10 @@ const VendorOverview = () => {
                   );
                   const reportId = reportMeta?.reportId;
                   const vendorGrade = reportMeta?.vendorGrade ?? null;
+                  const gradeLabel =
+                    vendorGrade != null
+                      ? normalizeDisplayLetterGrade(vendorGrade)
+                      : null;
                   const gradeVariantClass =
                     vendorGrade === "A"
                       ? "vendor_portal_grade_shield_a"
@@ -831,7 +836,7 @@ const VendorOverview = () => {
                         ? "vendor_portal_grade_shield_b"
                         : vendorGrade === "D"
                           ? "vendor_portal_grade_shield_d"
-                          : vendorGrade === "E" || vendorGrade === "F"
+                          : vendorGrade === "E" || vendorGrade === "F" /* E = legacy stored; display normalized to F */
                             ? "vendor_portal_grade_shield_ef"
                             : "";
                   const complianceCertificates = findCertificateTypesForAssessment(
@@ -852,13 +857,13 @@ const VendorOverview = () => {
                       </td>
                       <td>{org}</td>
                       <td>
-                        {vendorGrade ? (
+                        {gradeLabel ? (
                           <span
                             className={`vendor_portal_grade_shield ${gradeVariantClass}`.trim()}
-                            title={`Vendor grade ${vendorGrade} (from complete report)`}
+                            title={`Vendor grade ${gradeLabel} (from complete report)`}
                           >
                             <Shield size={14} aria-hidden />
-                            {vendorGrade}
+                            {gradeLabel}
                           </span>
                         ) : (
                           <span className="vendor_portal_grade_na">—</span>

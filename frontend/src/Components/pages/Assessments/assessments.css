@@ -638,6 +638,18 @@
   color: #dc2626;
   font-weight: 600;
 }
+.assessment_list_rows
+  .general_rpr_card
+  .general_report_card_header
+  p.assessment_card_status_user_archived,
+.assessment_list_rows
+  .general_rpr_card
+  .general_report_card_header
+  p.assessment_card_status_user_archived
+  .general_rpr_card_report_type_icon {
+  color: #64748b;
+  font-weight: 600;
+}
 
 /* Assessment cards: 3 per row (reports use 4) */
 .assessment_list_rows .general_rpr_cards_sec {
@@ -1182,6 +1194,12 @@
   color: #dc2626;
 }
 
+.assessments_ledger_badge_archived_user {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
 .assessments_ledger_progress_block {
   display: flex;
   flex-direction: column;
@@ -1307,8 +1325,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  flex-wrap: nowrap;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .assessments_ledger_action_btn_secondary {

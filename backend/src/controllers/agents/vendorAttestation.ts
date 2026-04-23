@@ -23,7 +23,7 @@ export interface TrustScoreBlock {
   overallScore: number;
   label: string;
   summary: string;
-  /** Letter grade from trust formula when computed from formula path (A–E). */
+  /** Letter grade from trust formula when computed from formula path (A–D, F for lowest). */
   grade?: string;
   scoreByCategory?: Record<string, string | number>;
 }
@@ -1930,7 +1930,7 @@ function interpretTrustScore(vts: number) {
   if (s >= 80) return { grade:"B",classification: 'Trusted Vendor',     recommended_action: 'Standard procurement process; focus on use-case fit', vendor_profile:'Strong capabilities; mature governance; reliable operations' };
   if (s >= 70) return { grade:"C",classification: 'Acceptable Vendor',  recommended_action: 'Enhanced due diligence; require mitigation roadmap', vendor_profile:'Moderate capabilities; some gaps; growing operations' };
   if (s >= 60) return { grade:"D",classification: 'Review Recommended',   recommended_action: 'Extensive validation; consider alternatives; pilot only',vendor_profile:'Significant gaps; immature processes; limited track record' };
-  return              { grade:"E",classification: 'Review Required', recommended_action: 'Reject; only consider for low-stakes non-production use',vendor_profile:'Critical deficiencies; unproven capabilities; high risk ' };
+  return              { grade:"F",classification: 'Review Required', recommended_action: 'Reject; only consider for low-stakes non-production use',vendor_profile:'Critical deficiencies; unproven capabilities; high risk ' };
 }
 
 function calculateVendorTrustScore(userInput: LooseInput) {

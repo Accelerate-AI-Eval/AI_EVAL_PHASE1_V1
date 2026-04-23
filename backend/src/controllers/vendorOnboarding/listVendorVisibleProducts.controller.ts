@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../database/db.js";
 import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 function firstNonEmptyText(...vals: (string | null | undefined)[]): string | undefined {
   for (const v of vals) {
@@ -14,7 +14,7 @@ function firstNonEmptyText(...vals: (string | null | undefined)[]): string | und
 /**
  * GET /vendorDirectory/:vendorId/products
  * Returns only products (attestations) that are COMPLETED, visible_to_buyer = true,
- * and not archived (expiry_at null or in the future). Vendor must have publicDirectoryListing = true.
+ * and not archived (expiry in the future, not user-archived on the attestation). Vendor must have publicDirectoryListing = true.
  * Query ?all=true (system admin only): returns all attestations for this vendor (any status).
  */
 const listVendorVisibleProducts = async (req: Request, res: Response): Promise<void> => {
@@ -90,7 +90,12 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
             })
             .from(vendorSelfAttestations)
-            .where(eq(vendorSelfAttestations.user_id, vendorUserId))
+            .where(
+              and(
+                eq(vendorSelfAttestations.user_id, vendorUserId),
+                isNull(vendorSelfAttestations.user_archived_at)
+              )
+            )
             .orderBy(desc(vendorSelfAttestations.updated_at))
         : await db
             .select({
@@ -110,7 +115,8 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
                 eq(vendorSelfAttestations.user_id, vendorUserId),
                 eq(vendorSelfAttestations.status, "COMPLETED"),
                 eq(vendorSelfAttestations.visible_to_buyer, true),
-                sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`
+                sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
+                isNull(vendorSelfAttestations.user_archived_at)
               )
             )
             .orderBy(desc(vendorSelfAttestations.updated_at));

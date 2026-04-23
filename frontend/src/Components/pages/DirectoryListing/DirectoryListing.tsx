@@ -35,6 +35,8 @@ export interface ProductProfileProduct {
   visibleToBuyer?: boolean;
   /** Attestation expiry date (ISO string); when in the past, product is archived. */
   attestationExpiryAt?: string | null;
+  /** User archived the attestation (same ledger notion as Assessments). */
+  userArchivedAt?: string | null;
   /** Generated product profile report (trust score + sections) after attestation submit. */
   generated_profile_report?: { trustScore: unknown; sections: unknown[] };
   /** Product target sectors (public_sector, private_sector, non_profit_sector) for display. */
@@ -119,7 +121,8 @@ export const DirectoryListing = () => {
     }
   }, []);
 
-  const LOADER_MIN_MS = 2500; // same as Assessments page
+  /** Initial product profile load: show loading at least this long, then data (single finish in `finally`). */
+  const LOADER_MIN_MS = 2000;
 
   const fetchProductProfileData = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;
@@ -134,7 +137,9 @@ export const DirectoryListing = () => {
     const finishLoading = () => {
       const elapsed = Date.now() - loadStart;
       const remaining = Math.max(0, LOADER_MIN_MS - elapsed);
-      setTimeout(() => setLoading(false), remaining);
+      setTimeout(() => {
+        setLoading(false);
+      }, remaining);
     };
     try {
       const organizationId = sessionStorage.getItem("organizationId") ?? "";
@@ -150,23 +155,19 @@ export const DirectoryListing = () => {
       let result: {
         success?: boolean;
         attestation?: { id?: string; status?: string; product_name?: string; created_at?: string; updated_at?: string; visible_to_buyer?: boolean; expiry_at?: string | null; generated_profile_report?: unknown; sector?: unknown };
-        attestations?: { id?: string; status?: string; product_name?: string; created_at?: string; updated_at?: string; visible_to_buyer?: boolean; expiry_at?: string | null; generated_profile_report?: unknown; sector?: unknown }[];
+        attestations?: { id?: string; status?: string; product_name?: string; created_at?: string; updated_at?: string; visible_to_buyer?: boolean; expiry_at?: string | null; generated_profile_report?: unknown; sector?: unknown; userArchivedAt?: string | null }[];
         companyProfile?: Record<string, unknown>;
         message?: string;
       } = {};
       try {
         result = text ? JSON.parse(text) : {};
       } catch {
-        if (!silent) finishLoading();
         return;
       }
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           setSessionExpired(true);
-          if (!silent) finishLoading();
-          return;
         }
-        if (!silent) finishLoading();
         return;
       }
 
@@ -199,6 +200,10 @@ export const DirectoryListing = () => {
             updated_at: a.updated_at ?? a.created_at ?? null,
             visibleToBuyer: a.visible_to_buyer === true,
             attestationExpiryAt: a.expiry_at ?? null,
+            userArchivedAt:
+              a.userArchivedAt != null && String(a.userArchivedAt).trim() !== ""
+                ? String(a.userArchivedAt)
+                : null,
             generated_profile_report: a.generated_profile_report,
             sector: a.sector ?? undefined,
           };
@@ -223,7 +228,6 @@ export const DirectoryListing = () => {
         try {
           detailResult = detailText ? JSON.parse(detailText) : {};
         } catch {
-          if (!silent) finishLoading();
           return;
         }
         if (detailRes.ok && detailResult.success && (detailResult.attestation || detailResult.companyProfile)) {

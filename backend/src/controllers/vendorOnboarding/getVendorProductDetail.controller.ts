@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../database/db.js";
 import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { mergeSummaryIntoReport } from "../../utils/mergeProfileReportSummary.js";
 import { canViewDirectoryProductViaAssessment } from "../../services/vendorDirectoryAssessmentProducts.js";
 
@@ -59,7 +59,7 @@ function mapAttestationRow(attestRow: Record<string, unknown>): Record<string, u
 /**
  * GET /vendorDirectory/:vendorId/products/:productId
  * Returns full attestation detail for one product. Default: vendor has public listing,
- * product is COMPLETED, visible_to_buyer = true, and not archived (expiry_at null or in future).
+ * product is COMPLETED, visible_to_buyer = true, and not archived (expiry in future; attestation not user-archived).
  * Query ?all=true (system admin only): returns product regardless of status/visibility/public listing.
  * If the user has a COTS assessment referencing this vendor product, they may open detail even when
  * the vendor is not publicly listed or the product is not buyer-visible.
@@ -150,6 +150,7 @@ const getVendorProductDetail = async (req: Request, res: Response): Promise<void
             eq(vendorSelfAttestations.status, "COMPLETED"),
             eq(vendorSelfAttestations.visible_to_buyer, true),
             sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
+            isNull(vendorSelfAttestations.user_archived_at),
           ),
         )
         .limit(1);
@@ -170,6 +171,7 @@ const getVendorProductDetail = async (req: Request, res: Response): Promise<void
             eq(vendorSelfAttestations.id, productId),
             eq(vendorSelfAttestations.user_id, vendorUserId),
             eq(vendorSelfAttestations.status, "COMPLETED"),
+            isNull(vendorSelfAttestations.user_archived_at),
           ),
         )
         .limit(1);

@@ -14,14 +14,19 @@ import {
   FileText,
   Calendar,
   Search,
+  Archive,
+  RotateCcw,
+  Ban,
+  Loader2,
 } from "lucide-react";
 import Button from "../../UI/Button";
 import LoadingMessage from "../../UI/LoadingMessage";
+import Modal from "../../UI/Modal";
 import ClickTooltip from "../../UI/ClickTooltip";
 import StepVendorSelfAttestationPrev, {
   type ComplianceDocumentExpiryMeta,
-  type FrameworkMappingPreviewRow,
 } from "../VendorAttestations/StepVendorSelfAttestationPrev";
+import { toast } from "react-toastify";
 import { ReportsPagination } from "../Reports/ReportsPagination";
 import type {
   VendorSelfAttestationPayload,
@@ -55,6 +60,8 @@ interface AttestationCardItem {
   completedBy?: string | null;
   organizationId?: string | null;
   createdByUserId?: string | null;
+  /** User archived (ledger); still COMPLETED in DB if not time-expired. */
+  userArchivedAt?: string | null;
 }
 
 const BASE_URL =
@@ -163,9 +170,6 @@ const VendorAttestationDetails = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewComplianceExpiries, setPreviewComplianceExpiries] = useState<
     Record<string, ComplianceDocumentExpiryMeta> | null
-  >(null);
-  const [previewFrameworkMappingRows, setPreviewFrameworkMappingRows] = useState<
-    FrameworkMappingPreviewRow[] | null
   >(null);
 
   const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim();
@@ -307,6 +311,7 @@ const VendorAttestationDetails = () => {
               (attestation as { expiry_at?: string | null }).expiry_at ?? null;
             const orgId = (attestation as { organization_id?: string | null }).organization_id ?? null;
             const createdByUserId = (attestation as { user_id?: string | number | null }).user_id;
+            const userArchivedAtRaw = (attestation as { userArchivedAt?: string | null }).userArchivedAt;
             list.push({
               id: attestation.id,
               title: productName || "Draft",
@@ -317,6 +322,10 @@ const VendorAttestationDetails = () => {
               completedBy: completedByName ?? null,
               organizationId: orgId ?? null,
               createdByUserId: createdByUserId != null ? String(createdByUserId) : null,
+              userArchivedAt:
+                userArchivedAtRaw != null && String(userArchivedAtRaw).trim() !== ""
+                  ? String(userArchivedAtRaw)
+                  : null,
             });
           }
         }
@@ -354,6 +363,12 @@ const VendorAttestationDetails = () => {
   const [attestationArchivedCardPage, setAttestationArchivedCardPage] =
     useState(1);
   const [attestationCardPageSize, setAttestationCardPageSize] = useState(10);
+  const [userArchiveModal, setUserArchiveModal] = useState<{
+    attestationId: string | null;
+    mode: "archive" | "reactive" | null;
+  }>({ attestationId: null, mode: null });
+  const [userArchiveReason, setUserArchiveReason] = useState("");
+  const [userArchiveSubmitting, setUserArchiveSubmitting] = useState(false);
 
   useEffect(() => {
     setAttestationCardPage(1);
@@ -392,7 +407,6 @@ const VendorAttestationDetails = () => {
       setPreviewLoading(true);
       setPreviewFormState(null);
       setPreviewComplianceExpiries(null);
-      setPreviewFrameworkMappingRows(null);
       try {
         const organizationId = sessionStorage.getItem("organizationId") ?? "";
         const params = new URLSearchParams();
@@ -432,10 +446,6 @@ const VendorAttestationDetails = () => {
               ? (rawExp as Record<string, ComplianceDocumentExpiryMeta>)
               : null,
           );
-          const rawFw = result.attestation?.framework_mapping_rows;
-          setPreviewFrameworkMappingRows(
-            Array.isArray(rawFw) ? (rawFw as FrameworkMappingPreviewRow[]) : null,
-          );
           setPreviewFormState(
             buildFormStateFromApi({
               companyProfile: result.companyProfile,
@@ -470,8 +480,8 @@ const VendorAttestationDetails = () => {
     return dateB - dateA;
   });
 
-  /** Completed/Rejected attestation is archived when expiry date is in the past or status is Expired in DB. Drafts are always current. */
-  const isAttestationExpired = (item: AttestationCardItem): boolean => {
+  /** Time-based: past expiry or DB status Expired. */
+  const isAttestationTimeExpired = (item: AttestationCardItem): boolean => {
     if (item.status === "Draft") return false;
     if (item.status === "Expired") return true;
     const exp = item.expiryDate;
@@ -484,12 +494,15 @@ const VendorAttestationDetails = () => {
     return expiry.getTime() < today.getTime();
   };
 
-  const currentCards = sortedCards.filter(
-    (item) => !isAttestationExpired(item),
-  );
-  const archivedCards = sortedCards.filter((item) =>
-    isAttestationExpired(item),
-  );
+  const isUserAttestationArchived = (item: AttestationCardItem): boolean =>
+    item.userArchivedAt != null && String(item.userArchivedAt).trim() !== "";
+
+  /** Archived tab: time-expired and/or user-archived (same as assessments). */
+  const isInAttestationArchivedList = (item: AttestationCardItem): boolean =>
+    isAttestationTimeExpired(item) || isUserAttestationArchived(item);
+
+  const currentCards = sortedCards.filter((item) => !isInAttestationArchivedList(item));
+  const archivedCards = sortedCards.filter((item) => isInAttestationArchivedList(item));
   const cardsForTab =
     attestationTab === "current" ? currentCards : archivedCards;
   const attestationSearchLower = attestationSearch.trim().toLowerCase();
@@ -499,6 +512,85 @@ const VendorAttestationDetails = () => {
       : cardsForTab.filter((item) =>
           (item.title ?? "").toLowerCase().includes(attestationSearchLower),
         );
+
+  /** Match Assessments ledger empty copy: tab-specific + search miss. */
+  const attestationListEmptyMessage =
+    attestationTab === "archived"
+      ? cardsForTab.length === 0
+        ? "No archived attestations."
+        : "No archived attestations match your search."
+      : cardsForTab.length === 0
+        ? "No attestations yet."
+        : "No attestations match your search.";
+
+  const openUserAttestationArchiveModal = (
+    attestationId: string,
+    mode: "archive" | "reactive",
+  ) => {
+    setUserArchiveModal({ attestationId, mode });
+    setUserArchiveReason("");
+  };
+
+  const closeUserAttestationArchiveModal = (force = false) => {
+    if (!force && userArchiveSubmitting) return;
+    setUserArchiveModal({ attestationId: null, mode: null });
+    setUserArchiveReason("");
+  };
+
+  const submitUserAttestationArchive = async () => {
+    const r = (userArchiveReason ?? "").trim();
+    if (!r) {
+      alert("Please provide a reason.");
+      return;
+    }
+    if (userArchiveModal.attestationId == null || !userArchiveModal.mode) return;
+    const token = sessionStorage.getItem("bearerToken");
+    if (!token) return;
+    setUserArchiveSubmitting(true);
+    try {
+      const id = userArchiveModal.attestationId;
+      const userArchived = userArchiveModal.mode === "archive";
+      const res = await fetch(
+        `${BASE_URL}/vendorSelfAttestation/${encodeURIComponent(id)}/user-archive`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userArchived, reason: r }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as { message?: string };
+      if (!res.ok) {
+        alert(data?.message || "Request failed");
+        return;
+      }
+      toast.success(
+        userArchived
+          ? "Attestation archived."
+          : "Attestation is now active (in Current).",
+      );
+      closeUserAttestationArchiveModal(true);
+      void fetchAttestations();
+    } catch {
+      alert("Request failed");
+    } finally {
+      setUserArchiveSubmitting(false);
+    }
+  };
+
+  const canUserArchiveAttestation = (item: AttestationCardItem): boolean =>
+    !isViewOnly &&
+    item.status === "Completed" &&
+    !isUserAttestationArchived(item) &&
+    !isAttestationTimeExpired(item);
+
+  const canUserReactivateAttestation = (item: AttestationCardItem): boolean =>
+    !isViewOnly &&
+    isUserAttestationArchived(item) &&
+    !isAttestationTimeExpired(item) &&
+    item.status === "Completed";
 
   return (
     <div className="sec_user_page attestation_page org_settings_page">
@@ -598,45 +690,49 @@ const VendorAttestationDetails = () => {
       </div>
    <div className="assessment_list_header_stack">
           <p className="your_assessments_title">YOUR ATTESTATIONS</p>
-          <div className="assessment_tabs_search_toolbar">
-            <div className="page_tabs attestation_page_tabs_inline">
+          <div className="assessments_ledger_toolbar attestation_ledger_toolbar">
+            <div className="assessments_ledger_search">
+              <Search
+                size={18}
+                className="assessments_ledger_search_icon"
+                aria-hidden
+              />
+              <input
+                type="search"
+                placeholder="Search attestations…"
+                value={attestationSearch}
+                onChange={(e) => setAttestationSearch(e.target.value)}
+                className="assessments_ledger_search_input"
+                aria-label="Search attestations"
+              />
+            </div>
+            <div
+              className="assessments_ledger_segmented assessments_ledger_segmented_inline"
+              role="group"
+              aria-label="Attestations scope"
+            >
               <button
                 type="button"
-                className={`page_tab ${attestationTab === "current" ? "page_tab_active" : ""}`}
+                className={
+                  attestationTab === "current"
+                    ? "assessments_ledger_segment active"
+                    : "assessments_ledger_segment"
+                }
                 onClick={() => setAttestationTab("current")}
               >
                 Current
               </button>
               <button
                 type="button"
-                className={`page_tab ${attestationTab === "archived" ? "page_tab_active" : ""}`}
+                className={
+                  attestationTab === "archived"
+                    ? "assessments_ledger_segment active"
+                    : "assessments_ledger_segment"
+                }
                 onClick={() => setAttestationTab("archived")}
               >
                 Archived
               </button>
-            </div>
-            <div className="assessment_search_wrap">
-              <Search
-                size={18}
-                className="assessment_search_icon"
-                aria-hidden
-              />
-              <input
-                type="search"
-                placeholder={
-                  attestationTab === "archived"
-                    ? "Search archived…"
-                    : "Search attestations…"
-                }
-                value={attestationSearch}
-                onChange={(e) => setAttestationSearch(e.target.value)}
-                className="assessment_search_input"
-                aria-label={
-                  attestationTab === "archived"
-                    ? "Search archived attestations"
-                    : "Search attestations by name"
-                }
-              />
             </div>
           </div>
         </div>
@@ -646,17 +742,11 @@ const VendorAttestationDetails = () => {
 
         {loading && <LoadingMessage message="Loading attestations…" />}
         {error && <div className="vendor_attestation_error">{error}</div>}
-        {!loading && !error && cards.length > 0 && (
+        {!loading && !error && (
           <div className="attestation_list_rows assessment_list_rows">
             {filteredAttestations.length === 0 ? (
               <p className="assessment_search_no_results">
-                {attestationTab === "archived"
-                  ? cardsForTab.length === 0
-                    ? "No archived attestations."
-                    : "No attestations match your search."
-                  : cardsForTab.length === 0
-                    ? "No current attestations."
-                    : "No attestations match your search."}
+                {attestationListEmptyMessage}
               </p>
             ) : (
               <>
@@ -673,15 +763,21 @@ const VendorAttestationDetails = () => {
                     );
                     return paginated.map((item) => {
                       const isDraft = item.status === "Draft";
-                      const archived = isAttestationExpired(item);
-                      const statusDisplay =
-                        item.status === "Completed"
+                      const isUserOnlyArchived =
+                        isUserAttestationArchived(item) &&
+                        !isAttestationTimeExpired(item) &&
+                        item.status === "Completed";
+                      const cardInArchived = isInAttestationArchivedList(item);
+                      const statusDisplay = isUserOnlyArchived
+                        ? "ARCHIVED"
+                        : item.status === "Completed"
                           ? "COMPLETED"
                           : item.status === "Expired"
                             ? "EXPIRED"
                             : item.status;
-                      const statusHeaderClass =
-                        item.status === "Completed"
+                      const statusHeaderClass = isUserOnlyArchived
+                        ? "assessment_card_status_user_archived"
+                        : item.status === "Completed"
                           ? "assessment_card_status_completed"
                           : item.status === "Expired"
                             ? "assessment_card_status_expired"
@@ -690,11 +786,12 @@ const VendorAttestationDetails = () => {
                               : "assessment_card_status_draft";
                       const showExpiryInHeader =
                         item.status === "Completed" ||
-                        item.status === "Expired";
+                        item.status === "Expired" ||
+                        isUserOnlyArchived;
                       return (
                         <article
                           key={item.id}
-                          className={`vendor_directory_card general_rpr_card${archived ? " general_rpr_card_archived" : ""}`}
+                          className={`vendor_directory_card general_rpr_card${cardInArchived ? " general_rpr_card_archived" : ""}`}
                           data-accent="sales"
                         >
                           <div className="general_report_card_header">
@@ -773,6 +870,46 @@ const VendorAttestationDetails = () => {
                                   <SquarePen size={14} aria-hidden />
                                 </Link>
                               )}
+                              {attestationTab === "current" &&
+                                canUserArchiveAttestation(item) &&
+                                item.recordId && (
+                                  <button
+                                    type="button"
+                                    className="general_rpr_card_download_btn assessment_card_header_action_btn"
+                                    title="Archive"
+                                    aria-label={`Archive attestation: ${item.title}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openUserAttestationArchiveModal(
+                                        String(item.recordId),
+                                        "archive",
+                                      );
+                                    }}
+                                    style={{ marginLeft: "0.25rem" }}
+                                  >
+                                    <Archive size={14} aria-hidden />
+                                  </button>
+                                )}
+                              {attestationTab === "archived" &&
+                                canUserReactivateAttestation(item) &&
+                                item.recordId && (
+                                  <button
+                                    type="button"
+                                    className="general_rpr_card_download_btn assessment_card_header_action_btn"
+                                    title="Reactive: return to Current"
+                                    aria-label={`Reactive attestation: ${item.title}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openUserAttestationArchiveModal(
+                                        String(item.recordId),
+                                        "reactive",
+                                      );
+                                    }}
+                                    style={{ marginLeft: "0.25rem" }}
+                                  >
+                                    <RotateCcw size={14} aria-hidden />
+                                  </button>
+                                )}
                             </span>
                           </div>
                           <div className="general_rpr_title">
@@ -812,27 +949,16 @@ const VendorAttestationDetails = () => {
                                   </span>
                                 </div>
                               )}
-                              {(archived && attestationTab === "current") ||
-                              (isDraft && !archived) ? (
+                              {isDraft ? (
                                 <div className="general_rpr_card_date_row">
-                                  {archived && attestationTab === "current" ? (
-                                    <span className="general_rpr_card_status general_rpr_card_status_archived">
-                                      Archived
-                                    </span>
-                                  ) : (
-                                    <>
-                                      <span className="general_rpr_card_date_label_expiry">
-                                        Drafted on:
-                                      </span>
-                                      <span className="general_rpr_card_date_value_expiry">
-                                        {item.submittedDate
-                                          ? formatDateDDMMMYYYY(
-                                              item.submittedDate,
-                                            )
-                                          : "—"}
-                                      </span>
-                                    </>
-                                  )}
+                                  <span className="general_rpr_card_date_label_expiry">
+                                    Drafted on:
+                                  </span>
+                                  <span className="general_rpr_card_date_value_expiry">
+                                    {item.submittedDate
+                                      ? formatDateDDMMMYYYY(item.submittedDate)
+                                      : "—"}
+                                  </span>
                                 </div>
                               ) : null}
                             </div>
@@ -863,11 +989,6 @@ const VendorAttestationDetails = () => {
                 />
               </>
             )}
-          </div>
-        )}
-        {!loading && !error && cards.length === 0 && (
-          <div className="vendor_attestation_loading">
-            No attestations found.
           </div>
         )}
       </div>
@@ -911,6 +1032,104 @@ const VendorAttestationDetails = () => {
         </div>
       </div>
 
+      <Modal
+        isOpen={userArchiveModal.attestationId != null}
+        onClose={() => closeUserAttestationArchiveModal()}
+        overlayClassName="profile_modal_overlay"
+        popupClassName=""
+      >
+        <div className="profile_modal_content settings_modal_content assessment_delete_modal_content">
+          <div className="profile_modal_header">
+            <h2
+              id="attestation_user_archive_modal_title"
+              className="profile_modal_title"
+            >
+              {userArchiveModal.mode === "archive"
+                ? "Archive attestation"
+                : "Reactive (return to Current)"}
+            </h2>
+            <button
+              type="button"
+              className="modal_close_btn"
+              onClick={() => closeUserAttestationArchiveModal()}
+              disabled={userArchiveSubmitting}
+              aria-label="Close"
+            >
+              <CircleX size={20} />
+            </button>
+          </div>
+          <div className="profile_modal_body">
+            <p className="assessment_delete_modal_subtitle">
+              {userArchiveModal.attestationId != null
+                ? cards.find((c) => c.id === userArchiveModal.attestationId)
+                    ?.title ?? "Attestation"
+                : ""}
+            </p>
+            <p className="assessment_delete_modal_message">
+              {userArchiveModal.mode === "archive"
+                ? "This will move the attestation to the Archived tab."
+                : "This will return the attestation to the Current list."}
+            </p>
+            <div className="settings_form_row">
+              <div
+                className="settings_form_group"
+                style={{ flex: "1 1 100%" }}
+              >
+                <label htmlFor="attestation_user_archive_reason">
+                  Reason <span className="assessment_delete_required">*</span>
+                </label>
+                <textarea
+                  id="attestation_user_archive_reason"
+                  className="settings_input"
+                  value={userArchiveReason}
+                  onChange={(e) => setUserArchiveReason(e.target.value)}
+                  placeholder="Please provide a reason for this change…"
+                  rows={3}
+                  disabled={userArchiveSubmitting}
+                  style={{ resize: "none", minHeight: "4em" }}
+                />
+              </div>
+            </div>
+            <div className="settings_form_actions">
+              <Button
+                type="button"
+                className="orgCancelBtn"
+                onClick={() => closeUserAttestationArchiveModal()}
+                disabled={userArchiveSubmitting}
+              >
+                <Ban size={16} aria-hidden />
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="orgCreateBtn"
+                onClick={() => {
+                  void submitUserAttestationArchive();
+                }}
+                disabled={userArchiveSubmitting || !userArchiveReason.trim()}
+              >
+                {userArchiveSubmitting ? (
+                  <>
+                    Saving…
+                    <Loader2 size={18} className="auth_spinner" aria-hidden />
+                  </>
+                ) : userArchiveModal.mode === "archive" ? (
+                  <>
+                    <Archive size={16} aria-hidden />
+                    Archive
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={16} aria-hidden />
+                    Reactive
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
       {previewOpen && (
         <div
           className="vendor_attestation_preview_modal_overlay"
@@ -939,7 +1158,6 @@ const VendorAttestationDetails = () => {
                   attestationId={previewAttestationId}
                   onOpenDocument={handleOpenDocument}
                   complianceDocumentExpiries={previewComplianceExpiries}
-                  frameworkMappingRows={previewFrameworkMappingRows ?? undefined}
                 />
               )}
             </div>

@@ -3,7 +3,7 @@
     "target": "es2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "backend_dist",
+    "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": false,
@@ -17,6 +17,6 @@
   ],
   "exclude": [
     "node_modules",
-    "backend_dist"
+    "dist"
   ]
 }
