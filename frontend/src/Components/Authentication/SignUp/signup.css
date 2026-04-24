@@ -154,16 +154,68 @@
 /* Shared AuthShell layout (sign-up form inside wide card) */
 .signup-shell-body {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.signup-form-actions {
-  justify-content: stretch;
+/*
+ * Rows use settings_form_row but fields use signup_form_group (not settings_form_group), so
+ * the global .settings_form_row .settings_form_group { flex: 1 } rule never applies. Scope all
+ * layout under .signup_form so modals and other settings_form_row usages are unchanged.
+ */
+.signup_form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
   width: 100%;
-  margin-top: 1em;
-  padding-top: 0.75em;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.signup-form-actions .login-btn.signin-submit {
+.signup_form .settings_form_row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.signup_form .settings_form_row .signup_form_group {
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+
+.signup_form .settings_error {
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}
+
+/* Override user_profile .settings_form_actions (flex-end); center full-width CTA */
+.signup_form .signup-form-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.25em;
+  padding-top: 0.75em;
+  gap: 0.75rem;
+}
+
+.signup_form .signup-form-actions .login-btn.signin-submit {
   width: 100%;
   justify-content: center;
   align-items: center;

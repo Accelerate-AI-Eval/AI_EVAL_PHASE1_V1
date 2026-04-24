@@ -183,10 +183,14 @@ export const PII_HANDLING_OPTIONS: OptionItem[] = [
 ];
 
 export const DATA_RESIDENCY_OPTIONS_OPTIONS: OptionItem[] = [
-  { label: "US only", value: "US only" },
-  { label: "EU only", value: "EU only" },
-  { label: "UK only", value: "UK only" },
-  { label: "Canada only", value: "Canada only" },
+  { label: "US", value: "US" },
+  { label: "EU", value: "EU" },
+  { label: "UK", value: "UK" },
+  { label: "Canada", value: "Canada" },
+  // { label: "US only", value: "US only" },
+  // { label: "EU only", value: "EU only" },
+  // { label: "UK only", value: "UK only" },
+  // { label: "Canada only", value: "Canada only" },
   { label: "Asia-Pacific", value: "Asia-Pacific" },
   { label: "Customer choice of region", value: "Customer choice of region" },
   {

@@ -206,9 +206,7 @@ const SignUp = () => {
                     inbox and use the link to complete onboarding.
                   </p>
                   <p className="text_signup" style={{ marginTop: "0.5rem" }}>
-                   
-                    {/* when you have completed onboarding. */}
-                     <Link
+                    <Link
                       to={LOGIN_PATH}
                       className="login-btn signin-submit signup-success-cta-link"
                     >
@@ -463,12 +461,12 @@ const SignUp = () => {
                   )}
                 </button>
               </div>
-               <p className="signinText signin-auth-footer">
-                        Already have an account?{" "}
-                        <Link to="/login">
-                          <span>Sign in</span>
-                        </Link>
-                      </p>
+              <p className="signinText signin-auth-footer">
+                Already have an account?{" "}
+                <Link to="/login">
+                  <span>Sign in</span>
+                </Link>
+              </p>
             </form>
           </div>
         </AuthShell>
