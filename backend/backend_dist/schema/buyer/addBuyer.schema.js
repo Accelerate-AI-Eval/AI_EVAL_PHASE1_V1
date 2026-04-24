@@ -1,0 +1,38 @@
+import { pgTable, uuid, varchar, timestamp, integer, jsonb, } from "drizzle-orm/pg-core";
+// Table: buyer_onboarding (SQL). camelCase keys for .values(), first arg = DB column.
+// One onboarding per org: unique on organization_id.
+export const buyerOnboarding = pgTable("buyer_onboarding", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: integer("user_id").notNull(),
+    organizationId: varchar("organization_id", { length: 255 }).notNull().unique(),
+    organizationName: varchar("organization_name", { length: 200 }).notNull(),
+    organizationType: varchar("organization_type", { length: 100 }),
+    sector: varchar("sector", { length: 500 }),
+    organizationWebsite: varchar("organization_website", { length: 500 }),
+    organizationDescription: varchar("organization_description", { length: 500 }),
+    primaryContactName: varchar("primary_contact_name", { length: 100 }).notNull(),
+    primaryContactEmail: varchar("primary_contact_email", { length: 255 }).notNull(),
+    primaryContactRole: varchar("primary_contact_role", { length: 100 }),
+    departmentOwner: varchar("department_owner", { length: 100 }),
+    employeeCount: varchar("employee_count", { length: 50 }),
+    annualRevenue: varchar("annual_revenue", { length: 50 }),
+    yearFounded: integer("year_founded"),
+    headquartersLocation: varchar("headquarters_location", { length: 100 }),
+    operatingRegions: jsonb("operating_regions"),
+    dataResidencyRequirements: jsonb("data_residency_requirements"),
+    existingAIInitiatives: varchar("existing_ai_initiatives", { length: 100 }),
+    aiGovernanceMaturity: varchar("ai_governance_maturity", { length: 100 }),
+    dataGovernanceMaturity: varchar("data_governance_maturity", { length: 100 }),
+    aiSkillsAvailability: varchar("ai_skills_availability", { length: 100 }),
+    changeManagementCapability: varchar("change_management_capability", { length: 100 }),
+    primaryRegulatoryFrameworks: jsonb("primary_regulatory_frameworks"),
+    regulatoryPenaltyExposure: varchar("regulatory_penalty_exposure", { length: 50 }),
+    dataClassificationHandled: jsonb("data_classification_handled"),
+    piiHandling: varchar("pii_handling", { length: 100 }),
+    existingTechStack: jsonb("existing_tech_stack"),
+    aiRiskAppetite: varchar("ai_risk_appetite", { length: 100 }),
+    acceptableRiskLevel: varchar("acceptable_risk_level", { length: 50 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+export const buyersTable = buyerOnboarding;
