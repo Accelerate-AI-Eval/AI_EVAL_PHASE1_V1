@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import "../../../styles/page_tabs.css";
+import "../Assessments/assessments.css";
 import "./VendorDirectory.css";
 import "../ProductProfile/product_profile.css";
 import GeneratedProductProfileCards from "../ProductProfile/GeneratedProductProfileCards";
@@ -1095,11 +1096,11 @@ const VendorDirectory = () => {
   );
 
   const directorySearchField = (
-    <div className="vd_directory_search_wrap">
-      <Search size={18} className="vd_directory_search_icon" aria-hidden />
+    <div className="assessments_ledger_search">
+      <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
       <input
         type="search"
-        className="vd_directory_search_input"
+        className="assessments_ledger_search_input"
         placeholder="Search for products specific to your use case (e.g., 'HIPAA compliant medical imaging')..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
@@ -1264,8 +1265,8 @@ const VendorDirectory = () => {
       {showUnifiedDirectoryChrome && (
         <div className="vd_premium_directory_shell">
           <div className="vd_premium_search_filter_row">
-            {directorySearchField}
             {industryFilterPills}
+            {directorySearchField}
           </div>
           <div className={directoryBodyClassName}>
             {vendorTab === "my" ? (

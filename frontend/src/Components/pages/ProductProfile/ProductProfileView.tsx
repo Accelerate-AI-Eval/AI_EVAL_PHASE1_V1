@@ -1023,21 +1023,6 @@ function ProductProfileView({
             <div
               className="assessments_ledger_toolbar attestation_ledger_toolbar product_profile_ledger_toolbar"
             >
-              <div className="assessments_ledger_search">
-                <Search
-                  size={18}
-                  className="assessments_ledger_search_icon"
-                  aria-hidden
-                />
-                <input
-                  type="search"
-                  placeholder="Search products…"
-                  value={productSearchQuery}
-                  onChange={(e) => setProductSearchQuery(e.target.value)}
-                  className="assessments_ledger_search_input"
-                  aria-label="Search products"
-                />
-              </div>
               <div
                 className="assessments_ledger_segmented assessments_ledger_segmented_inline"
                 role="group"
@@ -1065,6 +1050,21 @@ function ProductProfileView({
                 >
                   Archived
                 </button>
+              </div>
+              <div className="assessments_ledger_search">
+                <Search
+                  size={18}
+                  className="assessments_ledger_search_icon"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  placeholder="Search products…"
+                  value={productSearchQuery}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                  className="assessments_ledger_search_input"
+                  aria-label="Search products"
+                />
               </div>
             </div>
           ) : (

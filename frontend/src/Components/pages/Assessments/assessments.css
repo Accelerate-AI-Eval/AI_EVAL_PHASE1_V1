@@ -862,13 +862,25 @@
   margin-bottom: 1.5rem;
 }
 
+.assessments_ledger_kicker_row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.35rem 0;
+}
+
+.assessments_ledger_kicker_icon {
+  flex-shrink: 0;
+  color: #3b82f6;
+}
+
 .assessments_ledger_kicker {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #3b82f6;
-  margin: 0 0 0.35rem 0;
+  margin: 0;
 }
 
 .assessments_ledger_title {
@@ -1021,6 +1033,12 @@
   justify-content: space-between;
   gap: 0.75rem 1rem;
   margin-bottom: 1rem;
+}
+
+/* Segmented tabs first (left), search second (right). */
+.assessments_ledger_toolbar .assessments_ledger_search {
+  flex: 0 1 22rem;
+  margin-left: auto;
 }
 
 .assessments_ledger_search {

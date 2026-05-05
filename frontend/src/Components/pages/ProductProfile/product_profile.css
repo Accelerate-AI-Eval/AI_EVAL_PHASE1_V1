@@ -614,7 +614,7 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-/* Toolbar aligned with Assessments / Attestation: search + Current | Archived (see assessments.css). */
+/* Toolbar aligned with Assessments / Attestation: Current | Archived (left) + search (right) (see assessments.css). */
 .product_profile_ledger_toolbar.assessments_ledger_toolbar {
   width: 100%;
   margin-bottom: 1rem;

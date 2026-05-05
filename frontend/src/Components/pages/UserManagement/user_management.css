@@ -130,6 +130,12 @@
   opacity: 0.9;
 }
 
+/* Active / Inactive + search (same toolbar pattern as Organizations / Assessments; see assessments.css) */
+.user_management_ledger_toolbar.assessments_ledger_toolbar {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Portal-style search (matches Risk & Controls / Vendor Directory: icon + bordered input) */
 .user_management_search_row {
   display: flex;

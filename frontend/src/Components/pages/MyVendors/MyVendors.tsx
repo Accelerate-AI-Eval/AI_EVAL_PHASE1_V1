@@ -31,6 +31,7 @@ import {
 import { sanitizeFrameworkMappingNotesForDisplay } from "../../../utils/frameworkMappingNotesDisplay";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import "../../../styles/page_tabs.css";
+import "../Assessments/assessments.css";
 import "./MyVendors.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -1665,12 +1666,12 @@ const MyVendors = () => {
           ) : null}
           */}
         </div>
-        <div className="risk_mapping_search_wrap">
-          <Search size={18} className="risk_mapping_search_icon" aria-hidden />
+        <div className="assessments_ledger_search">
+          <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
           <input
             type="search"
             placeholder="Search risk ID, title, owner, framework, controls, notes…"
-            className="risk_mapping_search_input"
+            className="assessments_ledger_search_input"
             aria-label="Search risk mapping"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

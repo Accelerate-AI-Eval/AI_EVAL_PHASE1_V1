@@ -25,12 +25,14 @@ import Modal from "../../UI/Modal";
 import Button from "../../UI/Button";
 import { toast } from "react-toastify";
 import "../UserProfile/user_profile.css";
+import "../Assessments/assessments.css";
 import "../../../styles/popovers.css";
 
 const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: number; viewOnly?: boolean }) => {
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [filterText, setFilterText] = React.useState("");
+  const [statusScope, setStatusScope] = useState<"active" | "inactive">("active");
   const [resetPaginationToggle, setResetPaginationToggle] =
     React.useState(false);
   const [tableData, setTableData] = useState([]);
@@ -119,6 +121,10 @@ const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: numb
     // }
   }, [dispatch]);
 
+  useEffect(() => {
+    setResetPaginationToggle((r) => !r);
+  }, [statusScope]);
+
   // const filteredItems = tableData.filter(
   //   (item) =>
   //     item.userName &&
@@ -126,6 +132,10 @@ const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: numb
   // );
 
   const filteredItems = tableData.filter((item) => {
+    const statusLower = (item.userStatus ?? "active").toString().toLowerCase().trim();
+    const matchesStatus =
+      statusScope === "active" ? statusLower === "active" : statusLower !== "active";
+    if (!matchesStatus) return false;
     if (!filterText.trim()) return true;
     const search = filterText.toLowerCase();
     const userName = (item.user_name ?? "").toLowerCase();
@@ -143,7 +153,7 @@ const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: numb
     const onboardingStatus = (item.onboarding_status ?? "pending").toString().toLowerCase();
     const onboardingLabel =
       onboardingStatus === "completed" ? "completed" : onboardingStatus === "expired" ? "expired" : "pending";
-    const statusLabel = (item.userStatus ?? "active").toString().toLowerCase() === "active" ? "active" : "inactive";
+    const statusLabel = statusLower === "active" ? "active" : "inactive";
     return (
       userName.includes(search) ||
       email.includes(search) ||
@@ -479,13 +489,41 @@ const UserDataTable = ({ refreshKey = 0, viewOnly = false }: { refreshKey?: numb
   return (
     <>
     <div className="orgDataTable">
-      <div className="user_management_search_row">
-        <div className="user_management_search_wrap">
-          <Search size={18} className="user_management_search_icon" aria-hidden />
+      <div className="assessments_ledger_toolbar user_management_ledger_toolbar">
+        <div
+          className="assessments_ledger_segmented assessments_ledger_segmented_inline"
+          role="group"
+          aria-label="User status"
+        >
+          <button
+            type="button"
+            className={
+              statusScope === "active"
+                ? "assessments_ledger_segment active"
+                : "assessments_ledger_segment"
+            }
+            onClick={() => setStatusScope("active")}
+          >
+            Active
+          </button>
+          <button
+            type="button"
+            className={
+              statusScope === "inactive"
+                ? "assessments_ledger_segment active"
+                : "assessments_ledger_segment"
+            }
+            onClick={() => setStatusScope("inactive")}
+          >
+            Inactive
+          </button>
+        </div>
+        <div className="assessments_ledger_search">
+          <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
           <input
-            className="user_management_search_input"
             type="search"
             id="user-search"
+            className="assessments_ledger_search_input"
             placeholder="Filter by name, email, organization, role…"
             aria-label="Search users"
             value={filterText}

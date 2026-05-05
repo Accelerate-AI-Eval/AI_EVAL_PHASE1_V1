@@ -1,7 +1,9 @@
 .env
+.env.local1
 node_modules
 .env.local
 .env.prod
 .env.preprod
 
 dist
+logs

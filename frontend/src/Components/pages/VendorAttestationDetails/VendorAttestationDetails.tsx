@@ -691,21 +691,6 @@ const VendorAttestationDetails = () => {
    <div className="assessment_list_header_stack">
           <p className="your_assessments_title">YOUR ATTESTATIONS</p>
           <div className="assessments_ledger_toolbar attestation_ledger_toolbar">
-            <div className="assessments_ledger_search">
-              <Search
-                size={18}
-                className="assessments_ledger_search_icon"
-                aria-hidden
-              />
-              <input
-                type="search"
-                placeholder="Search attestations…"
-                value={attestationSearch}
-                onChange={(e) => setAttestationSearch(e.target.value)}
-                className="assessments_ledger_search_input"
-                aria-label="Search attestations"
-              />
-            </div>
             <div
               className="assessments_ledger_segmented assessments_ledger_segmented_inline"
               role="group"
@@ -733,6 +718,21 @@ const VendorAttestationDetails = () => {
               >
                 Archived
               </button>
+            </div>
+            <div className="assessments_ledger_search">
+              <Search
+                size={18}
+                className="assessments_ledger_search_icon"
+                aria-hidden
+              />
+              <input
+                type="search"
+                placeholder="Search attestations…"
+                value={attestationSearch}
+                onChange={(e) => setAttestationSearch(e.target.value)}
+                className="assessments_ledger_search_input"
+                aria-label="Search attestations"
+              />
             </div>
           </div>
         </div>

@@ -1113,10 +1113,10 @@ const Assessments = () => {
               <p className="section_desc">Assessments for your organization.</p>
               <div className="assessment_list_header_row">
                 <p className="your_assessments_title">YOUR ASSESSMENTS</p>
-                <div className="assessment_search_wrap">
+                <div className="assessments_ledger_search">
                   <Search
                     size={18}
-                    className="assessment_search_icon"
+                    className="assessments_ledger_search_icon"
                     aria-hidden
                   />
                   <input
@@ -1124,7 +1124,7 @@ const Assessments = () => {
                     placeholder="Search assessments…"
                     value={assessmentSearch}
                     onChange={(e) => setAssessmentSearch(e.target.value)}
-                    className="assessment_search_input"
+                    className="assessments_ledger_search_input"
                     aria-label="Search assessments by name"
                   />
                 </div>
@@ -1336,10 +1336,10 @@ const Assessments = () => {
               </p>
               <div className="assessment_list_header_row">
                 <p className="your_assessments_title">YOUR ASSESSMENTS</p>
-                <div className="assessment_search_wrap">
+                <div className="assessments_ledger_search">
                   <Search
                     size={18}
-                    className="assessment_search_icon"
+                    className="assessments_ledger_search_icon"
                     aria-hidden
                   />
                   <input
@@ -1347,7 +1347,7 @@ const Assessments = () => {
                     placeholder="Search archived…"
                     value={assessmentSearch}
                     onChange={(e) => setAssessmentSearch(e.target.value)}
-                    className="assessment_search_input"
+                    className="assessments_ledger_search_input"
                     aria-label="Search archived assessments"
                   />
                 </div>

@@ -9,6 +9,7 @@ import "../../../styles/page_tabs.css";
 import "../../../styles/popovers.css";
 import "../UserManagement/user_management.css";
 import "../UserProfile/user_profile.css";
+import "../Assessments/assessments.css";
 import "./reports.css";
 import GeneralReports, { type GeneratedReportItem } from "./GeneralReports";
 import GeneralReportsCards from "./GeneralReportsCards";
@@ -366,12 +367,12 @@ function Reports() {
             Archived
           </button>
         </div>
-        <div className="reports_search_wrap reports_search_input">
-          <Search size={18} className="reports_search_icon" aria-hidden />
+        <div className="assessments_ledger_search">
+          <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
           <input
             type="search"
             placeholder="Search by org name, product name, published or archived…"
-            className="reports_search_input"
+            className="assessments_ledger_search_input"
             aria-label="Search reports"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

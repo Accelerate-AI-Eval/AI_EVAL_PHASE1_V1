@@ -20,7 +20,7 @@ import "./general_reports.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
 
-const DEFAULT_MODEL_DISPLAY_NAME = "Claude Sonnet 3";
+// const DEFAULT_MODEL_DISPLAY_NAME = "Claude Sonnet 3";
 
 function isVendorPortalSession(): boolean {
   return (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim() === "vendor";
@@ -39,20 +39,20 @@ function riskMeterGradingForReport(
   return "default";
 }
 
-function modelNameFromReport(report: CustomerRiskReportItem): string {
-  const raw = report.report;
-  if (raw == null || typeof raw !== "object") return DEFAULT_MODEL_DISPLAY_NAME;
-  const o = raw as Record<string, unknown>;
-  const gen = o.generatedAnalysis ?? o.generated_analysis;
-  if (gen != null && typeof gen === "object") {
-    const g = gen as Record<string, unknown>;
-    const fromGen = g.modelName ?? g.model_name ?? g.aiModel ?? g.ai_model;
-    if (typeof fromGen === "string" && fromGen.trim()) return fromGen.trim();
-  }
-  const top = o.modelName ?? o.model_name ?? o.aiModel;
-  if (typeof top === "string" && top.trim()) return top.trim();
-  return DEFAULT_MODEL_DISPLAY_NAME;
-}
+// function modelNameFromReport(report: CustomerRiskReportItem): string {
+//   const raw = report.report;
+//   if (raw == null || typeof raw !== "object") return DEFAULT_MODEL_DISPLAY_NAME;
+//   const o = raw as Record<string, unknown>;
+//   const gen = o.generatedAnalysis ?? o.generated_analysis;
+//   if (gen != null && typeof gen === "object") {
+//     const g = gen as Record<string, unknown>;
+//     const fromGen = g.modelName ?? g.model_name ?? g.aiModel ?? g.ai_model;
+//     if (typeof fromGen === "string" && fromGen.trim()) return fromGen.trim();
+//   }
+//   const top = o.modelName ?? o.model_name ?? o.aiModel;
+//   if (typeof top === "string" && top.trim()) return top.trim();
+//   return DEFAULT_MODEL_DISPLAY_NAME;
+// }
 
 interface CompleteReportsCardsProps {
   reports: CustomerRiskReportItem[];
@@ -65,8 +65,8 @@ interface CompleteReportsCardsProps {
   viewEnabledWhenArchived?: boolean;
   /** When true, render only the card(s) in a fragment (no wrapper div) for use inside a parent grid. */
   singleCard?: boolean;
-  /** Shown directly under the card title; defaults from report JSON when present, else Claude Sonnet 3. */
-  getModelName?: (report: CustomerRiskReportItem) => string;
+  // /** Shown directly under the card title; defaults from report JSON when present, else Claude Sonnet 3. */
+  // getModelName?: (report: CustomerRiskReportItem) => string;
   /**
    * Organizational portal vendor COTS: show implementation risk score and buyer COTS grade colors (IRS high = red).
    * Default: alignment gradient for customer reports; inverted IRS bands for `buyer_vendor_risk`.
@@ -83,7 +83,6 @@ function CompleteReportsCards({
   onDownload,
   viewEnabledWhenArchived = false,
   singleCard = false,
-  getModelName,
   riskMeterGrading = "default",
 }: CompleteReportsCardsProps) {
   const [scoreByReportId, setScoreByReportId] = useState<Record<string, number | null>>({});
@@ -247,9 +246,9 @@ function CompleteReportsCards({
                 </h2>
               </span>
             </ClickTooltip>
-            <p className="complete_rpr_card_model">
+            {/* <p className="complete_rpr_card_model">
               Model: {getModelName ? getModelName(report) : modelNameFromReport(report)}
-            </p>
+            </p> */}
           </div>
         </div>
 

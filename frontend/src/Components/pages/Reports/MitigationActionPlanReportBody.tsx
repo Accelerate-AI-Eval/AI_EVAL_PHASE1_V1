@@ -1,6 +1,7 @@
 import { ArrowUpDown, CalendarClock, Download, ListChecks, Search, Table2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
+import "../Assessments/assessments.css";
 import "../Assessments/BuyerAssessment/buyer_vendor_risk_report.css";
 
 export type MitigationActionPlanRow = {
@@ -197,11 +198,11 @@ export default function MitigationActionPlanReportBody({ data }: { data: Mitigat
           criteria, and verification are shown in the table below.
         </p>
         <div className="map_action_toolbar">
-          <div className="assessment_search_wrap map_action_search_wrap">
-            <Search size={18} className="assessment_search_icon" aria-hidden />
+          <div className="assessments_ledger_search map_action_search_wrap">
+            <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
             <input
               type="search"
-              className="assessment_search_input"
+              className="assessments_ledger_search_input"
               placeholder="Search actions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

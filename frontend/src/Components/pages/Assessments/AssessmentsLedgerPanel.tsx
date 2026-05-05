@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Plus,
   Clipboard,
+  ClipboardList,
   Eye,
   FileText,
   Pencil,
@@ -117,7 +118,14 @@ export default function AssessmentsLedgerPanel({
     <div className="assessments_ledger">
       <header className="assessments_ledger_header">
         <div className="assessments_ledger_header_titles">
-          <p className="assessments_ledger_kicker">Risk governance</p>
+          <div className="assessments_ledger_kicker_row">
+            <ClipboardList
+              size={18}
+              className="assessments_ledger_kicker_icon"
+              aria-hidden
+            />
+            <p className="assessments_ledger_kicker">Risk governance</p>
+          </div>
           <h1 className="assessments_ledger_title">Assessments ledger</h1>
         </div>
         <div className="assessments_ledger_header_actions">
@@ -182,21 +190,6 @@ export default function AssessmentsLedgerPanel({
       </div>
 
       <div className="assessments_ledger_toolbar">
-        <div className="assessments_ledger_search">
-          <Search
-            size={18}
-            className="assessments_ledger_search_icon"
-            aria-hidden
-          />
-          <input
-            type="search"
-            placeholder="Search assessments…"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            aria-label="Search assessments"
-            className="assessments_ledger_search_input"
-          />
-        </div>
         <div
           className="assessments_ledger_segmented assessments_ledger_segmented_inline"
           role="group"
@@ -224,6 +217,21 @@ export default function AssessmentsLedgerPanel({
           >
             Archived
           </button>
+        </div>
+        <div className="assessments_ledger_search">
+          <Search
+            size={18}
+            className="assessments_ledger_search_icon"
+            aria-hidden
+          />
+          <input
+            type="search"
+            placeholder="Search assessments…"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search assessments"
+            className="assessments_ledger_search_input"
+          />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 // backend/src/database/db.ts
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { logger } from "../middlewares/logger.js";
 // Create the postgresql client
 const DATABASE_USER = process.env.DATABASE_USER ?? "postgres";
 const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD ?? "Postgresql123";
@@ -24,10 +25,16 @@ export { pool };
 export async function initDB() {
     try {
         await db.execute(`SELECT 1 AS connected`);
+        // logger.info("Database connected successfully");
         console.log("Database connected successfully");
     }
     catch (err) {
-        console.error("Database connection failed:", err);
+        console.log("Database connection failed", {
+            error: err instanceof Error ? err.message : String(err),
+        });
+        logger.error("Database connection failed", {
+            error: err instanceof Error ? err.message : String(err),
+        });
         throw err; // stop server if DB fails
     }
 }

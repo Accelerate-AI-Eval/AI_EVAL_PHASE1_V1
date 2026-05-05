@@ -565,10 +565,10 @@ const Organizations = () => {
                       <div className="assessment_list_header_row">
                         <p className="your_assessments_title">YOUR ATTESTATIONS</p>
                         <div className="attestation_tabs_and_search_row">
-                          <div className="assessment_search_wrap">
+                          <div className="assessments_ledger_search">
                             <Search
                               size={18}
-                              className="assessment_search_icon"
+                              className="assessments_ledger_search_icon"
                               aria-hidden
                             />
                             <input
@@ -576,7 +576,7 @@ const Organizations = () => {
                               placeholder="Search attestations…"
                               value={attestationSearch}
                               onChange={(e) => setAttestationSearch(e.target.value)}
-                              className="assessment_search_input"
+                              className="assessments_ledger_search_input"
                               aria-label="Search attestations by name"
                             />
                           </div>
@@ -731,14 +731,14 @@ const Organizations = () => {
                       <div className="assessment_list_header_row">
                         <p className="your_assessments_title">ASSESSMENTS</p>
                         <div className="attestation_tabs_and_search_row">
-                          <div className="assessment_search_wrap">
-                            <Search size={18} className="assessment_search_icon" aria-hidden />
+                          <div className="assessments_ledger_search">
+                            <Search size={18} className="assessments_ledger_search_icon" aria-hidden />
                             <input
                               type="search"
                               placeholder="Search assessments…"
                               value={orgAssessmentSearch}
                               onChange={(e) => setOrgAssessmentSearch(e.target.value)}
-                              className="assessment_search_input"
+                              className="assessments_ledger_search_input"
                               aria-label="Search assessments by name"
                             />
                           </div>

@@ -1,4 +1,4 @@
-import { Eye, SquarePen } from "lucide-react";
+import { Eye, SquarePen, Search } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import DataTable from "react-data-table-component";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,11 +6,13 @@ import { getOrganizations } from "../../../Context/OrganizationsData";
 import LoadingMessage from "../../UI/LoadingMessage";
 import EditOrganization from "./EditOrganization";
 import { getOrganizationTypeDisplay } from "../../../utils/organizationTypeDisplay";
+import "../Assessments/assessments.css";
 
 const LOADER_MIN_MS = 1500;
 
 const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
   const [filterText, setFilterText] = React.useState("");
+  const [statusScope, setStatusScope] = useState<"active" | "inactive">("active");
   const [resetPaginationToggle, setResetPaginationToggle] =
     React.useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,11 +39,21 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
     if (status === "loading") setLoading(true);
   }, [status]);
 
-  const filteredItems = (data ?? []).filter(
-    (item) =>
-      item.organizationName &&
-      item.organizationName.toLowerCase().includes(filterText.toLowerCase()),
-  );
+  useEffect(() => {
+    setResetPaginationToggle((r) => !r);
+  }, [statusScope]);
+
+  const filteredItems = (data ?? []).filter((item) => {
+    const statusLower = (item.organizationStatus ?? "").toLowerCase().trim();
+    const matchesStatus =
+      statusScope === "active"
+        ? statusLower === "active"
+        : statusLower !== "active";
+    const name = item.organizationName ?? "";
+    if (!name) return false;
+    const matchesName = name.toLowerCase().includes(filterText.toLowerCase());
+    return matchesStatus && matchesName;
+  });
 
   const editOrg = (id) => {
     setIsEdit(true);
@@ -172,17 +184,51 @@ const OrganizationDataTable = ({ openPreview, viewOnly = false }) => {
   return (
     <>
       <div className="orgDataTable">
-        <div className="filterOption">
-          <label htmlFor="org-search">Search</label>
-          <input
-            className="filterInput"
-            type="text"
-            id="org-search"
-            placeholder="Filter by organization name"
-            aria-label="Search organizations"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
+        <div className="assessments_ledger_toolbar org_organizations_toolbar">
+          <div
+            className="assessments_ledger_segmented assessments_ledger_segmented_inline"
+            role="group"
+            aria-label="Organization status"
+          >
+            <button
+              type="button"
+              className={
+                statusScope === "active"
+                  ? "assessments_ledger_segment active"
+                  : "assessments_ledger_segment"
+              }
+              onClick={() => setStatusScope("active")}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              className={
+                statusScope === "inactive"
+                  ? "assessments_ledger_segment active"
+                  : "assessments_ledger_segment"
+              }
+              onClick={() => setStatusScope("inactive")}
+            >
+              Inactive
+            </button>
+          </div>
+          <div className="assessments_ledger_search">
+            <Search
+              size={18}
+              className="assessments_ledger_search_icon"
+              aria-hidden
+            />
+            <input
+              type="search"
+              id="org-search"
+              className="assessments_ledger_search_input"
+              placeholder="Search organizations…"
+              aria-label="Search organizations"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+          </div>
         </div>
         {loading ? (
           <LoadingMessage message="Loading organizations…" />

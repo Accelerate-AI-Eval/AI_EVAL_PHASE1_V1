@@ -12,6 +12,14 @@
   /* border-bottom: 1px solid #e5e7eb; */
 }
 
+.reports_tabs_section .assessments_ledger_search {
+  flex: 0 1 22rem;
+  max-width: min(22rem, 100%);
+  min-width: 0;
+  margin-left: auto;
+  margin-bottom: 0;
+}
+
 .reports_tabs_search {
   margin-bottom: 0;
   display: flex;
