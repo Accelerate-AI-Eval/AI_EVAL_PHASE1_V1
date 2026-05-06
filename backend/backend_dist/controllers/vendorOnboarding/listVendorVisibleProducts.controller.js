@@ -1,6 +1,7 @@
 import { db } from "../../database/db.js";
-import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
+import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports, createOrganization, } from "../../schema/schema.js";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+const vendorOrgJoin = sql `${createOrganization.id} = (${vendors.organizationId})::int`;
 function firstNonEmptyText(...vals) {
     for (const v of vals) {
         const t = typeof v === "string" ? v.trim() : "";
@@ -14,6 +15,7 @@ function firstNonEmptyText(...vals) {
  * Returns only products (attestations) that are COMPLETED, visible_to_buyer = true,
  * and not archived (expiry in the future, not user-archived on the attestation). Vendor must have publicDirectoryListing = true.
  * Query ?all=true (system admin only): returns all attestations for this vendor (any status).
+ * Non-admin responses omit products when the vendor organization is inactive (directory visibility).
  */
 const listVendorVisibleProducts = async (req, res) => {
     try {
@@ -50,15 +52,19 @@ const listVendorVisibleProducts = async (req, res) => {
             id: vendors.id,
             userId: vendors.userId,
             publicDirectoryListing: vendors.publicDirectoryListing,
+            organizationStatus: createOrganization.organizationStatus,
         })
             .from(vendors)
+            .leftJoin(createOrganization, vendorOrgJoin)
             .where(eq(vendors.id, vendorId))
             .limit(1);
         if (!vendor) {
             res.status(404).json({ success: false, message: "Vendor not found" });
             return;
         }
-        if (!allProducts && !vendor.publicDirectoryListing) {
+        const orgActive = vendor.organizationStatus != null &&
+            String(vendor.organizationStatus).trim().toLowerCase() === "active";
+        if (!allProducts && (!vendor.publicDirectoryListing || !orgActive)) {
             res.status(200).json({ success: true, products: [] });
             return;
         }

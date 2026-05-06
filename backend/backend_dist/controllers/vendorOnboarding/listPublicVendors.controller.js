@@ -5,7 +5,8 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
  * GET /vendorDirectory
  * Returns only vendors who have turned on Public Directory Listing (for buyer-facing directory).
  * When DB has public_directory_listing column, filter by it; when column is missing, returns [].
- * Query ?scope=all (system admin only): returns all vendors, no filter.
+ * Query ?scope=all (system admin only): returns all vendors, no filter (includes inactive organizations).
+ * Otherwise excludes vendors whose organization is not active — they do not appear in the AI Vendor Directory.
  */
 const listPublicVendors = async (req, res) => {
     try {
@@ -55,7 +56,7 @@ const listPublicVendors = async (req, res) => {
                 .select(selectFields)
                 .from(vendors)
                 .leftJoin(createOrganization, joinCondition)
-                .where(eq(vendors.publicDirectoryListing, true));
+                .where(and(eq(vendors.publicDirectoryListing, true), eq(createOrganization.organizationStatus, "active")));
         const vendorIds = rows.map((r) => r.userId).filter((id) => id != null && Number.isInteger(id));
         const productRows = vendorIds.length > 0
             ? await db

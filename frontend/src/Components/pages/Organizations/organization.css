@@ -47,7 +47,7 @@
   padding: 20px 30px;
   border-radius: 5px;
   width: 90%;
-  max-width: 30em;
+  max-width: 40em;
   position: relative;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   border: 1px solid rgb(148, 163, 184);
@@ -60,6 +60,12 @@
 
 .orgDetails {
   margin: 10px 0px;
+}
+
+.createOrgFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
 }
 
 .orgDetails label {
@@ -313,6 +319,17 @@
   font-size: 12px;
   color: red;
   margin-top: 5px;
+  grid-column: 1 / -1;
+}
+
+.createOrgFormGrid .settings_form_actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .createOrgFormGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 #edit_org_status,

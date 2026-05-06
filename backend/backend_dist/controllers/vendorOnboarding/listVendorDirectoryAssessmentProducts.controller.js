@@ -6,6 +6,7 @@ import { listDirectoryProductsFromAssessments } from "../../services/vendorDirec
  * GET /vendorDirectory/assessment-products
  * Products the current user has referenced in COTS assessments (buyer: vendor + product fields;
  * vendor: vendor COTS with selected product). Used for AI Vendor Directory "My Products" tab.
+ * Includes products even when the vendor organization is inactive so buyers keep visibility to assessments they referenced.
  */
 const listVendorDirectoryAssessmentProducts = async (req, res) => {
     try {

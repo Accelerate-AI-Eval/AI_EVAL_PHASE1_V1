@@ -98,7 +98,7 @@ const CreateOrganization = ({ setIsOrganization }) => {
           </span>
         </div>
         <div className="orgDetails">
-          <form action="" autoComplete="off" onSubmit={createOrg}>
+          <form className="createOrgFormGrid" action="" autoComplete="off" onSubmit={createOrg}>
             <div className="orgName">
               <label htmlFor="orgname">
                 <span>

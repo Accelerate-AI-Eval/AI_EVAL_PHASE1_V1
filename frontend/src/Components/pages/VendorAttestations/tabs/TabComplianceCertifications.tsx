@@ -41,6 +41,7 @@ export interface TabComplianceCertificationsProps {
 const REGULATORY_LABEL = "Which compliance certifications do you hold? (attach evidence for each)";
 const REGULATORY_PLACEHOLDER =
   "Select certification types; for each certificate you can upload one file (max 10MB). Documents are parsed for assessment information.";
+const NONE_CERTIFICATION_VALUE = "None";
 
 function TabComplianceCertifications({
   attestation,
@@ -60,6 +61,10 @@ function TabComplianceCertifications({
   const regulatory = documentUpload?.["2"] ?? { categories: [], byCategory: {} };
   const categories = regulatory.categories ?? [];
   const byCategory = regulatory.byCategory ?? {};
+  const selectedUploadCategories = categories.filter(
+    (category) => category !== NONE_CERTIFICATION_VALUE,
+  );
+  const hasNoCertificationsSelected = categories.includes(NONE_CERTIFICATION_VALUE);
 
   const setRegulatoryCategories = (selected: string[]) => {
     setDocumentUpload?.((prev) => {
@@ -149,11 +154,17 @@ function TabComplianceCertifications({
               options={DOCUMENT_CATEGORIES.map((c) => ({ label: c.label, value: c.value }))}
               value={categories}
               onChange={setRegulatoryCategories}
+              globalExclusiveValue={NONE_CERTIFICATION_VALUE}
             />
           </FormField>
-          {categories.length > 0 && (
+          {hasNoCertificationsSelected && (
+            <p style={{ marginTop: "0.75rem", fontSize: "0.875rem", color: "#6b7280" }}>
+              No certification selected. File upload is not required.
+            </p>
+          )}
+          {selectedUploadCategories.length > 0 && (
             <div style={{ marginTop: "1rem" }} className="compliance_cert_categories">
-              {categories.map((category) => {
+              {selectedUploadCategories.map((category) => {
                 const docs = byCategory[category] ?? [];
                 return (
                   <div key={category} className="form_fields_vendor compliance_cert_category_block" style={{ marginBottom: "1rem" }}>

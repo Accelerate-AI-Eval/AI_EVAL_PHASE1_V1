@@ -159,7 +159,7 @@ const EditOrganization = ({ setIsEdit, id, orgData, allOrganizations = [] }) => 
                     SELECT
                   </option>
                   <option value="active">Active</option>
-                  <option value="inactive">In active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
             </div>

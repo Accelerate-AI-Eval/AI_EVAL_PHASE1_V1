@@ -1,7 +1,15 @@
 import type { Request, Response } from "express";
 import { db } from "../../database/db.js";
-import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
+import {
+  vendors,
+  vendorSelfAttestations,
+  usersTable,
+  generatedProfileReports,
+  createOrganization,
+} from "../../schema/schema.js";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+
+const vendorOrgJoin = sql`${createOrganization.id} = (${vendors.organizationId})::int`;
 
 function firstNonEmptyText(...vals: (string | null | undefined)[]): string | undefined {
   for (const v of vals) {
@@ -16,6 +24,7 @@ function firstNonEmptyText(...vals: (string | null | undefined)[]): string | und
  * Returns only products (attestations) that are COMPLETED, visible_to_buyer = true,
  * and not archived (expiry in the future, not user-archived on the attestation). Vendor must have publicDirectoryListing = true.
  * Query ?all=true (system admin only): returns all attestations for this vendor (any status).
+ * Non-admin responses omit products when the vendor organization is inactive (directory visibility).
  */
 const listVendorVisibleProducts = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -54,8 +63,10 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
         id: vendors.id,
         userId: vendors.userId,
         publicDirectoryListing: vendors.publicDirectoryListing,
+        organizationStatus: createOrganization.organizationStatus,
       })
       .from(vendors)
+      .leftJoin(createOrganization, vendorOrgJoin)
       .where(eq(vendors.id, vendorId))
       .limit(1);
 
@@ -64,7 +75,11 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    if (!allProducts && !vendor.publicDirectoryListing) {
+    const orgActive =
+      vendor.organizationStatus != null &&
+      String(vendor.organizationStatus).trim().toLowerCase() === "active";
+
+    if (!allProducts && (!vendor.publicDirectoryListing || !orgActive)) {
       res.status(200).json({ success: true, products: [] });
       return;
     }

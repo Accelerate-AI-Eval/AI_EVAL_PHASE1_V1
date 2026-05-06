@@ -300,8 +300,8 @@ function ProductProfileView({
   productTab = "current",
   onProductTabChange,
   fetchProductDetail,
-  trustScore = "A+",
-  compliancePercent = "92%",
+  trustScore = "—",
+  compliancePercent = "",
   publicListing = false,
   onPublicListingToggle,
   publicListingUpdating = false,
@@ -727,7 +727,9 @@ function ProductProfileView({
                 })()
               : reportToShow?.trustScore?.summary
                 ? truncate((reportToShow.trustScore.summary || "").replace(/\s*-+\s*$/, "").trim(), 60)
-                : `${compliancePercent} compliance`
+                : compliancePercent
+                  ? `${compliancePercent} compliance`
+                  : "No scored products"
           }
           iconColor="blue"
           primaryVariant="trustScore"

@@ -67,6 +67,8 @@ const VendorDirectoryIntelligence = () => {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<GeneratedProductProfileReport | null>(null);
   const [sectionVisibility, setSectionVisibility] = useState<SectionVisibility | null>(null);
+  const [isVendorOrganizationActive, setIsVendorOrganizationActive] =
+    useState(true);
   const [vendorName, setVendorName] = useState<string>(
     ((location.state as { vendorName?: string } | null)?.vendorName ?? "").trim(),
   );
@@ -124,6 +126,13 @@ const VendorDirectoryIntelligence = () => {
                   companyReach: vis.companyReach === true,
                 }
               : null,
+          );
+          const organizationStatusRaw =
+            typeof data?.organizationStatus === "string"
+              ? data.organizationStatus
+              : "";
+          setIsVendorOrganizationActive(
+            organizationStatusRaw.trim().toLowerCase() !== "inactive",
           );
         }
       } catch {
@@ -195,7 +204,7 @@ const VendorDirectoryIntelligence = () => {
           <CircleChevronLeft size={18} aria-hidden />
           Back to AI Vendor Directory
         </button>
-        {isBuyer && (
+        {isBuyer && isVendorOrganizationActive && (
           <button
             type="button"
             className="vendor_intel_start_assessment_btn"

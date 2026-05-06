@@ -492,8 +492,6 @@ export const DirectoryListing = () => {
       productTab={productTab}
       onProductTabChange={setProductTab}
       fetchProductDetail={fetchProductDetail}
-      trustScore="A+"
-      compliancePercent="92%"
       publicListing={publicListing}
       onPublicListingToggle={viewOnly ? undefined : handlePublicListingToggle}
       publicListingUpdating={publicListingUpdating}

@@ -1,6 +1,7 @@
 import { db } from "../../database/db.js";
-import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
+import { vendors, vendorSelfAttestations, usersTable, generatedProfileReports, createOrganization, } from "../../schema/schema.js";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+const vendorOrgJoin = sql `${createOrganization.id} = (${vendors.organizationId})::int`;
 import { mergeSummaryIntoReport } from "../../utils/mergeProfileReportSummary.js";
 import { canViewDirectoryProductViaAssessment } from "../../services/vendorDirectoryAssessmentProducts.js";
 function mapAttestationRow(attestRow) {
@@ -59,7 +60,8 @@ function mapAttestationRow(attestRow) {
  * product is COMPLETED, visible_to_buyer = true, and not archived (expiry in future; attestation not user-archived).
  * Query ?all=true (system admin only): returns product regardless of status/visibility/public listing.
  * If the user has a COTS assessment referencing this vendor product, they may open detail even when
- * the vendor is not publicly listed or the product is not buyer-visible.
+ * the vendor is not publicly listed or the product is not buyer-visible (still allowed when org is inactive).
+ * Directory browsing requires an active organization for publicly listed vendors.
  */
 const getVendorProductDetail = async (req, res) => {
     try {
@@ -109,14 +111,18 @@ const getVendorProductDetail = async (req, res) => {
             id: vendors.id,
             userId: vendors.userId,
             publicDirectoryListing: vendors.publicDirectoryListing,
+            organizationStatus: createOrganization.organizationStatus,
         })
             .from(vendors)
+            .leftJoin(createOrganization, vendorOrgJoin)
             .where(eq(vendors.id, vendorId))
             .limit(1);
         if (!vendor) {
             res.status(404).json({ success: false, message: "Vendor or product not found" });
             return;
         }
+        const orgActive = vendor.organizationStatus != null &&
+            String(vendor.organizationStatus).trim().toLowerCase() === "active";
         const vendorUserId = vendor.userId != null ? Number(vendor.userId) : null;
         if (vendorUserId == null) {
             res.status(404).json({ success: false, message: "Product not found" });
@@ -131,7 +137,7 @@ const getVendorProductDetail = async (req, res) => {
                 .limit(1);
             row = r;
         }
-        else if (vendor.publicDirectoryListing) {
+        else if (vendor.publicDirectoryListing && orgActive) {
             const [r] = await db
                 .select()
                 .from(vendorSelfAttestations)
@@ -183,6 +189,7 @@ const getVendorProductDetail = async (req, res) => {
             attestation,
             sectionVisibility,
             productName: String(rowRecord.product_name ?? "").trim() || "Product",
+            organizationStatus: vendor.organizationStatus ?? null,
         });
     }
     catch (e) {
