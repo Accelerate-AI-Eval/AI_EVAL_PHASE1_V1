@@ -1,6 +1,7 @@
 import { db } from "../database/db.js";
 import { vendors, vendorSelfAttestations, cotsBuyerAssessments, cotsVendorAssessments, createOrganization, generatedProfileReports, } from "../schema/schema.js";
 import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { attestationBelongsToVendorByIds, attestationBelongsToVendorDirectoryRow } from "./vendorDirectoryAttestationScope.js";
 const joinOrg = sql `${createOrganization.id} = (${vendors.organizationId})::int`;
 function firstNonEmptyText(...vals) {
     for (const v of vals) {
@@ -127,7 +128,7 @@ export async function resolveProductByOrgAndProductName(vendorName, productName)
     })
         .from(vendors)
         .innerJoin(createOrganization, joinOrg)
-        .innerJoin(vendorSelfAttestations, eq(vendorSelfAttestations.user_id, vendors.userId))
+        .innerJoin(vendorSelfAttestations, attestationBelongsToVendorDirectoryRow())
         .where(and(sql `trim(lower(${createOrganization.organizationName})) = trim(lower(${vName}))`, sql `trim(lower(coalesce(${vendorSelfAttestations.product_name}, ''))) = trim(lower(${pName}))`, sql `upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`, isNull(vendorSelfAttestations.user_archived_at)))
         .orderBy(desc(vendorSelfAttestations.updated_at))
         .limit(1);
@@ -211,7 +212,8 @@ export async function listDirectoryProductsFromAssessments(userId) {
     const { scores: trustByAtt, summaries: summaryByAtt } = await trustScoresAndSummariesForAttestations(ids);
     return resolved.map((r) => mapRowToApiProduct(r, trustByAtt[r.attestationId], summaryByAtt[r.attestationId]));
 }
-export async function canViewDirectoryProductViaAssessment(viewerUserId, vendorTableId, vendorUserId, productId) {
+export async function canViewDirectoryProductViaAssessment(viewerUserId, vendorTableId, vendorUserId, productId, vendorOrganizationId, organizationName) {
+    const scope = attestationBelongsToVendorByIds(vendorUserId >= 1 ? vendorUserId : null, vendorOrganizationId, organizationName ?? null);
     const [att] = await db
         .select({
         id: vendorSelfAttestations.id,
@@ -221,9 +223,9 @@ export async function canViewDirectoryProductViaAssessment(viewerUserId, vendorT
         user_archived_at: vendorSelfAttestations.user_archived_at,
     })
         .from(vendorSelfAttestations)
-        .where(and(eq(vendorSelfAttestations.user_id, vendorUserId), or(eq(vendorSelfAttestations.id, productId), eq(vendorSelfAttestations.vendor_self_attestation_id, productId))))
+        .where(and(scope, or(eq(vendorSelfAttestations.id, productId), eq(vendorSelfAttestations.vendor_self_attestation_id, productId))))
         .limit(1);
-    if (!att || att.user_id !== vendorUserId)
+    if (!att)
         return false;
     if (att.user_archived_at != null)
         return false;

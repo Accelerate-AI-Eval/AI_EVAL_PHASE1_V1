@@ -9,6 +9,13 @@ import "../ProductProfile/product_profile.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
 
+/*
+ * public_directory_listing (vendor_onboarding) / API field publicDirectoryListing:
+ * Loaded with GET /vendorOnboarding; optional explicit PATCH /vendorOnboarding/public-directory-listing;
+ * may be enabled from the server when marking a product “visible to buyers”. Drives buyer AI Vendor Directory eligibility.
+ * @see backend/src/services/vendorDirectoryAttestationScope.ts
+ */
+
 /** Clear auth session and navigate to login. Call only when user explicitly chooses to log in again. */
 function clearAuthAndGoToLogin() {
   sessionStorage.removeItem("bearerToken");
@@ -52,6 +59,11 @@ export interface StoredGeneratedReport {
   createdAt: string;
 }
 
+/**
+ * Product Profile route: product attestations, buyer visibility, generated profile, and org-level
+ * Public Directory Listing (GET/PATCH vendor onboarding `publicDirectoryListing`). The listing toggle
+ * in ProductProfileView is commented out in JSX but props/state/handlers stay wired for easy restore.
+ */
 export const DirectoryListing = () => {
   const systemRole = (sessionStorage.getItem("systemRole") ?? "").toLowerCase().trim();
   const userRole = (sessionStorage.getItem("userRole") ?? "").toLowerCase().trim();
@@ -65,6 +77,7 @@ export const DirectoryListing = () => {
   const [formState, setFormState] = useState<VendorSelfAttestationFormState | null>(null);
   const [products, setProducts] = useState<ProductProfileProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Org appears in public vendor directory when true (vendor onboarding `publicDirectoryListing`). */
   const [publicListing, setPublicListing] = useState(false);
   const [publicListingUpdating, setPublicListingUpdating] = useState(false);
   const [publicListingError, setPublicListingError] = useState<string | null>(null);
@@ -81,6 +94,7 @@ export const DirectoryListing = () => {
   /** Product list tab: current (non-expired attestation) vs archived (expired attestation) */
   const [productTab, setProductTab] = useState<"current" | "archived">("current");
 
+  /** Load org-level Public Directory Listing flag from GET /vendorOnboarding. */
   const fetchVendorPublicListing = useCallback(async () => {
     const token = sessionStorage.getItem("bearerToken");
     if (!token) return;
@@ -268,6 +282,7 @@ export const DirectoryListing = () => {
     }
   }, []);
 
+  /** PATCH /vendorOnboarding/public-directory-listing to enable or disable public directory presence. */
   const handlePublicListingToggle = useCallback(async () => {
     const token = sessionStorage.getItem("bearerToken");
     if (!token) {

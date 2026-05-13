@@ -1,12 +1,13 @@
 import { db } from "../../database/db.js";
 import { vendors, usersTable, createOrganization, vendorSelfAttestations } from "../../schema/schema.js";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { attestationBelongsToVendorDirectoryRow } from "../../services/vendorDirectoryAttestationScope.js";
 /**
  * GET /vendorDirectory
- * Returns only vendors who have turned on Public Directory Listing (for buyer-facing directory).
- * When DB has public_directory_listing column, filter by it; when column is missing, returns [].
- * Query ?scope=all (system admin only): returns all vendors, no filter (includes inactive organizations).
- * Otherwise excludes vendors whose organization is not active — they do not appear in the AI Vendor Directory.
+ * Buyer-facing vendor list. Requires vendor_onboarding.public_directory_listing = true (set automatically when
+ * a product is marked visible to buyers in Product Profile, or via PATCH public-directory-listing).
+ * Active organization and at least one directory-eligible product (COMPLETED, visible_to_buyer, not expired,
+ * not user-archived) for the vendor org — products may belong to any org member, not only vendor_onboarding.user_id.
  */
 const listPublicVendors = async (req, res) => {
     try {
@@ -43,7 +44,7 @@ const listPublicVendors = async (req, res) => {
             headquartersLocation: vendors.headquartersLocation,
             vendorMaturity: vendors.vendorMaturity,
             sector: vendors.sector,
-            publicDirectoryListing: vendors.publicDirectoryListing,
+            publicDirectoryListing: vendors.publicDirectoryListing, // response field; default list filters eq(..., true)
             organizationName: createOrganization.organizationName,
         };
         const joinCondition = sql `${createOrganization.id} = (${vendors.organizationId})::int`;
@@ -56,16 +57,22 @@ const listPublicVendors = async (req, res) => {
                 .select(selectFields)
                 .from(vendors)
                 .leftJoin(createOrganization, joinCondition)
-                .where(and(eq(vendors.publicDirectoryListing, true), eq(createOrganization.organizationStatus, "active")));
-        const vendorIds = rows.map((r) => r.userId).filter((id) => id != null && Number.isInteger(id));
-        const productRows = vendorIds.length > 0
+                .where(and(
+            // public.vendor_onboarding.public_directory_listing — buyer directory vendor list gate
+            eq(vendors.publicDirectoryListing, true), eq(createOrganization.organizationStatus, "active")));
+        const vendorUuidList = rows
+            .map((r) => r.id)
+            .filter((id) => id != null && String(id).trim() !== "");
+        const productRows = vendorUuidList.length > 0
             ? await db
                 .select({
-                user_id: vendorSelfAttestations.user_id,
+                user_id: vendors.userId,
                 product_name: vendorSelfAttestations.product_name,
             })
-                .from(vendorSelfAttestations)
-                .where(and(inArray(vendorSelfAttestations.user_id, vendorIds), eq(vendorSelfAttestations.visible_to_buyer, true), sql `upper(${vendorSelfAttestations.status}) = 'COMPLETED'`, sql `(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`, isNull(vendorSelfAttestations.user_archived_at)))
+                .from(vendors)
+                .innerJoin(createOrganization, joinCondition)
+                .innerJoin(vendorSelfAttestations, and(attestationBelongsToVendorDirectoryRow(), eq(vendorSelfAttestations.visible_to_buyer, true), sql `upper(${vendorSelfAttestations.status}) = 'COMPLETED'`, sql `(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`, isNull(vendorSelfAttestations.user_archived_at)))
+                .where(inArray(vendors.id, vendorUuidList))
             : [];
         const productNamesByUserId = {};
         for (const pr of productRows) {

@@ -634,7 +634,7 @@ function ProductProfileView({
               </p>
             </div>
           </div>
-          <div className="btn_user_page product_profile_header_actions">
+          {/* <div className="btn_user_page product_profile_header_actions">
             {onPublicListingToggle != null && (
               <>
                 <div className="product_profile_toggle_wrap">
@@ -655,7 +655,7 @@ function ProductProfileView({
                 )}
               </>
             )}
-          </div>
+          </div> */}
         </div>
       )}
 

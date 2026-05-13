@@ -374,7 +374,8 @@ const fetchVendorSelfAttestation = async (req: Request, res: Response): Promise<
     const organizationId = typeof req.query?.organizationId === "string" ? req.query.organizationId.trim() : null;
     const attestationId = typeof req.query?.id === "string" ? req.query.id.trim() || null : null;
 
-    // Explicit select (exclude public_directory_listing) so this works when that column does not exist yet
+    // Explicit select (exclude public_directory_listing): attestation API does not expose Public Directory Listing;
+    // vendors read that flag from GET /vendorOnboarding instead.
     const vendorSelect = {
       userId: vendors.userId,
       organizationId: vendors.organizationId,

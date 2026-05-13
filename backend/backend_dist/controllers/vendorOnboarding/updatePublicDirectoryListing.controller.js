@@ -5,8 +5,17 @@ const COLUMN_MISSING = /public_directory_listing|does not exist|column .* does n
 /**
  * PATCH /vendorOnboarding/public-directory-listing
  * Body: { enabled: boolean }
- * Sets public_directory_listing for the logged-in vendor's onboarding row.
- * If the column is missing, adds it (ALTER TABLE ... ADD COLUMN IF NOT EXISTS) then updates.
+ *
+ * Database: public.vendor_onboarding.public_directory_listing (boolean). Drizzle: vendors.publicDirectoryListing.
+ *
+ * Public Directory Listing: org-wide opt-in stored on that column.
+ * When enabled, the vendor can appear in GET /vendorDirectory and buyers can list products via
+ * GET /vendorDirectory/:vendorId/products (subject to active org, COMPLETED + visible_to_buyer products).
+ * Paired with GET /vendorOnboarding (data.publicDirectoryListing) for the Product Profile toggle.
+ * Also see enablePublicDirectoryListingForAttestation when a product is marked visible to buyers.
+ *
+ * Sets the flag for the JWT user’s vendor_onboarding row. If the column is missing, runs
+ * ALTER TABLE ... ADD COLUMN IF NOT EXISTS then retries the update.
  */
 const updatePublicDirectoryListing = async (req, res) => {
     try {

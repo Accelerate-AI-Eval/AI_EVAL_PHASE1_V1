@@ -27,6 +27,11 @@ export const vendorOnboarding = pgTable("vendor_onboarding", {
   yearFounded: integer("year_founded").notNull(),
   headquartersLocation: varchar("headquarters_location", { length: 100 }).notNull(),
   operatingRegions: jsonb("operating_regions"),
+  /**
+   * public_directory_listing (PostgreSQL) — org-level “Public Directory Listing”.
+   * Buyer APIs filter on this; vendors read/write via GET/PATCH vendorOnboarding and it may be set when marking a product visible to buyers.
+   * @see backend/src/services/vendorDirectoryAttestationScope.ts (file header).
+   */
   publicDirectoryListing: boolean("public_directory_listing").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

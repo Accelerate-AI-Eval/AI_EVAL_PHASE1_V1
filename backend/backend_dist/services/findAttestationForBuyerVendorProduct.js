@@ -1,8 +1,10 @@
 import { db } from "../database/db.js";
 import { vendors, vendorSelfAttestations, createOrganization } from "../schema/schema.js";
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { attestationBelongsToVendorDirectoryRow } from "./vendorDirectoryAttestationScope.js";
 /**
  * Find the vendor's completed buyer-visible attestation row matching directory vendor name + product name.
+ * Gates on vendors.publicDirectoryListing (DB: public_directory_listing) so name-based resolution aligns with GET /vendorDirectory.
  */
 export async function findAttestationForBuyerVendorProduct(vendorName, productName) {
     const vName = (vendorName ?? "").trim();
@@ -16,8 +18,9 @@ export async function findAttestationForBuyerVendorProduct(vendorName, productNa
     })
         .from(vendors)
         .innerJoin(createOrganization, joinOrg)
-        .innerJoin(vendorSelfAttestations, eq(vendorSelfAttestations.user_id, vendors.userId))
-        .where(and(eq(vendors.publicDirectoryListing, true), sql `trim(lower(${createOrganization.organizationName})) = trim(lower(${vName}))`, sql `trim(lower(coalesce(${vendorSelfAttestations.product_name}, ''))) = trim(lower(${pName}))`, sql `upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`, eq(vendorSelfAttestations.visible_to_buyer, true), sql `(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`, isNull(vendorSelfAttestations.user_archived_at)))
+        .innerJoin(vendorSelfAttestations, attestationBelongsToVendorDirectoryRow())
+        .where(and(eq(vendors.publicDirectoryListing, true), // public_directory_listing — same gate as buyer vendor directory
+    sql `trim(lower(${createOrganization.organizationName})) = trim(lower(${vName}))`, sql `trim(lower(coalesce(${vendorSelfAttestations.product_name}, ''))) = trim(lower(${pName}))`, sql `upper(trim(coalesce(${vendorSelfAttestations.status}, ''))) = 'COMPLETED'`, eq(vendorSelfAttestations.visible_to_buyer, true), sql `(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`, isNull(vendorSelfAttestations.user_archived_at)))
         .orderBy(desc(vendorSelfAttestations.updated_at))
         .limit(1);
     const r = rows[0]?.row;

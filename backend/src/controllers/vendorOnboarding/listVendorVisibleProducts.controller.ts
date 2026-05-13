@@ -8,6 +8,7 @@ import {
   createOrganization,
 } from "../../schema/schema.js";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { attestationBelongsToVendorDirectoryRow } from "../../services/vendorDirectoryAttestationScope.js";
 
 const vendorOrgJoin = sql`${createOrganization.id} = (${vendors.organizationId})::int`;
 
@@ -21,10 +22,10 @@ function firstNonEmptyText(...vals: (string | null | undefined)[]): string | und
 
 /**
  * GET /vendorDirectory/:vendorId/products
- * Returns only products (attestations) that are COMPLETED, visible_to_buyer = true,
- * and not archived (expiry in the future, not user-archived on the attestation). Vendor must have publicDirectoryListing = true.
- * Query ?all=true (system admin only): returns all attestations for this vendor (any status).
- * Non-admin responses omit products when the vendor organization is inactive (directory visibility).
+ * Public Directory Listing: for non-admins, the vendor row must have publicDirectoryListing = true and active org;
+ * Products include any org-scoped attestation tied to this vendor row (not only vendor_onboarding.user_id),
+ * so teammates' products appear in the directory and buyer product dropdowns after "Visible to buyers".
+ * Query ?all=true (system admin only): returns all attestations for this vendor (any status), bypassing listing gates.
  */
 const listVendorVisibleProducts = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -80,60 +81,51 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
       String(vendor.organizationStatus).trim().toLowerCase() === "active";
 
     if (!allProducts && (!vendor.publicDirectoryListing || !orgActive)) {
+      // Non-admin: require public_directory_listing + active org before returning any products for this vendor row
       res.status(200).json({ success: true, products: [] });
       return;
     }
 
-    const vendorUserId = vendor.userId != null ? Number(vendor.userId) : null;
-    if (vendorUserId == null) {
-      res.status(200).json({ success: true, products: [] });
-      return;
-    }
+    const productSelect = {
+      id: vendorSelfAttestations.id,
+      product_name: vendorSelfAttestations.product_name,
+      status: vendorSelfAttestations.status,
+      updated_at: vendorSelfAttestations.updated_at,
+      visible_to_buyer: vendorSelfAttestations.visible_to_buyer,
+      target_industries: vendorSelfAttestations.target_industries,
+      market_product_material: vendorSelfAttestations.market_product_material,
+      unique_solution: vendorSelfAttestations.unique_solution,
+      tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
+    };
+
+    const directoryAttestationJoin = and(
+      attestationBelongsToVendorDirectoryRow(),
+      isNull(vendorSelfAttestations.user_archived_at),
+    );
 
     const rows =
       allProducts && isSystemAdmin
         ? await db
-            .select({
-              id: vendorSelfAttestations.id,
-              product_name: vendorSelfAttestations.product_name,
-              status: vendorSelfAttestations.status,
-              updated_at: vendorSelfAttestations.updated_at,
-              visible_to_buyer: vendorSelfAttestations.visible_to_buyer,
-              target_industries: vendorSelfAttestations.target_industries,
-              market_product_material: vendorSelfAttestations.market_product_material,
-              unique_solution: vendorSelfAttestations.unique_solution,
-              tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
-            })
-            .from(vendorSelfAttestations)
-            .where(
-              and(
-                eq(vendorSelfAttestations.user_id, vendorUserId),
-                isNull(vendorSelfAttestations.user_archived_at)
-              )
-            )
+            .select(productSelect)
+            .from(vendors)
+            .innerJoin(createOrganization, vendorOrgJoin)
+            .innerJoin(vendorSelfAttestations, directoryAttestationJoin)
+            .where(eq(vendors.id, vendorId))
             .orderBy(desc(vendorSelfAttestations.updated_at))
         : await db
-            .select({
-              id: vendorSelfAttestations.id,
-              product_name: vendorSelfAttestations.product_name,
-              status: vendorSelfAttestations.status,
-              updated_at: vendorSelfAttestations.updated_at,
-              visible_to_buyer: vendorSelfAttestations.visible_to_buyer,
-              target_industries: vendorSelfAttestations.target_industries,
-              market_product_material: vendorSelfAttestations.market_product_material,
-              unique_solution: vendorSelfAttestations.unique_solution,
-              tech_product_specifications: vendorSelfAttestations.tech_product_specifications,
-            })
-            .from(vendorSelfAttestations)
-            .where(
+            .select(productSelect)
+            .from(vendors)
+            .innerJoin(createOrganization, vendorOrgJoin)
+            .innerJoin(
+              vendorSelfAttestations,
               and(
-                eq(vendorSelfAttestations.user_id, vendorUserId),
+                directoryAttestationJoin,
                 eq(vendorSelfAttestations.status, "COMPLETED"),
                 eq(vendorSelfAttestations.visible_to_buyer, true),
                 sql`(${vendorSelfAttestations.expiry_at} IS NULL OR ${vendorSelfAttestations.expiry_at} >= now())`,
-                isNull(vendorSelfAttestations.user_archived_at)
-              )
+              ),
             )
+            .where(eq(vendors.id, vendorId))
             .orderBy(desc(vendorSelfAttestations.updated_at));
 
     const attestationIds = rows.map((r) => r.id).filter((id): id is string => id != null && String(id).trim() !== "");

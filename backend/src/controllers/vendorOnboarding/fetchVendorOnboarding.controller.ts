@@ -7,7 +7,11 @@ import { eq, sql } from "drizzle-orm";
  * Fetch vendor onboarding data for the currently authenticated user.
  * Uses userId from JWT (req.user) to look up the vendor_onboarding row.
  * Returns empty object when no record exists so the frontend can show an empty form.
- * Ensures public_directory_listing column exists (ADD COLUMN IF NOT EXISTS) before selecting so no "column does not exist" error.
+ *
+ * Response data includes publicDirectoryListing (Public Directory Listing): org-level flag for whether
+ * the vendor is opted into the buyer-facing directory. Same row is updated by PATCH
+ * /vendorOnboarding/public-directory-listing. Ensures public_directory_listing exists
+ * (ADD COLUMN IF NOT EXISTS) before selecting so older DBs do not throw "column does not exist".
  */
 const fetchVendorOnboarding = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -25,7 +29,7 @@ const fetchVendorOnboarding = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // --- 2. Ensure column exists so select() never fails with "column does not exist" ---
+    // --- 2. vendor_onboarding.public_directory_listing: ensure column exists before select (legacy DBs) ---
     try {
       await db.execute(sql`
         ALTER TABLE public.vendor_onboarding
@@ -118,6 +122,7 @@ const fetchVendorOnboarding = async (req: Request, res: Response): Promise<void>
         : row.operatingRegions != null && typeof row.operatingRegions === "object"
           ? (row.operatingRegions as string[])
           : [],
+      // Public Directory Listing (see vendorOnboarding.routes block comment)
       publicDirectoryListing: publicListing,
     };
 

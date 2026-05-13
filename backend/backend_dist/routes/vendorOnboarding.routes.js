@@ -11,11 +11,18 @@ import clearBuyerOnboarding from "../controllers/buyerOnboarding/clearBuyerOnboa
 import onboardingAccess from "../middlewares/onboarding/onboardingTokenVerify.middleware.js";
 import authenticateToken from "../middlewares/routesProtection.js";
 const vendorRoutes = express.Router();
+/*
+ * public_directory_listing (DB) / publicDirectoryListing (API & Drizzle):
+ * - PostgreSQL column on public.vendor_onboarding; see vendorDirectoryAttestationScope.ts header for full map.
+ * - GET /vendorOnboarding exposes data.publicDirectoryListing; PATCH .../public-directory-listing sets it.
+ * - Buyer routes below also require this flag (plus org active + visible products) except admin ?scope=all.
+ * - May be set true automatically when a product is marked visible to buyers (PATCH attestation visibility).
+ */
 // GET: Fetch vendor onboarding data for the logged-in user (JWT required)
 vendorRoutes.get("/vendorOnboarding", authenticateToken, fetchVendorOnboarding);
-// PATCH: Vendor sets Public Directory Listing on/off (dashboard toggle)
+// PATCH: Sets vendor_onboarding.public_directory_listing (org-wide; Product Profile toggle when uncommented)
 vendorRoutes.patch("/vendorOnboarding/public-directory-listing", authenticateToken, updatePublicDirectoryListing);
-// GET: List vendors who have Public Directory Listing on (for buyer Vendor Portal)
+// GET: Vendors with public_directory_listing = true (buyer Vendor Portal directory)
 vendorRoutes.get("/vendorDirectory", authenticateToken, listPublicVendors);
 // GET: Products this user has used in COTS assessments (must be before :vendorId routes)
 vendorRoutes.get("/vendorDirectory/assessment-products", authenticateToken, listVendorDirectoryAssessmentProducts);

@@ -8,6 +8,7 @@ import {
   generatedProfileReports,
 } from "../schema/schema.js";
 import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { attestationBelongsToVendorByIds, attestationBelongsToVendorDirectoryRow } from "./vendorDirectoryAttestationScope.js";
 
 const joinOrg = sql`${createOrganization.id} = (${vendors.organizationId})::int`;
 
@@ -166,7 +167,7 @@ export async function resolveProductByOrgAndProductName(
     })
     .from(vendors)
     .innerJoin(createOrganization, joinOrg)
-    .innerJoin(vendorSelfAttestations, eq(vendorSelfAttestations.user_id, vendors.userId))
+    .innerJoin(vendorSelfAttestations, attestationBelongsToVendorDirectoryRow())
     .where(
       and(
         sql`trim(lower(${createOrganization.organizationName})) = trim(lower(${vName}))`,
@@ -284,7 +285,14 @@ export async function canViewDirectoryProductViaAssessment(
   vendorTableId: string,
   vendorUserId: number,
   productId: string,
+  vendorOrganizationId?: string | null,
+  organizationName?: string | null,
 ): Promise<boolean> {
+  const scope = attestationBelongsToVendorByIds(
+    vendorUserId >= 1 ? vendorUserId : null,
+    vendorOrganizationId,
+    organizationName ?? null,
+  );
   const [att] = await db
     .select({
       id: vendorSelfAttestations.id,
@@ -296,13 +304,13 @@ export async function canViewDirectoryProductViaAssessment(
     .from(vendorSelfAttestations)
     .where(
       and(
-        eq(vendorSelfAttestations.user_id, vendorUserId),
+        scope,
         or(eq(vendorSelfAttestations.id, productId), eq(vendorSelfAttestations.vendor_self_attestation_id, productId)),
       ),
     )
     .limit(1);
 
-  if (!att || att.user_id !== vendorUserId) return false;
+  if (!att) return false;
   if (att.user_archived_at != null) return false;
 
   const altId =
