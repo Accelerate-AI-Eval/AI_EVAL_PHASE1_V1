@@ -89,26 +89,20 @@ const BuyerCotsField = ({
     }
     if (options && !multiselect) {
       const strValue = typeof safeValue === "string" ? safeValue : String(safeValue);
-      const valueInOptions = options.some((o) => o.value === strValue || o.label === strValue);
+      const matched = options.find((o) => o.value === strValue || o.label === strValue);
+      const displayLabel = matched?.label ?? strValue;
       return (
         <>
           <FormField label={label} mandatory={isRequired} tooltipText={placeholder}>
-            <select
-              value={strValue || ""}
-              disabled
-              className="select_input input_readonly"
+            <input
+              type="text"
+              id={fieldKey}
+              value={displayLabel}
+              readOnly
+              className="input_readonly"
               aria-label={label}
-            >
-              <option value="">{placeholder || defaultOption}</option>
-              {options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-              {!valueInOptions && strValue ? (
-                <option value={strValue}>{strValue}</option>
-              ) : null}
-            </select>
+              aria-readonly="true"
+            />
           </FormField>
           {errorMessage && <FieldError message={errorMessage} />}
         </>

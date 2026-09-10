@@ -91,6 +91,8 @@ export interface PythonCotsBuyerScoreResult {
   scoring_version?: string;
   /** Plain-text rationale for terminal display (same as Python console). */
   rationale?: string;
+  /** Step-by-step IRS math + hardcoded constants (Python console dump). */
+  formula_console?: string;
 }
 
 function scoringBaseUrl(): string {
@@ -320,5 +322,6 @@ export async function scoreCotsBuyerWithPython(options: {
     scoring_source: r.scoring_source != null ? String(r.scoring_source) : "formula",
     scoring_version: r.scoring_version != null ? String(r.scoring_version) : "irs-1.1",
     rationale: typeof r.rationale === "string" ? r.rationale : undefined,
+    formula_console: typeof r.formula_console === "string" ? r.formula_console : undefined,
   };
 }

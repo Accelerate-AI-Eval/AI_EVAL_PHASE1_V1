@@ -38,7 +38,10 @@ import SubmitProgressOverlay from "../../../UI/SubmitProgressOverlay";
 import BuyerCotsDynamicStep from "./BuyerCotsDynamicStep";
 import StepBuyerCotsPreview from "./StepBuyerCotsPreview";
 import { BUYER_COTS_TAB_STEPS } from "./buyerCotsTabs";
-import { mergeAttestationPrefill } from "../../../../constants/buyerCotsAttestationMapping";
+import {
+  BUYER_COTS_ATTESTATION_PREFILL_KEYS,
+  mergeAttestationPrefill,
+} from "../../../../constants/buyerCotsAttestationMapping";
 
 const BASE_URL =
   import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -118,6 +121,8 @@ function getBuyerCotsStepFieldErrors(
       if (!visible) continue;
     }
     if (!field.required) continue;
+    if (field.readOnly) continue;
+    if ((BUYER_COTS_ATTESTATION_PREFILL_KEYS as readonly string[]).includes(field.key)) continue;
     if (field.inputType === "vendorProduct") {
       if (!hasValue(formData, "vendorName", false)) errors.vendorName = "This field is required";
       if (!hasValue(formData, "productName", false)) errors.productName = "This field is required";
@@ -149,16 +154,9 @@ function getBuyerCotsStepFieldErrors(
       continue;
     }
     if (field.inputType === "confirmDispute") {
-      const stanceKey = field.stanceKey ?? `${field.key}Stance`;
       const hasAnswer =
         hasValue(formData, field.key, false) || hasValue(formData, `${field.key}Attested`, false);
       if (!hasAnswer) errors[field.key] = "This field is required";
-      if (!hasValue(formData, stanceKey, false)) {
-        errors[stanceKey] = "Choose Confirm or Dispute to continue";
-      }
-      if (formData[stanceKey] === "Dispute" && !hasValue(formData, field.key, false)) {
-        errors[field.key] = "Select your corrected answer";
-      }
       continue;
     }
     if (field.inputType === "industrySector") {
@@ -407,13 +405,6 @@ const BuyerAssessment = () => {
     if (attestationPrefillRef.current === attestationId) return;
     const token = sessionStorage.getItem("bearerToken");
     if (!token) return;
-    const missing = ["trainingUseOfData", "monitoringDataAvailable", "auditLogsAvailable", "dataExportCapability"].some(
-      (key) => !String(formData[key] ?? "").trim(),
-    );
-    if (!missing) {
-      attestationPrefillRef.current = attestationId;
-      return;
-    }
     fetch(`${BASE_URL.replace(/\/$/, "")}/buyerCotsAssessment/attestation-prefill/${encodeURIComponent(attestationId)}`, {
       headers: {
         "Content-Type": "application/json",
@@ -424,7 +415,7 @@ const BuyerAssessment = () => {
         const json = await res.json().catch(() => ({}));
         if (!res.ok || !json?.success || !json.prefill) return;
         attestationPrefillRef.current = attestationId;
-        setFormData((prev) => mergeAttestationPrefill(prev, json.prefill as Record<string, string>, false));
+        setFormData((prev) => mergeAttestationPrefill(prev, json.prefill as Record<string, string>, true));
       })
       .catch(() => {
         /* leave fields for the user to complete */

@@ -26,6 +26,8 @@ type DirectoryProduct = {
   audit_logs?: unknown;
   training_data_document?: unknown;
   data_subject_rights?: unknown;
+  hosting_deployment?: unknown;
+  solution_hosted?: unknown;
 };
 
 function vendorDisplayLabel(v: DirectoryVendor): string {
@@ -60,7 +62,7 @@ export default function BuyerVendorProductFields({
   const appliedAttestationRef = useRef<string>("");
 
   const applyAttestationPrefill = useCallback(
-    async (attestationId: string, overwrite = false, product?: DirectoryProduct) => {
+    async (attestationId: string, overwrite = true, product?: DirectoryProduct) => {
       if (!attestationId) return;
       if (!overwrite && appliedAttestationRef.current === attestationId) return;
       if (product) {
@@ -192,6 +194,8 @@ export default function BuyerVendorProductFields({
             audit_logs: p.audit_logs,
             training_data_document: p.training_data_document,
             data_subject_rights: p.data_subject_rights,
+            hosting_deployment: p.hosting_deployment ?? p.solution_hosted,
+            solution_hosted: p.solution_hosted ?? p.hosting_deployment,
           }))
           .filter((p) => p.id),
       );
@@ -213,7 +217,7 @@ export default function BuyerVendorProductFields({
     ).trim();
     if (!attestationId) return;
     const product = products.find((p) => p.id === attestationId);
-    void applyAttestationPrefill(attestationId, false, product);
+    void applyAttestationPrefill(attestationId, true, product);
   }, [
     products,
     selectedProductId,

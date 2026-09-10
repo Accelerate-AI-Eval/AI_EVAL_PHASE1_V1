@@ -448,7 +448,7 @@ def _capacity_delta(resolved: dict[str, Any]) -> float:
     return 0.0
 
 
-def _calculate_org_readiness_gap(resolved: dict[str, Any]) -> float:
+def _org_readiness_gap_parts(resolved: dict[str, Any]) -> dict[str, Any]:
     risk = 35.0
     digital = _norm(resolved.get("digitalMaturityLevel"))
     if (
@@ -457,16 +457,19 @@ def _calculate_org_readiness_gap(resolved: dict[str, Any]) -> float:
         or "high" in digital
         or "advanced" in digital
     ):
-        risk -= 10
+        digital_delta = -10.0
     elif "level 3" in digital or "medium" in digital:
-        risk -= 4
+        digital_delta = -4.0
     elif (
         "level 1" in digital
         or "level 2" in digital
         or "low" in digital
         or "ad-hoc" in digital
     ):
-        risk += 10
+        digital_delta = 10.0
+    else:
+        digital_delta = 0.0
+    risk += digital_delta
 
     governance = _norm(resolved.get("dataGovernanceMaturity"))
     if (
@@ -475,56 +478,96 @@ def _calculate_org_readiness_gap(resolved: dict[str, Any]) -> float:
         or "mature" in governance
         or "excellent" in governance
     ):
-        risk -= 8
+        governance_delta = -8.0
     elif "basic" in governance or "developing" in governance or "defined" in governance:
-        risk += 4
+        governance_delta = 4.0
     elif (
         "ad-hoc" in governance
         or "low" in governance
         or "initial" in governance
         or governance.startswith("none")
     ):
-        risk += 10
+        governance_delta = 10.0
+    else:
+        governance_delta = 0.0
+    risk += governance_delta
 
+    board_delta = 0.0
     if not _is_empty(resolved.get("aiGovernanceBoard")) and not _bool_yes(
         resolved.get("aiGovernanceBoard")
     ):
-        risk += 8
+        board_delta = 8.0
+    risk += board_delta
+
+    ethics_delta = 0.0
     if not _is_empty(resolved.get("aiEthicsPolicy")) and not _bool_yes(
         resolved.get("aiEthicsPolicy")
     ):
-        risk += 8
+        ethics_delta = 8.0
+    risk += ethics_delta
 
-    risk += _capacity_delta(resolved)
+    capacity_delta = _capacity_delta(resolved)
+    risk += capacity_delta
 
     appetite = _norm(resolved.get("riskAppetite"))
     criticality = _norm(resolved.get("criticality"))
+    appetite_delta = 0.0
     if _is_high_stakes(criticality) and _is_aggressive_appetite(appetite):
-        risk += 8
+        appetite_delta += 8.0
     if _is_low_or_medium_stakes(criticality) and _is_conservative_appetite(appetite):
-        risk -= 2
+        appetite_delta -= 2.0
+    risk += appetite_delta
 
     sensitivity = _norm(resolved.get("dataSensitivity"))
     if "extremely" in sensitivity or "highly sensitive" in sensitivity:
-        risk += 6
+        sensitivity_delta = 6.0
     elif "sensitive" in sensitivity:
-        risk += 3
+        sensitivity_delta = 3.0
+    else:
+        sensitivity_delta = 0.0
+    risk += sensitivity_delta
 
     review = _norm(resolved.get("humanReviewLevel"))
     if "no review" in review:
-        risk += 8
+        review_delta = 8.0
     elif "exception" in review:
-        risk += 4
+        review_delta = 4.0
     elif review.startswith("always"):
-        risk -= 4
+        review_delta = -4.0
+    else:
+        review_delta = 0.0
+    risk += review_delta
 
     confidence = _norm(resolved.get("answerConfidence"))
     if confidence.startswith("low"):
-        risk += 4
+        confidence_delta = 4.0
     elif confidence.startswith("high"):
-        risk -= 2
+        confidence_delta = -2.0
+    else:
+        confidence_delta = 0.0
+    risk += confidence_delta
 
-    return _clamp01(risk)
+    raw = risk
+    value = _clamp01(risk)
+    return {
+        "base": 35.0,
+        "digital_delta": digital_delta,
+        "governance_delta": governance_delta,
+        "board_delta": board_delta,
+        "ethics_delta": ethics_delta,
+        "capacity_delta": capacity_delta,
+        "appetite_delta": appetite_delta,
+        "sensitivity_delta": sensitivity_delta,
+        "review_delta": review_delta,
+        "confidence_delta": confidence_delta,
+        "raw_total": raw,
+        "value": value,
+        "is_clamped": raw != value,
+    }
+
+
+def _calculate_org_readiness_gap(resolved: dict[str, Any]) -> float:
+    return float(_org_readiness_gap_parts(resolved)["value"])
 
 
 def _usage_delta(usage: Any) -> float:
@@ -570,7 +613,7 @@ def _access_delta(access_levels: Any) -> float:
     return 0.0
 
 
-def _calculate_integration_risk(resolved: dict[str, Any]) -> float:
+def _integration_risk_parts(resolved: dict[str, Any]) -> dict[str, Any]:
     risk = 25.0
     systems = _parse_list(resolved.get("integrationSystems"))
     systems = [
@@ -578,71 +621,129 @@ def _calculate_integration_risk(resolved: dict[str, Any]) -> float:
         for s in systems
         if "no integration" not in _norm(s) and _norm(s) != "none"
     ]
-    risk += min(30, len(systems) * 6)
-    risk += _access_delta(resolved.get("integrationAccessLevels"))
-    risk += _usage_delta(resolved.get("currentUsageState"))
-    risk += _rollback_delta(
+    systems_delta = float(min(30, len(systems) * 6))
+    risk += systems_delta
+
+    access_delta = _access_delta(resolved.get("integrationAccessLevels"))
+    risk += access_delta
+    usage_delta = _usage_delta(resolved.get("currentUsageState"))
+    risk += usage_delta
+    rollback_delta = _rollback_delta(
         resolved.get("rollbackCapability"),
         resolved.get("dataExportCapability"),
     )
+    risk += rollback_delta
 
-    if not _effective_available(
-        resolved.get("monitoringDataAvailable"),
-        resolved.get("monitoringDataStance"),
-    ):
-        risk += 6
-    if not _effective_available(
-        resolved.get("auditLogsAvailable"),
-        resolved.get("auditLogsStance"),
-    ):
-        risk += 6
-    if not _bool_yes(resolved.get("testingResultsAvailable")):
-        risk += 6
+    monitoring_delta = (
+        0.0
+        if _effective_available(
+            resolved.get("monitoringDataAvailable"),
+            resolved.get("monitoringDataStance"),
+        )
+        else 6.0
+    )
+    risk += monitoring_delta
+    audit_delta = (
+        0.0
+        if _effective_available(
+            resolved.get("auditLogsAvailable"),
+            resolved.get("auditLogsStance"),
+        )
+        else 6.0
+    )
+    risk += audit_delta
+    testing_delta = 0.0 if _bool_yes(resolved.get("testingResultsAvailable")) else 6.0
+    risk += testing_delta
 
     exposure = _norm(resolved.get("outputExposure"))
     if "published directly" in exposure:
-        risk += 6
+        exposure_delta = 6.0
     elif "customer-facing" in exposure:
-        risk += 3
+        exposure_delta = 3.0
+    else:
+        exposure_delta = 0.0
+    risk += exposure_delta
 
     training = _norm(resolved.get("trainingUseOfData"))
     stance = _norm(resolved.get("trainingUseOfDataStance"))
     if stance == "dispute" or training.startswith("yes"):
-        risk += 5
+        training_delta = 5.0
     elif "not yet" in training:
-        risk += 3
+        training_delta = 3.0
+    else:
+        training_delta = 0.0
+    risk += training_delta
 
     deployment = _norm(resolved.get("deploymentModel"))
     if "on-premise" in deployment or "private cloud" in deployment:
-        risk += 4
+        deployment_delta = 4.0
+    else:
+        deployment_delta = 0.0
+    risk += deployment_delta
 
     pilot = _norm(resolved.get("pilotStatus"))
     if "did not meet" in pilot:
-        risk += 6
+        pilot_delta = 6.0
     elif "not planned" in pilot:
-        risk += 4
+        pilot_delta = 4.0
     elif "met criteria" in pilot:
-        risk -= 4
+        pilot_delta = -4.0
+    else:
+        pilot_delta = 0.0
+    risk += pilot_delta
 
     users = _norm(resolved.get("usersInScope"))
     if "5,000+" in users or "5000+" in users:
-        risk += 4
+        users_delta = 4.0
     elif "1-10" in users:
-        risk -= 2
+        users_delta = -2.0
+    else:
+        users_delta = 0.0
+    risk += users_delta
 
     effort = _norm(resolved.get("trainingEffort"))
-    if "multi-day" in effort:
-        risk += 3
+    effort_delta = 3.0 if "multi-day" in effort else 0.0
+    risk += effort_delta
 
     contracts = [_norm(x) for x in _parse_list(resolved.get("contractsInPlace"))]
-    if contracts and any("nothing signed" in x for x in contracts):
-        risk += 4
+    contracts_delta = (
+        4.0 if contracts and any("nothing signed" in x for x in contracts) else 0.0
+    )
+    risk += contracts_delta
 
     use_cases = [_norm(x) for x in _parse_list(resolved.get("useCaseTypes"))]
-    if any("automatically" in x for x in use_cases):
-        risk += 4
+    use_cases_delta = 4.0 if any("automatically" in x for x in use_cases) else 0.0
+    risk += use_cases_delta
 
-    return _clamp01(risk)
+    raw = risk
+    value = _clamp01(risk)
+    return {
+        "base": 25.0,
+        "systems_count": len(systems),
+        "systems": systems,
+        "systems_delta": systems_delta,
+        "access_delta": access_delta,
+        "usage_delta": usage_delta,
+        "rollback_delta": rollback_delta,
+        "monitoring_delta": monitoring_delta,
+        "audit_delta": audit_delta,
+        "testing_delta": testing_delta,
+        "exposure_delta": exposure_delta,
+        "training_delta": training_delta,
+        "deployment_delta": deployment_delta,
+        "pilot_delta": pilot_delta,
+        "users_delta": users_delta,
+        "effort_delta": effort_delta,
+        "contracts_delta": contracts_delta,
+        "use_cases_delta": use_cases_delta,
+        "raw_total": raw,
+        "value": value,
+        "is_clamped": raw != value,
+    }
+
+
+def _calculate_integration_risk(resolved: dict[str, Any]) -> float:
+    return float(_integration_risk_parts(resolved)["value"])
 
 
 def _interpret(score: float) -> dict[str, str]:
@@ -778,13 +879,24 @@ def calculate_buyer_implementation_risk_score(
         2,
     )
     vendor_risk_raw = _clamp01(100 - vendor_trust_score)
-    org_raw = _calculate_org_readiness_gap(resolved)
-    int_raw = _calculate_integration_risk(resolved)
+    org_parts = _org_readiness_gap_parts(resolved)
+    int_parts = _integration_risk_parts(resolved)
     intent = _calc_intent_multiplier(payload)
     implementation_risk_score, vendor_risk, organizational_readiness_gap, integration_risk = (
-        _irs_final_from_parts(vendor_risk_raw, org_raw, int_raw, float(intent["value"]))
+        _irs_final_from_parts(
+            vendor_risk_raw,
+            float(org_parts["value"]),
+            float(int_parts["value"]),
+            float(intent["value"]),
+        )
     )
     interpreted = _interpret(implementation_risk_score)
+    vr_c = vendor_risk * 0.35
+    org_c = organizational_readiness_gap * 0.35
+    integ_c = integration_risk * 0.30
+    base_w = vr_c + org_c + integ_c
+    risk_term = base_w * float(intent["value"])
+    weighted = 100.0 - risk_term
 
     return {
         "implementationRiskScore": implementation_risk_score,
@@ -806,6 +918,29 @@ def calculate_buyer_implementation_risk_score(
             "intentProfile": intent["profile"],
             "intentionalRiskCount": intent["intentional_count"],
             "unintentionalRiskCount": intent["unintentional_count"],
+        },
+        "detail": {
+            "vendor_risk": {
+                "vendor_trust_score": vendor_trust_score,
+                "value": vendor_risk,
+            },
+            "organizational_readiness_gap": org_parts,
+            "integration_risk": int_parts,
+            "intent_multiplier": intent,
+            "final_formula": {
+                "vendor_risk": vendor_risk,
+                "organizational_readiness_gap": organizational_readiness_gap,
+                "integration_risk": integration_risk,
+                "vendor_risk_contribution": vr_c,
+                "org_gap_contribution": org_c,
+                "integration_risk_contribution": integ_c,
+                "base_weighted_sum": base_w,
+                "intent_multiplier": intent["value"],
+                "risk_term": risk_term,
+                "weighted": weighted,
+                "score": implementation_risk_score,
+            },
+            "resolved_inputs": resolved,
         },
         "source": {
             "vendorName": vendor_name or "Vendor",

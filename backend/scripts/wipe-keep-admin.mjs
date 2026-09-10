@@ -1,5 +1,6 @@
 /**
- * Wipe all app data; keep only platform admin admin@work.com (+ org id=1 if linked).
+ * Wipe all app data; keep platform admin admin@work.com (+ org id=1 if linked),
+ * plus catalog tables: risk_mappings, risk_top5_mitigations, document_chunks.
  * Run: node scripts/wipe-keep-admin.mjs
  */
 import bcrypt from "bcrypt";
@@ -23,6 +24,12 @@ const connectionString = (process.env.DATABASE_URL ?? "").trim() || fromParts;
 
 const ADMIN_EMAIL = "admin@work.com";
 const ADMIN_PASSWORD = "12345678";
+
+const KEEP_TABLES = new Set([
+  "risk_mappings",
+  "risk_top5_mitigations",
+  "document_chunks",
+]);
 
 const pool = new pg.Pool({ connectionString });
 const client = await pool.connect();
@@ -56,9 +63,18 @@ try {
     throw new Error("No public tables found");
   }
 
-  const quoted = names.map((n) => `"${n.replace(/"/g, '""')}"`).join(", ");
-  console.log(`Truncating ${names.length} tables…`);
-  await client.query(`TRUNCATE TABLE ${quoted} RESTART IDENTITY CASCADE`);
+  const truncateNames = names.filter((n) => !KEEP_TABLES.has(n));
+  if (truncateNames.length === 0) {
+    throw new Error("No tables left to truncate");
+  }
+
+  const quoted = truncateNames.map((n) => `"${n.replace(/"/g, '""')}"`).join(", ");
+  console.log(`Keeping tables: ${[...KEEP_TABLES].filter((n) => names.includes(n)).join(", ") || "(none present)"}`);
+  console.log(`Truncating ${truncateNames.length} tables…`);
+  // Avoid TRUNCATE CASCADE: it would also wipe kept tables that FK to truncated ones.
+  await client.query(`SET session_replication_role = 'replica'`);
+  await client.query(`TRUNCATE TABLE ${quoted} RESTART IDENTITY`);
+  await client.query(`SET session_replication_role = 'origin'`);
 
   // Recreate minimal org
   if (org) {

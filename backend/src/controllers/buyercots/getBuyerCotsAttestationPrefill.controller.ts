@@ -84,6 +84,71 @@ const AUDIT_ALIASES: Record<string, string> = {
   none: "No - No audit logs available",
 };
 
+function collectDocCategories(raw: unknown): string[] {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const slot2 = (raw as Record<string, unknown>)["2"];
+  if (slot2 == null || typeof slot2 !== "object" || Array.isArray(slot2)) return [];
+  return asList((slot2 as Record<string, unknown>).categories);
+}
+
+function mapEvidence(row: Record<string, unknown>): string {
+  const found = new Set<string>();
+  const docs = row.document_uploads;
+  const certs = [
+    ...asList(row.security_compliance_certificates),
+    ...collectDocCategories(docs),
+  ].map((t) => t.toLowerCase());
+  if (certs.some((t) => t.includes("soc 2 type 2") || t.includes("soc 2 type ii"))) {
+    found.add("SOC 2 Type 2 report");
+  }
+  if (certs.some((t) => t.includes("iso 27001"))) found.add("ISO 27001 certificate");
+  if (certs.some((t) => t.includes("iso 42001"))) found.add("ISO 42001 certificate");
+
+  const dpa = asText(row.dpa_available).toLowerCase();
+  if (dpa && dpa !== "none" && dpa !== "no") found.add("DPA");
+
+  const baa = asList(row.hipaa_baa).map((t) => t.toLowerCase());
+  if (baa.some((t) => t.includes("hipaa") || t.includes("baa") || t.startsWith("yes"))) {
+    found.add("BAA");
+  }
+
+  if (Array.isArray(row.sub_processors) && row.sub_processors.some((item) => {
+    if (item == null) return false;
+    if (typeof item === "object") return Boolean(String((item as Record<string, unknown>).name ?? "").trim());
+    return Boolean(String(item).trim());
+  })) {
+    found.add("Sub-processor list");
+  }
+
+  const pen = asText(row.independent_pen_test_frequency).toLowerCase();
+  if (pen && pen !== "none" && pen !== "no") found.add("Pen-test summary");
+
+  const testing = asText(row.test_results).toLowerCase();
+  if (testing && testing !== "no" && !testing.includes("no formal")) {
+    found.add("Model or safety testing results");
+  }
+
+  if (docs && typeof docs === "object" && !Array.isArray(docs)) {
+    const spec = (docs as Record<string, unknown>)["1"];
+    if (Array.isArray(spec) && spec.some((x) => String(x ?? "").trim())) {
+      found.add("Architecture diagram");
+    }
+  }
+
+  const list = [...found];
+  if (list.length > 0) return JSON.stringify(list);
+  const hasSource = [
+    row.document_uploads,
+    row.security_compliance_certificates,
+    row.dpa_available,
+    row.hipaa_baa,
+    row.sub_processors,
+    row.independent_pen_test_frequency,
+    row.test_results,
+  ].some((v) => v != null && String(v).trim() !== "" && String(v) !== "[]");
+  return hasSource ? JSON.stringify(["Nothing yet"]) : "";
+}
+
 function mapAttestationRow(row: Record<string, unknown>): Record<string, string> {
   const monitoring = matchAlias(
     asText(row.available_usage_data) || asText(row.production_model_monitoring),
@@ -92,12 +157,16 @@ function mapAttestationRow(row: Record<string, unknown>): Record<string, string>
   const audit = matchAlias(asText(row.audit_logs), AUDIT_ALIASES);
   const training = asText(row.training_data_document);
   const dataExport = mapDataExport(row.data_subject_rights);
+  const deployment = asText(row.solution_hosted || row.hosting_deployment);
 
   const out: Record<string, string> = {};
   if (training) out.trainingUseOfData = training;
   if (monitoring) out.monitoringDataAvailable = monitoring;
   if (audit) out.auditLogsAvailable = audit;
   if (dataExport) out.dataExportCapability = dataExport;
+  if (deployment) out.deploymentModel = deployment;
+  const evidence = mapEvidence(row);
+  if (evidence) out.vendorEvidenceReceived = evidence;
   return out;
 }
 
@@ -116,6 +185,14 @@ const getBuyerCotsAttestationPrefill = async (req: Request, res: Response) => {
         audit_logs: vendorSelfAttestations.audit_logs,
         training_data_document: vendorSelfAttestations.training_data_document,
         data_subject_rights: vendorSelfAttestations.data_subject_rights,
+        solution_hosted: vendorSelfAttestations.solution_hosted,
+        document_uploads: vendorSelfAttestations.document_uploads,
+        security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+        dpa_available: vendorSelfAttestations.dpa_available,
+        hipaa_baa: vendorSelfAttestations.hipaa_baa,
+        sub_processors: vendorSelfAttestations.sub_processors,
+        independent_pen_test_frequency: vendorSelfAttestations.independent_pen_test_frequency,
+        test_results: vendorSelfAttestations.test_results,
       })
       .from(vendorSelfAttestations)
       .where(

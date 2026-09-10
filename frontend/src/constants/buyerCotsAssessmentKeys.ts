@@ -48,6 +48,8 @@ const EXTRA_KEYS = [
   "monitoringDataAvailableAttested",
   "auditLogsAvailableAttested",
   "dataExportCapabilityAttested",
+  "deploymentModelAttested",
+  "vendorEvidenceReceivedAttested",
   "expectedOutcomes",
   "requirementGaps",
   "criticality",

@@ -2,10 +2,7 @@ import { useEffect } from "react";
 import HeaderForBuyer from "../../BuyerOnboarding/HeaderForBuyer";
 import FormField from "../../../UI/FormField";
 import FileUpload from "../../../UI/FileUpload";
-import ChipMultiSelect from "../../../UI/ChipMultiSelect";
 import FieldError from "../../../UI/FieldError";
-import ClickTooltip from "../../../UI/ClickTooltip";
-import { Check, Info, X } from "lucide-react";
 import { MAX_FILE_SIZE_BYTES } from "../../../../constants/vendorAttestationDocumentConstants";
 import type { BuyerCotsFieldConfig, BuyerCotsSectionConfig } from "../../../../constants/buyerCotsFormSchema";
 import {
@@ -17,9 +14,9 @@ import { toast } from "react-toastify";
 import {
   applyBuyerCotsDerivedFields,
   parseEvidenceFilesByCategory,
-  pruneEvidenceFilesByCategory,
 } from "../../../../constants/buyerCotsDerived";
 import { flattenOnboardingSectorIndustries } from "../../../../constants/buyerCotsOnboardingMapping";
+import { isBuyerCotsAttestationLockedField } from "../../../../constants/buyerCotsAttestationMapping";
 import BuyerCotsField from "./BuyerCotsField";
 import BuyerVendorProductFields from "./BuyerVendorProductFields";
 import "../../VendorAttestations/tabs/TabComplianceCertifications.css";
@@ -93,11 +90,10 @@ export default function BuyerCotsDynamicStep({
   useEffect(() => {
     const patch: Record<string, string> = {};
     for (const field of section.fields) {
-      if (field.inputType !== "confirmDispute") continue;
       const attested = String(formData[`${field.key}Attested`] ?? "").trim();
+      if (!attested && field.inputType !== "confirmDispute") continue;
       const current = String(formData[field.key] ?? "").trim();
-      const stance = String(formData[field.stanceKey ?? `${field.key}Stance`] ?? "").trim();
-      if (attested && !current && stance !== "Dispute") {
+      if (attested && current !== attested) {
         patch[field.key] = attested;
       }
     }
@@ -152,6 +148,7 @@ export default function BuyerCotsDynamicStep({
             const byCategory = parseEvidenceFilesByCategory(formData.vendorComplianceDocumentation);
             const uploadCategories = selected.filter((cat) => cat !== noneValue);
             const nothingSelected = selected.includes(noneValue);
+            const evidenceText = selected.length ? selected.join(", ") : "";
             return (
               <div key={field.key} className="form_fields_vendor buyer_cots_field">
                 <FormField
@@ -160,25 +157,17 @@ export default function BuyerCotsDynamicStep({
                   tooltipText={field.placeholder}
                 >
                   <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                    Select artefact types and upload one file per artefact. Max 10MB per file.
+                    Prefilled from the selected vendor attestation. Upload one file per artefact if you hold a copy. Max 10MB per file.
                   </p>
-                  <ChipMultiSelect
+                  <input
+                    type="text"
                     id={field.key}
-                    labelName=""
-                    options={options}
-                    value={selected}
-                    onChange={(nextSelected) => {
-                      const nextByCategory = pruneEvidenceFilesByCategory(
-                        nextSelected,
-                        byCategory,
-                        noneValue,
-                      );
-                      commit({
-                        [field.key]: JSON.stringify(nextSelected),
-                        vendorComplianceDocumentation: JSON.stringify(nextByCategory),
-                      });
-                    }}
-                    globalExclusiveValue={noneValue}
+                    value={evidenceText}
+                    readOnly
+                    className="input_readonly"
+                    aria-label={field.label}
+                    aria-readonly="true"
+                    placeholder={field.placeholder}
                   />
                   {error && <FieldError message={error} />}
                 </FormField>
@@ -465,83 +454,21 @@ export default function BuyerCotsDynamicStep({
           }
 
           if (field.inputType === "confirmDispute") {
-            const stanceKey = field.stanceKey ?? `${field.key}Stance`;
-            const attestedKey = `${field.key}Attested`;
-            const stance = formData[stanceKey] ?? "";
-            const attestedValue = String(formData[attestedKey] || "").trim();
+            const attestedValue = String(formData[`${field.key}Attested`] || "").trim();
             const currentValue = String(formData[field.key] || "").trim();
-            const isDispute = stance === "Dispute";
-            const displayValue = isDispute ? currentValue : (currentValue || attestedValue);
-            const fieldReadOnly = Boolean(displayValue) && !isDispute;
-            const selectOptions =
-              displayValue && !options.some((o) => o.value === displayValue || o.label === displayValue)
-                ? [{ label: displayValue, value: displayValue }, ...options]
-                : options;
+            const displayValue = attestedValue || currentValue;
             return (
               <div key={field.key} className="form_fields_vendor buyer_cots_field">
-                <div className="labelSection">
-                  <span>{field.label}</span>
-                  {field.required && (
-                    <sup className="form_field_mandatory_asterisk" aria-hidden="true">
-                      *
-                    </sup>
-                  )}
-                  {field.placeholder && (
-                    <ClickTooltip content={field.placeholder}>
-                      <Info size={14} color="#6B7280" />
-                    </ClickTooltip>
-                  )}
-                </div>
-                <div className="buyer_cots_confirm_dispute_row">
-                  <div className="buyer_cots_confirm_dispute_control">
-                    <select
-                      value={displayValue}
-                      disabled={fieldReadOnly}
-                      onChange={(e) => commit({ [field.key]: e.target.value })}
-                      className={`select_input${fieldReadOnly ? " input_readonly" : ""}${!displayValue ? " select_input--placeholder" : ""}`}
-                      aria-label={field.label}
-                    >
-                      <option value="">Select an answer</option>
-                      {selectOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="buyer_cots_stance_btns" role="group" aria-label="Confirm or dispute">
-                    <button
-                      type="button"
-                      className={`buyer_cots_stance_btn buyer_cots_stance_btn--confirm${stance === "Confirm" ? " buyer_cots_stance_btn--active" : ""}`}
-                      aria-pressed={stance === "Confirm"}
-                      onClick={() =>
-                        setFormData((prev) => {
-                          const keep = String(prev[attestedKey] || prev[field.key] || "").trim();
-                          return applyBuyerCotsDerivedFields(prev, {
-                            [stanceKey]: "Confirm",
-                            ...(keep ? { [field.key]: keep, [attestedKey]: prev[attestedKey] || keep } : {}),
-                          });
-                        })
-                      }
-                    >
-                      <Check size={14} strokeWidth={2.4} aria-hidden="true" />
-                      Confirm
-                    </button>
-                    <button
-                      type="button"
-                      className={`buyer_cots_stance_btn buyer_cots_stance_btn--dispute${stance === "Dispute" ? " buyer_cots_stance_btn--active" : ""}`}
-                      aria-pressed={stance === "Dispute"}
-                      onClick={() => commit({ [stanceKey]: "Dispute" })}
-                    >
-                      <X size={14} strokeWidth={2.4} aria-hidden="true" />
-                      Dispute
-                    </button>
-                  </div>
-                </div>
-                {error && <FieldError message={error} />}
-                {fieldErrors[stanceKey] && (
-                  <FieldError message={fieldErrors[stanceKey]} />
-                )}
+                <BuyerCotsField
+                  fieldKey={field.key}
+                  label={field.label}
+                  placeholder="Prefilled from the selected vendor attestation"
+                  required={field.required ? "true" : "false"}
+                  value={displayValue}
+                  onChange={() => undefined}
+                  readOnly
+                  errorMessage={error}
+                />
               </div>
             );
           }
@@ -593,13 +520,22 @@ export default function BuyerCotsDynamicStep({
                 label={field.label}
                 placeholder={field.placeholder}
                 required={field.required ? "true" : "false"}
-                options={options.length ? options : undefined}
+                options={
+                  isBuyerCotsAttestationLockedField(formData, field.key) || field.readOnly
+                    ? undefined
+                    : options.length
+                      ? options
+                      : undefined
+                }
                 multiselect={field.inputType === "multiselect"}
                 textarea={field.inputType === "textarea"}
                 exclusiveValue={exclusive}
                 value={formData[field.key]}
-                onChange={(val) => commit({ [field.key]: val })}
-                readOnly={!!field.readOnly}
+                onChange={(val) => {
+                  if (field.readOnly || isBuyerCotsAttestationLockedField(formData, field.key)) return;
+                  commit({ [field.key]: val });
+                }}
+                readOnly={!!field.readOnly || isBuyerCotsAttestationLockedField(formData, field.key)}
                 errorMessage={error}
               />
             </div>

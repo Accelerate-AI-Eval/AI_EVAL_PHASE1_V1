@@ -811,6 +811,181 @@ def print_srs_rationale(
 # Type 3 - Buyer Implementation Readiness Score (IRS)
 # ---------------------------------------------------------------------------
 
+def _irs_formula_console_lines(
+    result: dict[str, Any],
+    buyer_payload: dict[str, Any] | None = None,
+) -> list[str]:
+    """Step-by-step IRS arithmetic plus hardcoded constants used by Type 3."""
+    breakdown = _dict(result.get("breakdown"))
+    detail = _dict(result.get("detail"))
+    org = _dict(detail.get("organizational_readiness_gap"))
+    integ = _dict(detail.get("integration_risk"))
+    intent = _dict(detail.get("intent_multiplier"))
+    final = _dict(detail.get("final_formula"))
+    resolved = _dict(detail.get("resolved_inputs"))
+    if not resolved and isinstance(buyer_payload, dict):
+        resolved = buyer_payload
+
+    vr = _num(breakdown.get("vendorRisk"), _num(final.get("vendor_risk")))
+    org_v = _num(
+        breakdown.get("organizationalReadinessGap"),
+        _num(final.get("organizational_readiness_gap"), _num(org.get("value"))),
+    )
+    integ_v = _num(
+        breakdown.get("integrationRisk"),
+        _num(final.get("integration_risk"), _num(integ.get("value"))),
+    )
+    vts = _num(breakdown.get("vendorTrustScore"))
+    intent_v = _num(
+        final.get("intent_multiplier"),
+        _num(breakdown.get("intentMultiplier"), _num(intent.get("value"), 1.0)),
+    )
+    vr_c = _num(final.get("vendor_risk_contribution"), vr * 0.35)
+    org_c = _num(final.get("org_gap_contribution"), org_v * 0.35)
+    integ_c = _num(final.get("integration_risk_contribution"), integ_v * 0.30)
+    base_w = _num(final.get("base_weighted_sum"), vr_c + org_c + integ_c)
+    risk_term = _num(final.get("risk_term"), base_w * intent_v)
+    weighted = _num(final.get("weighted"), 100.0 - risk_term)
+    irs = _num(result.get("implementationRiskScore"), _num(final.get("score")))
+
+    lines: list[str] = [
+        "IRS FORMULA CALCULATION (console)  [Buyer COTS / Type 3]",
+        _bar(),
+        "",
+        "HARDCODED CONSTANTS",
+        "  Top-level:           IRS = 100 - (((VR x 0.35) + (OrgGap x 0.35) + (Integ x 0.30)) x Intent)",
+        "  VR_WEIGHT            = 0.35",
+        "  ORG_WEIGHT           = 0.35",
+        "  INTEG_WEIGHT         = 0.30",
+        "  SCORE_CAP            = 100",
+        "  SCORE_FLOOR          = 0",
+        "  Vendor_Risk          = clamp(100 - Vendor_Trust_Score)",
+        "  VTS default          = 50 if no attestation / evidence",
+        "  VTS from evidence    = start 55; +SOC2 8; +ISO27001 6; +ISO42001 6; +pen-test 4; +BAA/DPA 3; cap 78",
+        "  OrgGap base          = 35",
+        "  Integration base     = 25",
+        "  Intent:              intentional_pct>0.6 -> 1.2; unintentional_pct>0.6 -> 0.7; else Mixed=1.0",
+        "  Intent clamp         = 0.5 .. 1.5  (invalid precomputed value falls back to 1.0)",
+        "  Grade bands (IRS):   A>=76, B>=51, C>=26, else D",
+        "  Org digital:         L4/L5/high/advanced=-10; L3/medium=-4; L1/L2/low/ad-hoc=+10",
+        "  Org governance:      optimized/managed/mature/excellent=-8; basic/developing/defined=+4;",
+        "                       ad-hoc/low/initial/none=+10",
+        "  Org board/ethics     = +8 each when answered and not yes",
+        "  Org capacity:        dedicated=-6; named owner=0; shared=+6; no one assigned / no team=+8",
+        "  Org appetite:        high-stakes + aggressive=+8; low/medium-stakes + conservative=-2",
+        "  Org sensitivity:     extremely/highly sensitive=+6; sensitive=+3",
+        "  Org human review:    no review=+8; exception=+4; always=-4",
+        "  Org confidence:      low=+4; high=-2",
+        "  Integ systems        = min(30, count x 6)  (excludes 'no integration' / none)",
+        "  Integ access:        admin/delete=+6; write=+3",
+        "  Integ usage:         officially in use / yes=-3; trial/poc=+4; unsanctioned=+8; not in use/no=+12",
+        "  Integ rollback:      none/no=+12; manual/moderate/limited=+6; else (present)=-3",
+        "  Integ export fallback= no=+12; yes (incl. limited)=+6",
+        "  Integ missing ops    = +6 each for monitoring, audit, testing when not effectively available",
+        "  Integ exposure:      published directly=+6; customer-facing=+3",
+        "  Integ training data: dispute or yes=+5; not yet=+3",
+        "  Integ deployment:    on-premise / private cloud=+4",
+        "  Integ pilot:         did not meet=+6; not planned=+4; met criteria=-4",
+        "  Integ users:         5,000+=+4; 1-10=-2",
+        "  Integ training effort= multi-day=+3",
+        "  Integ contracts:     nothing signed=+4",
+        "  Integ use cases:     automatically=+4",
+        "",
+        "FORMULA INPUT VALUES (resolved)",
+        f"  digitalMaturityLevel          = {_safe(resolved.get('digitalMaturityLevel'), 80)}",
+        f"  dataGovernanceMaturity        = {_safe(resolved.get('dataGovernanceMaturity'), 80)}",
+        f"  aiGovernanceBoard             = {_safe(resolved.get('aiGovernanceBoard'), 80)}",
+        f"  aiEthicsPolicy                = {_safe(resolved.get('aiEthicsPolicy'), 80)}",
+        f"  implementationCapacity        = {_safe(resolved.get('implementationCapacity'), 80)}",
+        f"  riskAppetite                  = {_safe(resolved.get('riskAppetite'), 80)}",
+        f"  criticality / decisionStakes  = {_safe(resolved.get('criticality'), 80)}",
+        f"  dataSensitivity               = {_safe(resolved.get('dataSensitivity'), 80)}",
+        f"  humanReviewLevel              = {_safe(resolved.get('humanReviewLevel'), 80)}",
+        f"  answerConfidence              = {_safe(resolved.get('answerConfidence'), 80)}",
+        f"  integrationSystems            = {_safe(resolved.get('integrationSystems'), 200)}",
+        f"  integrationAccessLevels       = {_safe(resolved.get('integrationAccessLevels'), 120)}",
+        f"  currentUsageState             = {_safe(resolved.get('currentUsageState'), 80)}",
+        f"  rollbackCapability            = {_safe(resolved.get('rollbackCapability'), 80)}",
+        f"  dataExportCapability          = {_safe(resolved.get('dataExportCapability'), 80)}",
+        f"  monitoringDataAvailable       = {_safe(resolved.get('monitoringDataAvailable'), 80)}",
+        f"  monitoringDataStance          = {_safe(resolved.get('monitoringDataStance'), 40)}",
+        f"  auditLogsAvailable            = {_safe(resolved.get('auditLogsAvailable'), 80)}",
+        f"  auditLogsStance               = {_safe(resolved.get('auditLogsStance'), 40)}",
+        f"  testingResultsAvailable       = {_safe(resolved.get('testingResultsAvailable'), 80)}",
+        f"  outputExposure                = {_safe(resolved.get('outputExposure'), 80)}",
+        f"  trainingUseOfData             = {_safe(resolved.get('trainingUseOfData'), 80)}",
+        f"  trainingUseOfDataStance       = {_safe(resolved.get('trainingUseOfDataStance'), 40)}",
+        f"  deploymentModel               = {_safe(resolved.get('deploymentModel'), 80)}",
+        f"  pilotStatus                   = {_safe(resolved.get('pilotStatus'), 80)}",
+        f"  usersInScope                  = {_safe(resolved.get('usersInScope'), 40)}",
+        f"  trainingEffort                = {_safe(resolved.get('trainingEffort'), 80)}",
+        f"  contractsInPlace              = {_safe(resolved.get('contractsInPlace'), 120)}",
+        f"  useCaseTypes                  = {_safe(resolved.get('useCaseTypes'), 160)}",
+        f"  vendorEvidenceReceived        = {_safe(resolved.get('vendorEvidenceReceived'), 160)}",
+        f"  intentionalRiskCount          = {breakdown.get('intentionalRiskCount', intent.get('intentional_count'))}",
+        f"  unintentionalRiskCount        = {breakdown.get('unintentionalRiskCount', intent.get('unintentional_count'))}",
+        f"  intent_profile                = {_safe(breakdown.get('intentProfile') or intent.get('profile'), 40)}",
+        "",
+        "VENDOR RISK",
+        f"  Vendor_Trust_Score   = {vts:.2f}",
+        f"  Vendor_Risk          = clamp(100 - {vts:.2f}) = {vr:.2f}",
+        "",
+        "ORGANIZATIONAL READINESS GAP",
+        f"  base                 = { _num(org.get('base'), 35.0):.2f}",
+        f"  digital              = {org.get('digital_delta')}",
+        f"  governance           = {org.get('governance_delta')}",
+        f"  board                = {org.get('board_delta')}",
+        f"  ethics               = {org.get('ethics_delta')}",
+        f"  capacity             = {org.get('capacity_delta')}",
+        f"  appetite x stakes    = {org.get('appetite_delta')}",
+        f"  data sensitivity     = {org.get('sensitivity_delta')}",
+        f"  human review         = {org.get('review_delta')}",
+        f"  answer confidence    = {org.get('confidence_delta')}",
+        f"  raw OrgGap           = {org.get('raw_total')}",
+        f"  OrgGap               = clamp(raw) = {org_v:.2f}   clamped={org.get('is_clamped')}",
+        "",
+        "INTEGRATION RISK",
+        f"  base                 = { _num(integ.get('base'), 25.0):.2f}",
+        f"  systems              = n={integ.get('systems_count')}  delta={integ.get('systems_delta')}"
+        f"  ({_safe(integ.get('systems'), 200)})",
+        f"  access               = {integ.get('access_delta')}",
+        f"  usage                = {integ.get('usage_delta')}",
+        f"  rollback / export    = {integ.get('rollback_delta')}",
+        f"  monitoring           = {integ.get('monitoring_delta')}",
+        f"  audit                = {integ.get('audit_delta')}",
+        f"  testing              = {integ.get('testing_delta')}",
+        f"  output exposure      = {integ.get('exposure_delta')}",
+        f"  training use of data = {integ.get('training_delta')}",
+        f"  deployment           = {integ.get('deployment_delta')}",
+        f"  pilot                = {integ.get('pilot_delta')}",
+        f"  users in scope       = {integ.get('users_delta')}",
+        f"  training effort      = {integ.get('effort_delta')}",
+        f"  contracts            = {integ.get('contracts_delta')}",
+        f"  use cases            = {integ.get('use_cases_delta')}",
+        f"  raw Integ            = {integ.get('raw_total')}",
+        f"  Integ                = clamp(raw) = {integ_v:.2f}   clamped={integ.get('is_clamped')}",
+        "",
+        "INTENT MULTIPLIER",
+        f"  intentional={intent.get('intentional_count', breakdown.get('intentionalRiskCount'))}  "
+        f"unintentional={intent.get('unintentional_count', breakdown.get('unintentionalRiskCount'))}  "
+        f"profile={_safe(intent.get('profile') or breakdown.get('intentProfile'), 30)}  value={intent_v}",
+        "",
+        "TOP-LEVEL ARITHMETIC",
+        f"  Vendor_Risk x 0.35                 = {vr:.4f} x 0.35 = {vr_c:.4f}",
+        f"  Organizational_Readiness_Gap x 0.35 = {org_v:.4f} x 0.35 = {org_c:.4f}",
+        f"  Integration_Risk x 0.30             = {integ_v:.4f} x 0.30 = {integ_c:.4f}",
+        f"  base_weighted_sum                   = {vr_c:.4f} + {org_c:.4f} + {integ_c:.4f} = {base_w:.4f}",
+        f"  x Intent {intent_v}                 = {base_w:.4f} x {intent_v} = {risk_term:.4f}",
+        f"  IRS                                 = 100 - {risk_term:.4f} = {weighted:.4f}",
+        f"  IRS (clamped, half-up)              = {irs:.0f}",
+        f"  Grade                               = {_safe(result.get('grade'), 8)} - "
+        f"{_safe(result.get('classification'), 80)}",
+        f"  Decision                            = {_safe(result.get('decision'), 80)}",
+        "",
+    ]
+    return lines
+
+
 def print_irs_rationale(
     *,
     result: dict[str, Any],
@@ -939,4 +1114,8 @@ def print_irs_rationale(
         name3, risk3, _w3, tip3 = ranked[2]
         lines.append(f"  3. {name3} ({risk3:.1f}) - {tip3}")
     lines.append("")
-    return _emit(lines)
+    text = _emit(lines)
+    formula_text = "\n".join(_irs_formula_console_lines(result, buyer_payload))
+    print(formula_text, flush=True)
+    result["formula_console"] = formula_text
+    return text

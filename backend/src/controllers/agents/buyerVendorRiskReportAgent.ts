@@ -883,6 +883,13 @@ export async function generateBuyerVendorRiskReport(
             : grade === "D"
               ? "DO NOT PROCEED"
               : "PROCEED WITH CAUTION";
+        const formula =
+          "IRS = 100 - (((Vendor_Risk × 0.35) + (Organizational_Readiness_Gap × 0.35) + (Integration_Risk × 0.30)) × Intent)";
+        const vrC = parts.vendorRisk * 0.35;
+        const orgC = parts.orgGap * 0.35;
+        const integC = parts.integrationRisk * 0.3;
+        const baseW = vrC + orgC + integC;
+        const riskTerm = baseW * intent;
         return {
           implementationRiskScore: parts.score,
           grade,
@@ -890,8 +897,23 @@ export async function generateBuyerVendorRiskReport(
           decision,
           readiness_profile: local.readiness_profile,
           recommendedAction: local.recommendedAction,
-          formula:
-            "IRS = 100 - (((Vendor_Risk × 0.35) + (Organizational_Readiness_Gap × 0.35) + (Integration_Risk × 0.30)) × Intent)",
+          formula,
+          formula_console: [
+            "IRS FORMULA CALCULATION (console)  [Buyer COTS / Type 3] (node fallback)",
+            formula,
+            `  Vendor_Trust_Score = ${local.breakdown.vendorTrustScore}`,
+            `  Vendor_Risk        = ${parts.vendorRisk}   (100 - VTS)`,
+            `  OrgGap             = ${parts.orgGap}`,
+            `  Integration_Risk   = ${parts.integrationRisk}`,
+            `  Intent             = ${intent}`,
+            `  VR x 0.35          = ${vrC.toFixed(4)}`,
+            `  OrgGap x 0.35      = ${orgC.toFixed(4)}`,
+            `  Integ x 0.30       = ${integC.toFixed(4)}`,
+            `  base_weighted_sum  = ${baseW.toFixed(4)}`,
+            `  x Intent           = ${riskTerm.toFixed(4)}`,
+            `  IRS                = 100 - ${riskTerm.toFixed(4)} = ${parts.score}`,
+            `  Grade              = ${grade} - ${classification}`,
+          ].join("\n"),
           breakdown: {
             vendorRisk: parts.vendorRisk,
             organizationalReadinessGap: parts.orgGap,
@@ -975,6 +997,9 @@ export async function generateBuyerVendorRiskReport(
       invokeModel(userPrompt),
     ]);
     console.log("irs", implementationRisk.implementationRiskScore);
+    if (implementationRisk.formula_console?.trim()) {
+      console.log(implementationRisk.formula_console);
+    }
     if (implementationRisk.rationale?.trim()) {
       console.log(implementationRisk.rationale);
     } else {
