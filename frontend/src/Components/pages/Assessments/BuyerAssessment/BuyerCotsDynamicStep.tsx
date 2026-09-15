@@ -3,6 +3,7 @@ import HeaderForBuyer from "../../BuyerOnboarding/HeaderForBuyer";
 import FormField from "../../../UI/FormField";
 import FileUpload from "../../../UI/FileUpload";
 import FieldError from "../../../UI/FieldError";
+import ChipMultiSelect from "../../../UI/ChipMultiSelect";
 import { MAX_FILE_SIZE_BYTES } from "../../../../constants/vendorAttestationDocumentConstants";
 import type { BuyerCotsFieldConfig, BuyerCotsSectionConfig } from "../../../../constants/buyerCotsFormSchema";
 import {
@@ -14,9 +15,13 @@ import { toast } from "react-toastify";
 import {
   applyBuyerCotsDerivedFields,
   parseEvidenceFilesByCategory,
+  pruneEvidenceFilesByCategory,
 } from "../../../../constants/buyerCotsDerived";
 import { flattenOnboardingSectorIndustries } from "../../../../constants/buyerCotsOnboardingMapping";
-import { isBuyerCotsAttestationLockedField } from "../../../../constants/buyerCotsAttestationMapping";
+import {
+  BUYER_COTS_ATTESTATION_PREFILL_KEYS,
+  isBuyerCotsAttestationLockedField,
+} from "../../../../constants/buyerCotsAttestationMapping";
 import BuyerCotsField from "./BuyerCotsField";
 import BuyerVendorProductFields from "./BuyerVendorProductFields";
 import "../../VendorAttestations/tabs/TabComplianceCertifications.css";
@@ -90,6 +95,7 @@ export default function BuyerCotsDynamicStep({
   useEffect(() => {
     const patch: Record<string, string> = {};
     for (const field of section.fields) {
+      if (!(BUYER_COTS_ATTESTATION_PREFILL_KEYS as readonly string[]).includes(field.key)) continue;
       const attested = String(formData[`${field.key}Attested`] ?? "").trim();
       if (!attested && field.inputType !== "confirmDispute") continue;
       const current = String(formData[field.key] ?? "").trim();
@@ -148,7 +154,6 @@ export default function BuyerCotsDynamicStep({
             const byCategory = parseEvidenceFilesByCategory(formData.vendorComplianceDocumentation);
             const uploadCategories = selected.filter((cat) => cat !== noneValue);
             const nothingSelected = selected.includes(noneValue);
-            const evidenceText = selected.length ? selected.join(", ") : "";
             return (
               <div key={field.key} className="form_fields_vendor buyer_cots_field">
                 <FormField
@@ -157,17 +162,25 @@ export default function BuyerCotsDynamicStep({
                   tooltipText={field.placeholder}
                 >
                   <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                    Prefilled from the selected vendor attestation. Upload one file per artefact if you hold a copy. Max 10MB per file.
+                    Select the regulatory documents you currently hold. Optionally upload a copy of each. Max 10MB per file.
                   </p>
-                  <input
-                    type="text"
+                  <ChipMultiSelect
                     id={field.key}
-                    value={evidenceText}
-                    readOnly
-                    className="input_readonly"
-                    aria-label={field.label}
-                    aria-readonly="true"
-                    placeholder={field.placeholder}
+                    labelName=""
+                    options={options}
+                    value={selected}
+                    onChange={(selectedValues) => {
+                      const nextFiles = pruneEvidenceFilesByCategory(
+                        selectedValues,
+                        byCategory,
+                        noneValue,
+                      );
+                      commit({
+                        [field.key]: JSON.stringify(selectedValues),
+                        vendorComplianceDocumentation: JSON.stringify(nextFiles),
+                      });
+                    }}
+                    globalExclusiveValue={noneValue}
                   />
                   {error && <FieldError message={error} />}
                 </FormField>

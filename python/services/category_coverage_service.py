@@ -18,7 +18,11 @@ from services.compliance_cert_blobs import (
 
 logger = logging.getLogger(__name__)
 
-# Keep in sync with scoring_service.MITIGATION_CATEGORIES
+# Document 1 §4.4 — no collectable input; drop from required and the denominator.
+EXCLUDED_MITIGATION_CATEGORIES = {
+    "Access Management & Authentication",
+    "User Education & Awareness",
+}
 MITIGATION_CATEGORIES = [
     "Data Governance & Privacy Controls",
     "Model Security & Integrity",
@@ -596,8 +600,14 @@ def derive_required_categories(payload: dict[str, Any]) -> list[str]:
         if "Human Oversight Mechanisms" not in required:
             required.append("Human Oversight Mechanisms")
 
-    ordered = [c for c in MITIGATION_CATEGORIES if c in set(required)]
-    return ordered or list(MITIGATION_CATEGORIES[:8])
+    ordered = [
+        c for c in MITIGATION_CATEGORIES
+        if c in set(required) and c not in EXCLUDED_MITIGATION_CATEGORIES
+    ]
+    return ordered or [
+        c for c in MITIGATION_CATEGORIES
+        if c not in EXCLUDED_MITIGATION_CATEGORIES
+    ][:8]
 
 
 def derive_implemented_from_attestation(

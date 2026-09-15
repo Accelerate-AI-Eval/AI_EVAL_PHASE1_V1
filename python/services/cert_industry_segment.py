@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-CERTIFICATIONS_SCORE_CAP = 50
+CERTIFICATIONS_SCORE_CAP = 25
 
 CERT_FRAMEWORK_KEYS = {
     "SOC2_T2": "SOC 2 Type 2",

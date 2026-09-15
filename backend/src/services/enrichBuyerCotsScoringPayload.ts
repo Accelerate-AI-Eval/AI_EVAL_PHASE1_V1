@@ -54,6 +54,9 @@ export async function enrichBuyerCotsScoringPayload(
     fill(out, "aiSkillsAvailability", row.aiSkillsAvailability);
     fill(out, "existingAIInitiatives", row.existingAIInitiatives);
     fill(out, "changeManagementCapability", row.changeManagementCapability);
+    fill(out, "regulatoryPenaltyExposure", row.regulatoryPenaltyExposure);
+    fill(out, "industrySector", out.industrySector ?? row.sector);
+    fill(out, "existingTechnologyStack", out.existingTechnologyStack ?? row.existingTechStack);
     fill(out, "riskAppetite", out.riskAppetite ?? row.aiRiskAppetite);
     fill(out, "employeeCount", out.employeeCount ?? row.employeeCount);
     return out;

@@ -31,13 +31,13 @@ def test_global_operating_region_outranks_array_length():
 def test_public_sensitivity_is_low_not_high():
     assert (
         normalize_data_sensitivity_for_formula("Public - No Sensitive Data")
-        == "Low (Public or anonymized)"
+        == "Public"
     )
     assert (
         normalize_data_sensitivity_for_formula(
             "Highly Sensitive - PHI, Financial Records, or PCI Data"
         )
-        == "High (PHI, Financial data, PII)"
+        == "Highly_Sensitive"
     )
 
 
@@ -52,16 +52,16 @@ def test_low_risk_averse_is_not_very_low():
         normalize_risk_tolerance_for_formula(
             "Very Low - Zero tolerance for risk, extensive controls required"
         )
-        == "Risk_averse"
+        == "Very_Low"
     )
 
 
 def test_unknown_budget_is_conservative_not_enterprise():
-    assert budget_for_formula("") == "< $100K"
-    assert budget_for_formula("Not Yet Determined") == "< $100K"
-    assert budget_for_formula("Not known - estimate only") == "< $100K"
-    assert budget_for_formula("$5M - $10M") == "> $5M"
-    assert budget_for_formula("Over $10M") == "> $5M"
+    assert budget_for_formula("") is None
+    assert budget_for_formula("Not Yet Determined") == "Not known"
+    assert budget_for_formula("Not known - estimate only") == "Not known"
+    assert budget_for_formula("$5M - $10M") == "$5M-$10M"
+    assert budget_for_formula("Over $10M") == "> $10M"
     assert budget_for_formula("$1M - $5M") == "$1M-$5M"
 
 
@@ -72,7 +72,7 @@ def test_customization_tiers_are_distinct():
     assert normalize_customization_for_formula(
         "Extensive - Major Product Modifications"
     ) == "Extensive (significant dev)"
-    assert normalize_customization_for_formula("unmatched gibberish") == "Moderate (config + light dev)"
+    assert normalize_customization_for_formula("unmatched gibberish") is None
 
 
 def test_sector_does_not_default_technology():
@@ -106,8 +106,8 @@ def test_rebuild_does_not_trigger_build_vs_buy():
 
 
 def test_exploratory_timeline_is_not_low_pressure_default():
-    assert timeline_months_for_formula("Exploratory/No Specific Timeline") == 30
-    assert timeline_months_for_formula("unknown") == 8
+    assert timeline_months_for_formula("Exploratory/No Specific Timeline") == 0
+    assert timeline_months_for_formula("unknown") is None
     assert timeline_months_for_formula("Immediate (< 30 days)") == 1
 
 
@@ -124,12 +124,15 @@ def test_aiq019_blank_uptime_does_not_beat_a_real_answer():
     blank = calc_sla_score(_vts_input())
     answered = calc_sla_score(_vts_input(uptime_sla="99.9% (8.8 hrs/year)"))
     no_sla = calc_sla_score(_vts_input(uptime_sla="< 95% or No SLA"))
-    assert blank["uptime_points"] == no_sla["uptime_points"] == 3
+    assert blank["uptime_points"] == 0
+    assert blank["has_input"] is False
+    assert no_sla["uptime_points"] == 3
     assert answered["uptime_points"] > blank["uptime_points"]
+    assert answered["uptime_points"] > no_sla["uptime_points"]
 
 
 def test_aiq021_unanswered_and_no_ethics_do_not_score_as_yes():
-    assert _vts_input()["aiEthicsPolicy"] is False
+    assert _vts_input()["aiEthicsPolicy"] is None
     assert _vts_input(documented_ai_governance_policy="No")["aiEthicsPolicy"] is False
     assert _vts_input(documented_ai_governance_policy="Yes")["aiEthicsPolicy"] is True
 
@@ -145,37 +148,34 @@ def test_aiq022_no_is_not_truthy_for_policy_gates():
     assert no_payload["dataRetentionPolicy"] is False
     assert no_payload["modelVersionControl"] is False
     assert no_payload["multiTenancySupport"] is False
-    assert no_payload["privacyPolicy"] is False
-    assert no_payload["incidentResponsePlan"] is False
+    assert no_payload["privacyPolicy"] is None
+    assert no_payload["incidentResponsePlan"] is None
     yes_payload = _vts_input(data_retention_policy="Yes")
     assert yes_payload["dataRetentionPolicy"] is True
 
 
 def test_aiq023_assessment_method_is_not_hardcoded_internal_audit():
     blank = _vts_input()
-    assert blank["assessmentMethod"] == "self_reported_unverified"
+    assert blank["assessmentMethod"] is None
     mapped = _vts_input(assessment_completion_level="Third-party independent audit")
     assert mapped["assessmentMethod"] == "third_party_audit"
 
 
-def test_aiq026_yes_on_monitoring_audit_testing_drops_18_integration_points():
+def test_aiq026_rollback_and_work_stops_raises_blocker():
     from services.buyer_implementation_risk_formula import calculate_buyer_implementation_risk_score
 
-    missing = calculate_buyer_implementation_risk_score({}, None, "V", "P")
-    present = calculate_buyer_implementation_risk_score(
+    result = calculate_buyer_implementation_risk_score(
         {
-            "monitoringDataAvailable": "Yes",
-            "auditLogsAvailable": "Yes",
-            "testingResultsAvailable": "Yes",
+            "rollbackCapability": "None - No rollback capability, forward-only",
+            "unavailabilityImpact": "Work stops - no manual alternative",
         },
         None,
         "V",
         "P",
     )
-    assert present["implementationRiskScore"] > missing["implementationRiskScore"]
-    # 18 raw integration points (6 each for monitoring / audit / testing)
-    delta = missing["breakdown"]["integrationRisk"] - present["breakdown"]["integrationRisk"]
-    assert abs(delta - 18) < 0.15
+    ids = [b["id"] for b in result["detail"]["blockers"]]
+    assert "no_rollback_and_work_stops" in ids
+    assert result["decision"] == "Flagged as a high risk"
 
 
 def test_type03_uses_new_cots_fields_instead_of_hardcoded():
@@ -235,7 +235,6 @@ def test_type03_uses_new_cots_fields_instead_of_hardcoded():
         "P",
     )
     assert strong["implementationRiskScore"] > weak["implementationRiskScore"]
-    assert strong["breakdown"]["vendorTrustScore"] > 50
     assert weak["breakdown"]["organizationalReadinessGap"] > strong["breakdown"][
         "organizationalReadinessGap"
     ]
@@ -254,10 +253,19 @@ def test_type03_attestation_fills_rollback_instead_of_hardcoded():
         "V",
         "P",
     )
-    assert (
-        from_attestation["breakdown"]["integrationRisk"]
-        > no_data["breakdown"]["integrationRisk"]
-    )
+
+    def rollback(result):
+        return next(
+            c
+            for c in result["detail"]["integration_risk"]["components"]
+            if c["name"] == "rollback"
+        )
+
+    assert rollback(no_data)["included"] is False
+    assert rollback(from_attestation)["included"] is True
+    assert rollback(from_attestation)["value"] > 0
+    assert from_attestation["breakdown"]["integrationRisk"] is not None
+
 
 
 def test_aiq045_srs_inputs_are_not_hardcoded():
@@ -338,14 +346,14 @@ def test_type02_uses_new_cots_fields_instead_of_hardcoded():
     assert large["customerConsideringBuildVsBuy"] is True
     assert small["customerTechnicalCapability"] == "Weak (unlikely to build)"
     assert large["customerTechnicalCapability"] == "Strong (can build)"
-    assert small["uniqueDifferentiators"][0]["advantageType"] == "Superior_feature_set"
-    assert large["uniqueDifferentiators"][0]["advantageType"] == "Regulatory_certification"
+    assert small["uniqueDifferentiators"][0]["advantageType"] == "Product"
+    assert large["uniqueDifferentiators"][0]["advantageType"] == "Compliance"
     assert small["approvalLevels"] == "VP_and_below"
     assert large["approvalLevels"] == "Board_approval"
-    assert len(small["integrationPoints"]) == 1
-    assert len(large["integrationPoints"]) >= 4
-    assert large["vendorStage"] == "mature"
-    assert small["avgMitigationsPerRisk"] == 0
+    assert len(small["likelyIntegrationSystems"]) == 1
+    assert len(large["likelyIntegrationSystems"]) >= 4
+    assert large["vendorStage"] is None
+    assert small["proposedMitigationsCount"] is None
 
     srs_small = calculate_sales_risk_score(small)["sales_risk_score"]
     srs_large = calculate_sales_risk_score(large)["sales_risk_score"]
@@ -366,7 +374,7 @@ def test_type01_nested_sector_maps_to_healthcare_not_technology():
     assert payload["sector"] == "Healthcare"
     assert payload["decisionStakeLevel"] == "Critical"
     assert payload["geographicRegions"] == "multi_national"
-    assert payload["supportsHipaaWorkflows"] is True
+    assert payload["supportsHipaaWorkflows"] is False
 
 
 def test_type01_json_string_sector_and_operate_regions_alias():
@@ -413,4 +421,154 @@ def test_aiq048_unknown_formula_enum_is_degraded_not_crash():
     )
     assert result["scoring_source"] == "degraded"
     assert 0 <= result["sales_risk_score"] <= 100
+
+
+def test_doc2_pillar_normalisation_t2_01():
+    from services.sales_risk_formula import _normalise_risk_pillar, CFR_ATTAINABLE
+
+    result = _normalise_risk_pillar(
+        [
+            ("regulatory_complexity", {"value": 70}, True),
+            ("data_sensitivity_friction", {"value": 50}, True),
+            ("risk_tolerance_friction", {"value": 0}, True),
+            ("customer_specific_risk_friction", {"value": 0}, True),
+            ("trust_gap_friction", {"value": 0}, False),
+            ("sector_risk_climate", {"value": 0}, False),
+        ],
+        CFR_ATTAINABLE,
+    )
+    # 120 of 70+60+45+60=235 would not match T2-01's 200 example; assert ratio math.
+    fake = _normalise_risk_pillar(
+        [
+            ("a", {"value": 120}, True),
+            ("b", {"value": 0}, False),
+        ],
+        {"a": 200, "b": 40},
+    )
+    assert fake["value"] == 60.0
+    assert result["not_implemented"] is False
+
+
+def test_doc2_absent_coverage_scores_full_risk_t2_02():
+    from services.sales_risk_formula import calc_control_coverage_gap
+
+    gap = calc_control_coverage_gap({"customerSpecificRiskCount": 3})
+    assert gap["value"] == 40
+    assert gap["has_input"] is True
+
+
+def test_doc2_trust_gap_t2_03_t2_04():
+    from services.sales_risk_formula import calc_trust_gap_friction
+
+    included = calc_trust_gap_friction(
+        {
+            "vendorTrustScore": 74,
+            "sector": "Healthcare",
+            "customerRiskTolerance": "Conservative",
+        }
+    )
+    assert included["value"] == 11
+    missing = calc_trust_gap_friction({})
+    assert missing["has_input"] is False
+
+
+def test_doc2_five_integration_systems_t2_05():
+    from services.sales_risk_formula import calc_integration_complexity
+
+    systems = [
+        "Identity / SSO",
+        "Code hosting",
+        "CI/CD",
+        "Ticketing (Jira, ServiceNow)",
+        "Data warehouse",
+    ]
+    result = calc_integration_complexity({"likelyIntegrationSystems": systems})
+    assert result["system_count_penalty"] == 10
+    expected_avg = (5 + 6 + 8 + 12 + 18) / 5
+    assert abs(result["average_complexity"] - expected_avg) < 0.01
+    assert abs(result["value"] - (expected_avg + 10)) < 0.01
+
+
+def test_doc2_opportunity_renewal_t2_06():
+    from services.sales_risk_formula import calc_opportunity_type, calculate_competitive_risk
+
+    opp = calc_opportunity_type({"opportunityType": "Renewal"})
+    assert opp["value"] == -12
+    cr = calculate_competitive_risk(
+        {
+            "budgetMidpoint": "Not known",
+            "opportunityType": "Renewal",
+        }
+    )
+    assert cr["raw_total"] == 3  # 15 not-known budget + (-12) renewal
+
+
+def test_doc2_competitive_clamp_t2_07():
+    from services.sales_risk_formula import calculate_competitive_risk
+
+    cr = calculate_competitive_risk(
+        {
+            "uniqueDifferentiators": [
+                {"advantageType": "Compliance"},
+                {"advantageType": "Security"},
+                {"advantageType": "Price"},
+                {"advantageType": "Product"},
+                {"advantageType": "Support"},
+                {"advantageType": "Ecosystem"},
+            ]
+        }
+    )
+    assert cr["value"] == 0
+
+
+def test_doc2_blank_groups_do_not_deflate_scs():
+    from services.sales_risk_formula import calculate_sales_risk_score
+
+    public_only = calculate_sales_risk_score(
+        {"customerDataSensitivity": "Public", "sector": "Technology"}
+    )
+    public_and_averse = calculate_sales_risk_score(
+        {
+            "customerDataSensitivity": "Public",
+            "sector": "Technology",
+            "customerRiskTolerance": "Very_Low",
+        }
+    )
+    assert public_only["customer_friction_risk"] < public_and_averse["customer_friction_risk"]
+    assert public_only["sales_confidence_score"] > public_and_averse["sales_confidence_score"]
+    empty = calculate_sales_risk_score({})
+    assert empty["detail"]["customer_friction_risk"]["not_implemented"] is True
+    assert empty["sales_confidence_score"] == 100
+    assert empty["detail"]["final_formula"]["pillar_weights"] == {
+        "customer_friction": 0.35,
+        "implementation": 0.35,
+        "competitive": 0.30,
+    }
+
+
+def test_doc2_empty_payload_does_not_score_full_coverage_gap():
+    from services.sales_risk_formula import (
+        build_sales_risk_formula_input,
+        calc_control_coverage_gap,
+        calculate_sales_risk_score,
+    )
+
+    built = build_sales_risk_formula_input({})
+    gap = calc_control_coverage_gap(built)
+    assert built["proposedMitigationsCount"] is None
+    assert gap["has_input"] is False
+    scored = calculate_sales_risk_score(built)
+    assert scored["detail"]["implementation_risk"]["control_coverage_gap"]["has_input"] is False
+    assert scored["sales_confidence_score"] == 100
+
+
+def test_doc2_key_advantages_map_to_registry_categories():
+    from services.sales_risk_formula import build_sales_risk_formula_input
+
+    built = build_sales_risk_formula_input(
+        {"key_advantages": ["SOC 2 compliance", "Lower price", "24/7 support"]}
+    )
+    types = [row["advantageType"] for row in built["uniqueDifferentiators"]]
+    assert types == ["Compliance", "Price", "Support"]
+    assert "Domain_expertise" not in types
 

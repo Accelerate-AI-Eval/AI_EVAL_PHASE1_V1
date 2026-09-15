@@ -66,7 +66,7 @@ async def score_cots_vendor(body: CotsVendorScoreRequest) -> dict[str, Any]:
         return {
             **result,
             "scoring_source": scoring_source,
-            "scoring_version": "srs-1.1",
+            "scoring_version": "scs-2.0",
             "rationale": rationale,
         }
     except Exception as exc:
@@ -92,7 +92,7 @@ async def score_cots_buyer(body: CotsBuyerScoreRequest) -> dict[str, Any]:
         return {
             **result,
             "scoring_source": "formula",
-            "scoring_version": "irs-1.2",
+            "scoring_version": "irs-2.0",
             "rationale": rationale,
         }
     except Exception as exc:

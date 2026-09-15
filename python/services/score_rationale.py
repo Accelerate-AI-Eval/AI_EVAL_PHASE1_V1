@@ -129,7 +129,6 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
     TM = _dict(CM.get("timing_multiplier"))
     AM = _dict(CM.get("architecture_multiplier"))
     SMUL = _dict(CM.get("scale_multiplier"))
-    RTM = _dict(CM.get("risk_tolerance_multiplier"))
     IM = _dict(CM.get("intent_multiplier"))
     DW = _dict(pr_block.get("domain_weight"))
     SM = _dict(pr_block.get("sector_modifier"))
@@ -174,10 +173,8 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         "  L/I default stub     = [3, 3, 3]   (used when Risk Intellect scores are missing)",
         "  S default stub       = [9, 9, 9]   (or LxI per risk when lengths match)",
         "  Intent defaults      = intentional=1, unintentional=2",
-        "  assessmentPhase      = vendor_evaluation   (hardcoded in formula input)",
-        "  aiRiskAppetite       = moderate            (hardcoded in formula input)",
-        "  applicableDomains    = Privacy & Security / AI System Safety / Accountability",
-        "                         & Governance, riskCount=1 each   (hardcoded)",
+        "  assessmentPhase      = vendor_evaluation",
+        "  applicableDomains    = derived from product exposure (Document 1 §4.3)",
         "  aiCapabilityType     = administrative      (hardcoded; Healthcare SM lookup)",
         "  patientDemographic   = general             (hardcoded)",
         "  Inherent risk:       IR = min(100, (((L x I) x CM x DW) + SM) x 4)",
@@ -186,10 +183,13 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         "  Mitigation:          ME = (Category_Coverage x 0.60) + (Evidence_Quality x 0.40)",
         "  ME_COVERAGE_WEIGHT   = 0.60",
         "  ME_QUALITY_WEIGHT    = 0.40",
-        "  Product risk:        PR = IR x (1 - ME) x CF",
-        "  Governance risk:     GR = 100 - min(100, max(0, raw_governance_score))",
-        "  Operational risk:    OR = 100 - min(100, raw_operational_score)",
-        "  Certifications cap   = 50",
+        "  Product risk:        PR = clamp(IR x (1 - ME) x CF, 0, 100)",
+        "  Governance risk:     GR = 100 x (1 - gov_earned / gov_attainable)",
+        "  Operational risk:    OR = 100 x (1 - ops_earned / ops_attainable)",
+        "  Certifications cap   = 25 (attainable 23)",
+        "  CM clamp             = 0.143 .. 3.1  (no risk-tolerance multiplier on VTS)",
+        "  CF                   = 1.0 x 0.95 cert-in-date x 0.97 pen-test x 0.98 testing x 0.98 trust-centre",
+        "                       clamped to [0.80, 1.20]; assessment method is Governance-only",
         "  Grade bands          = A>=90, B>=80, C>=70, D>=60, else F",
         "",
         "HARDCODED LOOKUP TABLES (formula maps)",
@@ -247,11 +247,10 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         f"+ host {AM.get('hosting_adj')} = {AM.get('value')}",
         f"  Scale SMUL             = (emp {SMUL.get('employee_base')} x geo {SMUL.get('geographic_factor')}) "
         f"+ data {SMUL.get('data_volume_adj')} = {SMUL.get('value')}",
-        f"  Risk tolerance RTM     = {RTM.get('value')}   (hardcoded appetite map; input usually 'moderate')",
         f"  Intent IM              = {IM.get('value')}   profile={IM.get('profile')} "
         f"(intentional={IM.get('intentional_count')}/{IM.get('intentional_pct')}%, "
         f"unintentional={IM.get('unintentional_count')}/{IM.get('unintentional_pct')}%)",
-        f"  CM                     = ET x TM x AM x SMUL x RTM x IM = {cm_val}",
+        f"  CM                     = clamp(ET x TM x AM x SMUL x IM, 0.143, 3.1) = {cm_val}",
         f"  Domain weight DW       = weighted_sum {DW.get('weighted_sum')} / total_risks "
         f"{DW.get('total_risks')} = {dw_val}",
     ]
@@ -446,6 +445,10 @@ def _subdriver_tips(detail_block: Any) -> list[str]:
         "timeline_pressure": "Propose a realistic timeline or phased rollout",
         "feature_gap": "Close critical feature gaps or roadmap commitments",
         "mitigation_gap": "Add concrete risk mitigations per customer concern",
+        "control_coverage_gap": "Close control coverage gaps with named mitigations",
+        "trust_gap_friction": "Close the vendor trust gap before security review",
+        "sector_risk_climate": "Address sector incident climate in the narrative",
+        "opportunity_type": "Account for opportunity type (renewal vs new logo)",
         "competitive_alternatives": "Differentiate vs alternatives / build-vs-buy",
         "budget_constraint": "Right-size packaging / ROI story for the budget",
         "competitive_advantage": "Strengthen unique differentiators",
@@ -508,7 +511,7 @@ def _srs_formula_console_lines(
         _bar(),
         "",
         "HARDCODED CONSTANTS",
-        "  Top-level:           SRS = min(100, max(0, ((CFR x 0.35) + (IR x 0.35) + (CR x 0.30)) x Intent))",
+        "  Top-level:           SCS = 100 - [CFR x 0.35 + IR x 0.35 + CR x 0.30]",
         "  CFR_WEIGHT           = 0.35",
         "  IR_WEIGHT            = 0.35",
         "  CR_WEIGHT            = 0.30",
@@ -764,12 +767,12 @@ def print_srs_rationale(
     cust = src.get("customerType") or src.get("customer_type")
 
     lines: list[str] = [
-        "SALES RISK SCORE (Type 2) - EXPLAINED",
+        "SALES CONFIDENCE SCORE (Type 2) - EXPLAINED",
         _bar(),
         "",
         "RESULT",
-        f"  Sales risk:         {srs:.2f} / 100   (higher = harder deal)",
-        f"  Deal probability:   ~{round(deal)}%     (roughly 100 - sales risk)",
+        f"  Sales confidence:   {deal:.2f} / 100   (higher = stronger deal)",
+        f"  Internal risk:      {srs:.2f} / 100   (not displayed)",
         f"  Grade:              {grade} - {_safe(classification, 80)}",
     ]
     if deal_chars:
@@ -811,21 +814,32 @@ def print_srs_rationale(
 # Type 3 - Buyer Implementation Readiness Score (IRS)
 # ---------------------------------------------------------------------------
 
+def _irs_component_lines(title: str, pillar: dict[str, Any]) -> list[str]:
+    lines = [title, f"  value={pillar.get('value')}  excluded={pillar.get('excluded')}"]
+    for row in pillar.get("components") or []:
+        flag = "in" if row.get("included") else "out"
+        lines.append(
+            f"    [{flag}] {row.get('name'):<16} w={row.get('weight')}  "
+            f"v={row.get('value')}  {row.get('reason') or ''}"
+        )
+    return lines
+
+
 def _irs_formula_console_lines(
     result: dict[str, Any],
     buyer_payload: dict[str, Any] | None = None,
 ) -> list[str]:
-    """Step-by-step IRS arithmetic plus hardcoded constants used by Type 3."""
+    """Step-by-step IRS arithmetic (Documents 0 and 3)."""
     breakdown = _dict(result.get("breakdown"))
     detail = _dict(result.get("detail"))
     org = _dict(detail.get("organizational_readiness_gap"))
     integ = _dict(detail.get("integration_risk"))
-    intent = _dict(detail.get("intent_multiplier"))
+    vr_p = _dict(detail.get("vendor_risk"))
     final = _dict(detail.get("final_formula"))
     resolved = _dict(detail.get("resolved_inputs"))
     if not resolved and isinstance(buyer_payload, dict):
         resolved = buyer_payload
-
+    weights = _dict(final.get("weights") or breakdown.get("pillarWeightsUsed"))
     vr = _num(breakdown.get("vendorRisk"), _num(final.get("vendor_risk")))
     org_v = _num(
         breakdown.get("organizationalReadinessGap"),
@@ -836,151 +850,78 @@ def _irs_formula_console_lines(
         _num(final.get("integration_risk"), _num(integ.get("value"))),
     )
     vts = _num(breakdown.get("vendorTrustScore"))
-    intent_v = _num(
-        final.get("intent_multiplier"),
-        _num(breakdown.get("intentMultiplier"), _num(intent.get("value"), 1.0)),
-    )
-    vr_c = _num(final.get("vendor_risk_contribution"), vr * 0.35)
-    org_c = _num(final.get("org_gap_contribution"), org_v * 0.35)
-    integ_c = _num(final.get("integration_risk_contribution"), integ_v * 0.30)
-    base_w = _num(final.get("base_weighted_sum"), vr_c + org_c + integ_c)
-    risk_term = _num(final.get("risk_term"), base_w * intent_v)
+    w_vr = _num(weights.get("vendor_risk"), 0.35)
+    w_org = _num(weights.get("organizational_readiness"), 0.35)
+    w_int = _num(weights.get("integration_risk"), 0.30)
+    risk_term = _num(final.get("risk_term"), vr * w_vr + org_v * w_org + integ_v * w_int)
     weighted = _num(final.get("weighted"), 100.0 - risk_term)
     irs = _num(result.get("implementationRiskScore"), _num(final.get("score")))
+    blockers = detail.get("blockers") if isinstance(detail.get("blockers"), list) else []
 
     lines: list[str] = [
-        "IRS FORMULA CALCULATION (console)  [Buyer COTS / Type 3]",
+        "IRS FORMULA CALCULATION (console)  [Buyer COTS / Type 3 / Docs 0+3]",
         _bar(),
         "",
         "HARDCODED CONSTANTS",
-        "  Top-level:           IRS = 100 - (((VR x 0.35) + (OrgGap x 0.35) + (Integ x 0.30)) x Intent)",
-        "  VR_WEIGHT            = 0.35",
-        "  ORG_WEIGHT           = 0.35",
-        "  INTEG_WEIGHT         = 0.30",
-        "  SCORE_CAP            = 100",
-        "  SCORE_FLOOR          = 0",
-        "  Vendor_Risk          = clamp(100 - Vendor_Trust_Score)",
-        "  VTS default          = 50 if no attestation / evidence",
-        "  VTS from evidence    = start 55; +SOC2 8; +ISO27001 6; +ISO42001 6; +pen-test 4; +BAA/DPA 3; cap 78",
-        "  OrgGap base          = 35",
-        "  Integration base     = 25",
-        "  Intent:              intentional_pct>0.6 -> 1.2; unintentional_pct>0.6 -> 0.7; else Mixed=1.0",
-        "  Intent clamp         = 0.5 .. 1.5  (invalid precomputed value falls back to 1.0)",
+        "  Top-level:           IRS = 100 - (VR x 0.35 + ORG x 0.35 + IntR x 0.30)",
+        "  Missing pillars:     excluded; weights redistributed (Doc 0 §6)",
+        "  VR leaves:           Base 0.35, Maturity_Gap 0.25, Cert_Gap 0.20, Track 0.10, Financial 0.10",
+        "  ORG leaves:          AI_Gov 0.25, Data_Gov 0.20, Skills 0.25, Change 0.15, Budget 0.15",
+        "  IntR leaves:         Technical 0.20, Use-case 0.20, Fit 0.15, Lock-in 0.15, Rollback 0.10, Scaling 0.20",
+        "  Base Vendor Risk:    clamp((100 - VTS) x RTM, 0, 100)",
+        "  RTM:                 Very Low 1.25, Low 1.15, Moderate 1.00, High 0.90, Very High 0.85",
+        "  No attestation:      Base = 50 x RTM (disclosed)",
+        "  RTM applied:         here only, not on VTS",
+        "  Dispute:             +5 per disputed prefill, cap +20, added to VR",
+        "  Track record:        0 and 'no public record found' when AIRI has no match",
         "  Grade bands (IRS):   A>=76, B>=51, C>=26, else D",
-        "  Org digital:         L4/L5/high/advanced=-10; L3/medium=-4; L1/L2/low/ad-hoc=+10",
-        "  Org governance:      optimized/managed/mature/excellent=-8; basic/developing/defined=+4;",
-        "                       ad-hoc/low/initial/none=+10",
-        "  Org board/ethics     = +8 each when answered and not yes",
-        "  Org capacity:        dedicated=-6; named owner=0; shared=+6; no one assigned / no team=+8",
-        "  Org appetite:        high-stakes + aggressive=+8; low/medium-stakes + conservative=-2",
-        "  Org sensitivity:     extremely/highly sensitive=+6; sensitive=+3",
-        "  Org human review:    no review=+8; exception=+4; always=-4",
-        "  Org confidence:      low=+4; high=-2",
-        "  Integ systems        = min(30, count x 6)  (excludes 'no integration' / none)",
-        "  Integ access:        admin/delete=+6; write=+3",
-        "  Integ usage:         officially in use / yes=-3; trial/poc=+4; unsanctioned=+8; not in use/no=+12",
-        "  Integ rollback:      none/no=+12; manual/moderate/limited=+6; else (present)=-3",
-        "  Integ export fallback= no=+12; yes (incl. limited)=+6",
-        "  Integ missing ops    = +6 each for monitoring, audit, testing when not effectively available",
-        "  Integ exposure:      published directly=+6; customer-facing=+3",
-        "  Integ training data: dispute or yes=+5; not yet=+3",
-        "  Integ deployment:    on-premise / private cloud=+4",
-        "  Integ pilot:         did not meet=+6; not planned=+4; met criteria=-4",
-        "  Integ users:         5,000+=+4; 1-10=-2",
-        "  Integ training effort= multi-day=+3",
-        "  Integ contracts:     nothing signed=+4",
-        "  Integ use cases:     automatically=+4",
+        "  Blockers:            override recommendation; score unchanged",
         "",
         "FORMULA INPUT VALUES (resolved)",
-        f"  digitalMaturityLevel          = {_safe(resolved.get('digitalMaturityLevel'), 80)}",
+        f"  aiGovernanceMaturity          = {_safe(resolved.get('aiGovernanceMaturity'), 80)}",
         f"  dataGovernanceMaturity        = {_safe(resolved.get('dataGovernanceMaturity'), 80)}",
-        f"  aiGovernanceBoard             = {_safe(resolved.get('aiGovernanceBoard'), 80)}",
-        f"  aiEthicsPolicy                = {_safe(resolved.get('aiEthicsPolicy'), 80)}",
+        f"  aiSkillsAvailability          = {_safe(resolved.get('aiSkillsAvailability'), 80)}",
+        f"  changeManagementCapability    = {_safe(resolved.get('changeManagementCapability'), 80)}",
         f"  implementationCapacity        = {_safe(resolved.get('implementationCapacity'), 80)}",
         f"  riskAppetite                  = {_safe(resolved.get('riskAppetite'), 80)}",
-        f"  criticality / decisionStakes  = {_safe(resolved.get('criticality'), 80)}",
+        f"  decisionStakes                = {_safe(resolved.get('decisionStakes'), 80)}",
+        f"  unavailabilityImpact          = {_safe(resolved.get('unavailabilityImpact'), 80)}",
         f"  dataSensitivity               = {_safe(resolved.get('dataSensitivity'), 80)}",
         f"  humanReviewLevel              = {_safe(resolved.get('humanReviewLevel'), 80)}",
-        f"  answerConfidence              = {_safe(resolved.get('answerConfidence'), 80)}",
         f"  integrationSystems            = {_safe(resolved.get('integrationSystems'), 200)}",
-        f"  integrationAccessLevels       = {_safe(resolved.get('integrationAccessLevels'), 120)}",
-        f"  currentUsageState             = {_safe(resolved.get('currentUsageState'), 80)}",
         f"  rollbackCapability            = {_safe(resolved.get('rollbackCapability'), 80)}",
-        f"  dataExportCapability          = {_safe(resolved.get('dataExportCapability'), 80)}",
-        f"  monitoringDataAvailable       = {_safe(resolved.get('monitoringDataAvailable'), 80)}",
-        f"  monitoringDataStance          = {_safe(resolved.get('monitoringDataStance'), 40)}",
-        f"  auditLogsAvailable            = {_safe(resolved.get('auditLogsAvailable'), 80)}",
-        f"  auditLogsStance               = {_safe(resolved.get('auditLogsStance'), 40)}",
-        f"  testingResultsAvailable       = {_safe(resolved.get('testingResultsAvailable'), 80)}",
-        f"  outputExposure                = {_safe(resolved.get('outputExposure'), 80)}",
-        f"  trainingUseOfData             = {_safe(resolved.get('trainingUseOfData'), 80)}",
-        f"  trainingUseOfDataStance       = {_safe(resolved.get('trainingUseOfDataStance'), 40)}",
         f"  deploymentModel               = {_safe(resolved.get('deploymentModel'), 80)}",
         f"  pilotStatus                   = {_safe(resolved.get('pilotStatus'), 80)}",
         f"  usersInScope                  = {_safe(resolved.get('usersInScope'), 40)}",
-        f"  trainingEffort                = {_safe(resolved.get('trainingEffort'), 80)}",
-        f"  contractsInPlace              = {_safe(resolved.get('contractsInPlace'), 120)}",
         f"  useCaseTypes                  = {_safe(resolved.get('useCaseTypes'), 160)}",
+        f"  budgetRange                   = {_safe(resolved.get('budgetRange'), 80)}",
         f"  vendorEvidenceReceived        = {_safe(resolved.get('vendorEvidenceReceived'), 160)}",
-        f"  intentionalRiskCount          = {breakdown.get('intentionalRiskCount', intent.get('intentional_count'))}",
-        f"  unintentionalRiskCount        = {breakdown.get('unintentionalRiskCount', intent.get('unintentional_count'))}",
-        f"  intent_profile                = {_safe(breakdown.get('intentProfile') or intent.get('profile'), 40)}",
         "",
-        "VENDOR RISK",
-        f"  Vendor_Trust_Score   = {vts:.2f}",
-        f"  Vendor_Risk          = clamp(100 - {vts:.2f}) = {vr:.2f}",
+        *_irs_component_lines("VENDOR RISK", vr_p),
+        f"  Vendor_Trust_Score   = {vts:.2f}  source={_safe(detail.get('vts_source'), 40)}",
+        f"  disputeAdjustment    = {breakdown.get('disputeAdjustment')}",
+        f"  VR                   = {vr:.2f}",
         "",
-        "ORGANIZATIONAL READINESS GAP",
-        f"  base                 = { _num(org.get('base'), 35.0):.2f}",
-        f"  digital              = {org.get('digital_delta')}",
-        f"  governance           = {org.get('governance_delta')}",
-        f"  board                = {org.get('board_delta')}",
-        f"  ethics               = {org.get('ethics_delta')}",
-        f"  capacity             = {org.get('capacity_delta')}",
-        f"  appetite x stakes    = {org.get('appetite_delta')}",
-        f"  data sensitivity     = {org.get('sensitivity_delta')}",
-        f"  human review         = {org.get('review_delta')}",
-        f"  answer confidence    = {org.get('confidence_delta')}",
-        f"  raw OrgGap           = {org.get('raw_total')}",
-        f"  OrgGap               = clamp(raw) = {org_v:.2f}   clamped={org.get('is_clamped')}",
+        *_irs_component_lines("ORGANIZATIONAL READINESS GAP", org),
+        f"  ORG                  = {org_v:.2f}",
         "",
-        "INTEGRATION RISK",
-        f"  base                 = { _num(integ.get('base'), 25.0):.2f}",
-        f"  systems              = n={integ.get('systems_count')}  delta={integ.get('systems_delta')}"
-        f"  ({_safe(integ.get('systems'), 200)})",
-        f"  access               = {integ.get('access_delta')}",
-        f"  usage                = {integ.get('usage_delta')}",
-        f"  rollback / export    = {integ.get('rollback_delta')}",
-        f"  monitoring           = {integ.get('monitoring_delta')}",
-        f"  audit                = {integ.get('audit_delta')}",
-        f"  testing              = {integ.get('testing_delta')}",
-        f"  output exposure      = {integ.get('exposure_delta')}",
-        f"  training use of data = {integ.get('training_delta')}",
-        f"  deployment           = {integ.get('deployment_delta')}",
-        f"  pilot                = {integ.get('pilot_delta')}",
-        f"  users in scope       = {integ.get('users_delta')}",
-        f"  training effort      = {integ.get('effort_delta')}",
-        f"  contracts            = {integ.get('contracts_delta')}",
-        f"  use cases            = {integ.get('use_cases_delta')}",
-        f"  raw Integ            = {integ.get('raw_total')}",
-        f"  Integ                = clamp(raw) = {integ_v:.2f}   clamped={integ.get('is_clamped')}",
+        *_irs_component_lines("INTEGRATION RISK", integ),
+        f"  IntR                 = {integ_v:.2f}",
         "",
-        "INTENT MULTIPLIER",
-        f"  intentional={intent.get('intentional_count', breakdown.get('intentionalRiskCount'))}  "
-        f"unintentional={intent.get('unintentional_count', breakdown.get('unintentionalRiskCount'))}  "
-        f"profile={_safe(intent.get('profile') or breakdown.get('intentProfile'), 30)}  value={intent_v}",
+        "BLOCKERS",
+        f"  {blockers or 'none'}",
         "",
         "TOP-LEVEL ARITHMETIC",
-        f"  Vendor_Risk x 0.35                 = {vr:.4f} x 0.35 = {vr_c:.4f}",
-        f"  Organizational_Readiness_Gap x 0.35 = {org_v:.4f} x 0.35 = {org_c:.4f}",
-        f"  Integration_Risk x 0.30             = {integ_v:.4f} x 0.30 = {integ_c:.4f}",
-        f"  base_weighted_sum                   = {vr_c:.4f} + {org_c:.4f} + {integ_c:.4f} = {base_w:.4f}",
-        f"  x Intent {intent_v}                 = {base_w:.4f} x {intent_v} = {risk_term:.4f}",
-        f"  IRS                                 = 100 - {risk_term:.4f} = {weighted:.4f}",
-        f"  IRS (clamped, half-up)              = {irs:.0f}",
-        f"  Grade                               = {_safe(result.get('grade'), 8)} - "
+        f"  weights used                       = {weights}",
+        f"  VR x {w_vr:.4f}                    = {vr:.4f} x {w_vr:.4f} = {vr * w_vr:.4f}",
+        f"  ORG x {w_org:.4f}                  = {org_v:.4f} x {w_org:.4f} = {org_v * w_org:.4f}",
+        f"  IntR x {w_int:.4f}                 = {integ_v:.4f} x {w_int:.4f} = {integ_v * w_int:.4f}",
+        f"  risk_term                          = {risk_term:.4f}",
+        f"  IRS                                = 100 - {risk_term:.4f} = {weighted:.4f}",
+        f"  IRS (clamped, half-up)             = {irs:.0f}",
+        f"  Grade                              = {_safe(result.get('grade'), 8)} - "
         f"{_safe(result.get('classification'), 80)}",
-        f"  Decision                            = {_safe(result.get('decision'), 80)}",
+        f"  Decision                           = {_safe(result.get('decision'), 80)}",
         "",
     ]
     return lines

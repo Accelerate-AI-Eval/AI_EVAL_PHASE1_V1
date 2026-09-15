@@ -483,9 +483,6 @@ function trustGradeFromScore(score: number | undefined): {
     if (h === "#ffba08" || h === "#facc15" || h === "#fbbf24" || h === "#f59e0b") {
       return "#c2410c";
     }
-    if (h === "#0aff99") {
-      return "#059669";
-    }
     if (h === "#ff8700") {
       return "#ea580c";
     }

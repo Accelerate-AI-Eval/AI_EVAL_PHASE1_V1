@@ -342,30 +342,44 @@ const VendorEvaluation = ({
                   tooltipText={config.placeholder}
                 >
                   {!selectedVendorId ? (
-                    <input
-                      type="text"
-                      className="select_input"
-                      value={formData.productName ?? ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          productName: e.target.value,
-                        }))
-                      }
-                      placeholder={config.placeholder}
-                      aria-label={config.label}
-                    />
+                    (formData.vendorName ?? "").trim() ? (
+                      <input
+                        type="text"
+                        className="select_input"
+                        value={formData.productName ?? ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            productName: e.target.value,
+                          }))
+                        }
+                        placeholder={config.placeholder}
+                        aria-label={config.label}
+                      />
+                    ) : (
+                      <select
+                        className="select_input select_input--placeholder"
+                        value=""
+                        disabled
+                        aria-label={config.label}
+                      >
+                        <option value="">Select a vendor first</option>
+                      </select>
+                    )
                   ) : productsLoading ? (
                     <LoadingMessage message="Loading products…" />
-                  ) : productOptions.length > 0 ? (
+                  ) : (
                     <select
                       className={`select_input ${!selectedProductId ? "select_input--placeholder" : ""}`}
                       value={selectedProductId}
                       onChange={(e) => onProductSelect(e.target.value)}
+                      disabled={productOptions.length === 0}
                       aria-label={config.label}
                     >
                       <option value="">
-                        Select the product or solution for this vendor
+                        {productOptions.length > 0
+                          ? "Select the product or solution for this vendor"
+                          : "No products listed for this vendor"}
                       </option>
                       {productOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -373,22 +387,6 @@ const VendorEvaluation = ({
                         </option>
                       ))}
                     </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData.productName ?? ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          productName: e.target.value,
-                        }))
-                      }
-                      placeholder={
-                        "No public products listed for this vendor. Enter product name."
-                      }
-                      className="select_input"
-                      aria-label={config.label}
-                    />
                   )}
                 </FormField>
                 {fieldErrors?.[key] && (

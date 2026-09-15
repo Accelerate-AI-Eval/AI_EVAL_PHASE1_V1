@@ -295,14 +295,15 @@ function hslToRgbString(h: number, sPercent: number, lPercent: number): string {
 
 /**
  * Vendor trust / assessment grade colors on the vendor portal (lowest score → highest).
- * ≥ 90 uses {@link VENDOR_TRUST_ASSESSMENT_GRADE_COLORS}[4] (`#0aff99`).
+ * ≥ 90 uses {@link VENDOR_TRUST_ASSESSMENT_GRADE_COLORS}[4] (`#059669`).
+ * Top bands stay in the emerald range: neon greens wash out on light card backgrounds.
  */
 export const VENDOR_TRUST_ASSESSMENT_GRADE_COLORS = [
   "#ff6201",
   "#ff8700",
   "#ffba08",
-  "#52b788",
-  "#0aff99",
+  "#34a853",
+  "#059669",
 ] as const;
 
 /**

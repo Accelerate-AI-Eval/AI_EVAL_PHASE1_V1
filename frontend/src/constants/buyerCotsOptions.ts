@@ -473,15 +473,13 @@ export const TRAINING_EFFORT_OPTIONS: OptionItem[] = [
 ];
 
 export const VENDOR_EVIDENCE_OPTIONS: OptionItem[] = [
-  { label: "SOC 2 Type 2 report", value: "SOC 2 Type 2 report" },
-  { label: "ISO 27001 certificate", value: "ISO 27001 certificate" },
-  { label: "ISO 42001 certificate", value: "ISO 42001 certificate" },
-  { label: "Pen-test summary", value: "Pen-test summary" },
-  { label: "DPA", value: "DPA" },
-  { label: "BAA", value: "BAA" },
-  { label: "Sub-processor list", value: "Sub-processor list" },
-  { label: "Model or safety testing results", value: "Model or safety testing results" },
-  { label: "Architecture diagram", value: "Architecture diagram" },
+  { label: "SOC 2 Type 1", value: "SOC 2 Type 1" },
+  { label: "SOC 2 Type 2", value: "SOC 2 Type 2" },
+  { label: "ISO 27001", value: "ISO 27001" },
+  { label: "ISO 42001 (AI Management)", value: "ISO 42001 (AI Management)" },
+  { label: "HITRUST", value: "HITRUST" },
+  { label: "FedRAMP", value: "FedRAMP" },
+  { label: "PCI DSS", value: "PCI DSS" },
   { label: "Nothing yet", value: "Nothing yet" },
 ];
 

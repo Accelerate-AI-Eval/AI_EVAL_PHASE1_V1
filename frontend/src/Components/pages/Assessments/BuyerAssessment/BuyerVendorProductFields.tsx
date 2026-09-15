@@ -16,6 +16,7 @@ type DirectoryVendor = {
   id: string;
   organizationName?: string | null;
   companyWebsite?: string | null;
+  productNames?: string[];
 };
 
 type DirectoryProduct = {
@@ -129,6 +130,9 @@ export default function BuyerVendorProductFields({
             id: String(v.id ?? ""),
             organizationName: v.organizationName as string | null,
             companyWebsite: v.companyWebsite as string | null,
+            productNames: Array.isArray(v.productNames)
+              ? v.productNames.map((n) => String(n ?? "").trim()).filter(Boolean)
+              : [],
           }))
           .filter((v) => v.id),
       );
@@ -230,8 +234,17 @@ export default function BuyerVendorProductFields({
     const name = (formData.productName ?? "").trim();
     if (!name || products.length === 0) return;
     const found = products.find((p) => p.productName === name);
-    if (found) setSelectedProductId(found.id);
-  }, [products, formData.productName]);
+    if (!found) return;
+    setSelectedProductId(found.id);
+    if (String(formData.vendorAttestationId ?? "").trim() === found.id) return;
+    setFormData((prev) =>
+      applyBuyerCotsDerivedFields(prev, {
+        vendorAttestationId: found.id,
+        selectedProductId: found.id,
+        unlinkedVendor: "false",
+      }),
+    );
+  }, [products, formData.productName, formData.vendorAttestationId, setFormData]);
 
   const vendorOptions = useMemo(
     () =>
@@ -243,18 +256,25 @@ export default function BuyerVendorProductFields({
   );
 
   const productOptions = useMemo(() => {
-    const nameCount = new Map<string, number>();
-    for (const p of products) {
-      nameCount.set(p.productName, (nameCount.get(p.productName) ?? 0) + 1);
+    if (products.length > 0) {
+      const nameCount = new Map<string, number>();
+      for (const p of products) {
+        nameCount.set(p.productName, (nameCount.get(p.productName) ?? 0) + 1);
+      }
+      return products.map((p) => ({
+        value: p.id,
+        label:
+          (nameCount.get(p.productName) ?? 0) > 1
+            ? `${p.productName} (${p.id.slice(0, 8)}…)`
+            : p.productName,
+      }));
     }
-    return products.map((p) => ({
-      value: p.id,
-      label:
-        (nameCount.get(p.productName) ?? 0) > 1
-          ? `${p.productName} (${p.id.slice(0, 8)}…)`
-          : p.productName,
+    const vendor = directoryVendors.find((v) => String(v.id) === selectedVendorId);
+    return (vendor?.productNames ?? []).map((name) => ({
+      value: name,
+      label: name,
     }));
-  }, [products]);
+  }, [products, directoryVendors, selectedVendorId]);
 
   const onVendorSelect = (vendorId: string) => {
     setSelectedVendorId(vendorId);
@@ -290,19 +310,23 @@ export default function BuyerVendorProductFields({
 
   const onProductSelect = (attestationId: string) => {
     setSelectedProductId(attestationId);
-    const p = products.find((x) => x.id === attestationId);
+    const p =
+      products.find((x) => x.id === attestationId) ??
+      products.find((x) => x.productName === attestationId);
+    const productName = p?.productName ?? attestationId;
+    const linkedId = p?.id ?? "";
     appliedAttestationRef.current = "";
     setFormData((prev) =>
       applyBuyerCotsDerivedFields(prev, {
-        productName: p ? p.productName : "",
-        vendorAttestationId: attestationId,
-        selectedProductId: attestationId,
-        unlinkedVendor: attestationId ? "false" : "true",
-        ...(attestationId ? {} : clearBuyerCotsAttestationPrefill()),
+        productName: attestationId ? productName : "",
+        vendorAttestationId: linkedId,
+        selectedProductId: linkedId,
+        unlinkedVendor: linkedId ? "false" : attestationId ? "true" : "true",
+        ...(linkedId ? {} : clearBuyerCotsAttestationPrefill()),
       }),
     );
-    if (attestationId) {
-      void applyAttestationPrefill(attestationId, true, p);
+    if (linkedId) {
+      void applyAttestationPrefill(linkedId, true, p);
     }
   };
 
@@ -371,53 +395,55 @@ export default function BuyerVendorProductFields({
         <FormField
           label="What is the specific product or solution name?"
           mandatory={required}
-          tooltipText="Select a product after choosing a directory vendor, or type the product name"
+          tooltipText="After you choose a vendor, pick a product from that vendor’s directory listings. Type a name only if the vendor is not in the directory."
         >
           {!selectedVendorId ? (
-            <input
-              type="text"
-              className="select_input"
-              value={formData.productName ?? ""}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  productName: e.target.value,
-                  unlinkedVendor: prev.vendorName?.trim() ? "true" : prev.unlinkedVendor,
-                }))
-              }
-              placeholder="Enter the product name"
-              aria-label="Product name"
-            />
+            (formData.vendorName ?? "").trim() ? (
+              <input
+                type="text"
+                className="select_input"
+                value={formData.productName ?? ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    productName: e.target.value,
+                    unlinkedVendor: prev.vendorName?.trim() ? "true" : prev.unlinkedVendor,
+                  }))
+                }
+                placeholder="Enter the product name"
+                aria-label="Product name"
+              />
+            ) : (
+              <select
+                className="select_input select_input--placeholder"
+                value=""
+                disabled
+                aria-label="Product"
+              >
+                <option value="">Select a vendor first</option>
+              </select>
+            )
           ) : productsLoading ? (
             <LoadingMessage message="Loading products…" />
-          ) : productOptions.length > 0 ? (
+          ) : (
             <select
               className={`select_input ${!selectedProductId ? "select_input--placeholder" : ""}`}
               value={selectedProductId}
               onChange={(e) => onProductSelect(e.target.value)}
+              disabled={productOptions.length === 0}
               aria-label="Product"
             >
-              <option value="">Select the product or solution for this vendor</option>
+              <option value="">
+                {productOptions.length > 0
+                  ? "Select the product or solution for this vendor"
+                  : "No products listed for this vendor"}
+              </option>
               {productOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
-          ) : (
-            <input
-              type="text"
-              value={formData.productName ?? ""}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  productName: e.target.value,
-                }))
-              }
-              placeholder="No public products listed for this vendor. Enter product name."
-              className="select_input"
-              aria-label="Product name"
-            />
           )}
         </FormField>
         {fieldErrors.productName && <FieldError message={fieldErrors.productName} />}

@@ -168,6 +168,8 @@ def yes_no(value: Any, *, default: bool | None = None) -> bool | None:
 
 def decision_autonomy_level(value: Any) -> str:
     answer = as_answer(value).lower()
+    if not answer:
+        return ""
     if "fully" in answer and "autonom" in answer:
         return "fully_autonomous"
     if "autonom" in answer:
@@ -176,7 +178,7 @@ def decision_autonomy_level(value: Any) -> str:
         return "assisted"
     if "advis" in answer:
         return "advisory"
-    return "supervised"
+    return ""
 
 
 def number(value: Any, fallback: float | None = None) -> float | None:
@@ -209,7 +211,8 @@ def reconcile_ir_plan(plan_answer: Any, frequency_answer: Any) -> tuple[str | No
         maturity = "documented_not_tested"
     if testing in _IR_TESTING_CLAIMS and as_answer(plan_answer) and not plan_claims_tested:
         testing = "documented_untested"
-    return maturity, testing or "documented_untested"
+    # A completely unanswered pair is absent, not an untested plan.
+    return maturity, testing or ("documented_untested" if as_answer(plan_answer) else "")
 
 
 _PEN_TEST_CADENCE_CLAIMS = {"continuous", "quarterly", "annually", "ad_hoc"}

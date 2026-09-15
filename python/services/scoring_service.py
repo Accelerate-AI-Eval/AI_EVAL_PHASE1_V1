@@ -19,16 +19,56 @@ from services.compliance_cert_blobs import (
     collect_compliance_upload_file_names,
 )
 
-SCORING_VERSION = "vts-1.1"
+SCORING_VERSION = "vts-2.0"
+CALIBRATION_VERSION = "vts-2.0-cal-2026-09-09"
 
+# Document 1 §4.3 — Weight is the value in force now. Unknown domains still
+# return a defined weight (Document 1: the function must not fail closed).
 DOMAIN_WEIGHTS = {
-    "Privacy & Security": 1.20,
-    "AI System Safety": 1.20,
-    "Fairness & Non-discrimination": 1.15,
-    "Transparency & Explainability": 1.10,
-    "Human Oversight": 1.10,
-    "Accountability & Governance": 1.00,
-    "Socioeconomic Impact": 0.90,
+    "Malicious Actors and Misuse": 1.20,
+    "Privacy and Security": 1.15,
+    "AI System Safety, Failures and Limitations": 1.15,
+    "Discrimination and Toxicity": 1.10,
+    "Misinformation": 1.10,
+    "Human-Computer Interaction": 1.05,
+    "Socioeconomic and Environmental": 0.90,
+}
+DOMAIN_WEIGHT_ALIASES = {
+    "Privacy & Security": "Privacy and Security",
+    "AI System Safety": "AI System Safety, Failures and Limitations",
+    "Fairness & Non-discrimination": "Discrimination and Toxicity",
+    "Transparency & Explainability": "Human-Computer Interaction",
+    "Human Oversight": "Human-Computer Interaction",
+    "Accountability & Governance": "Malicious Actors and Misuse",
+    "Socioeconomic Impact": "Socioeconomic and Environmental",
+}
+DEFAULT_DOMAIN_WEIGHT = 1.00
+CM_CLAMP = (0.143, 3.1)
+
+# Document 0 §3.1 — attainable maxima. Groups marked None are excluded until measured.
+GOVERNANCE_GROUP_ATTAINABLE: dict[str, float | None] = {
+    "certifications_score": 23,
+    "assessment_quality_score": 25,
+    "policy_score": 29,
+    "operational_controls_score": 27,
+    "vendor_maturity_adjustment": 10,
+    "data_protection_score": None,
+    "supply_chain_score": None,
+    "adversarial_disclosure_score": None,
+    "dpa_score": None,
+}
+OPERATIONAL_GROUP_ATTAINABLE: dict[str, float | None] = {
+    "sla_score": 25,
+    "incident_management_score": 16,
+    "deployment_maturity_score": 22,
+    "stability_score": 15,
+    "support_score": 8,
+}
+
+PILLAR_WEIGHTS = {
+    "product": 0.40,
+    "governance": 0.30,
+    "operational": 0.30,
 }
 
 MITIGATION_CATEGORIES = [
@@ -46,17 +86,110 @@ MITIGATION_CATEGORIES = [
     "Compliance & Regulatory Adherence",
     "User Education & Awareness",
 ]
-
-CERT_EVIDENCE_NEAR_FW = re.compile(
-    r"(certif|certificate|audit|report|attestation|third[\s-]?party|external assessment|assessor|aico|\.pdf|\.docx?)",
-    re.I,
-)
+# Document 1 §4.4 — no collectable input; drop from required and the denominator.
+EXCLUDED_MITIGATION_CATEGORIES = {
+    "Access Management & Authentication",
+    "User Education & Awareness",
+}
 
 LooseInput = dict[str, Any]
 
 
 def _pf(value: float, digits: int = 4) -> float:
     return float(f"{value:.{digits}f}")
+
+
+def _has_input(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str) and not value.strip():
+        return False
+    if isinstance(value, (list, dict)) and len(value) == 0:
+        return False
+    return True
+
+
+def _domain_weight_for(domain: Any) -> tuple[str, float]:
+    name = str(domain or "").strip()
+    canonical = DOMAIN_WEIGHT_ALIASES.get(name, name)
+    if canonical in DOMAIN_WEIGHTS:
+        return canonical, DOMAIN_WEIGHTS[canonical]
+    return canonical or str(domain), DEFAULT_DOMAIN_WEIGHT
+
+
+def _stake_from_impact_scores(impact_scores: list[float]) -> str | None:
+    """Document 1 §4.2 — stake proxied from median impact of the applicable set."""
+    if not impact_scores:
+        return None
+    ordered = sorted(float(x) for x in impact_scores)
+    median = ordered[len(ordered) // 2]
+    if median <= 1.5:
+        return "Low"
+    if median <= 2.5:
+        return "Moderate"
+    if median <= 3.5:
+        return "High"
+    if median <= 4.5:
+        return "Critical"
+    return "Life-Critical"
+
+
+def _normalise_pillar(
+    groups: list[tuple[str, dict[str, Any], bool]],
+    attainable_map: dict[str, float | None],
+) -> dict[str, Any]:
+    """Document 0 §3: Pillar_Risk = 100 × (1 − earned / attainable). Absent groups drop out."""
+    earned = 0.0
+    attainable = 0.0
+    included: list[dict[str, Any]] = []
+    excluded: list[dict[str, Any]] = []
+    for name, result, has_input in groups:
+        cap = attainable_map.get(name)
+        if cap is None:
+            excluded.append({"group": name, "reason": "excluded_until_measured"})
+            continue
+        if not has_input:
+            excluded.append({"group": name, "reason": "no_input"})
+            continue
+        pts = float(result.get("value") or 0)
+        pts = min(pts, float(cap))
+        earned += pts
+        attainable += float(cap)
+        included.append({
+            "group": name,
+            "earned": _pf(pts),
+            "attainable": float(cap),
+        })
+    if attainable <= 0:
+        return {
+            "earned": 0.0,
+            "attainable": 0.0,
+            "included_groups": included,
+            "excluded_groups": excluded,
+            "not_implemented": True,
+            "value": None,
+        }
+    ratio = earned / attainable
+    risk = 100.0 * (1.0 - ratio)
+    clamped = max(0.0, min(100.0, risk))
+    return {
+        "earned": _pf(earned),
+        "attainable": _pf(attainable),
+        "included_groups": included,
+        "excluded_groups": excluded,
+        "not_implemented": False,
+        "raw_risk": _pf(risk),
+        "value": _pf(clamped),
+    }
+
+
+def _redistribute_pillar_weights(active: dict[str, bool]) -> dict[str, float]:
+    base = dict(PILLAR_WEIGHTS)
+    live = {k: v for k, v in base.items() if active.get(k, True)}
+    total = sum(live.values())
+    if total <= 0:
+        return {k: 0.0 for k in base}
+    return {k: (live[k] / total if k in live else 0.0) for k in base}
 
 
 def _score_list(
@@ -117,13 +250,31 @@ def calc_entity_type_multiplier(p: LooseInput) -> dict[str, Any]:
         "Critical": 0.15,
         "Life-Critical": 0.2,
     }
-    base = base_map.get(p.get("decisionAutonomyLevel"))
+    unmatched: list[dict[str, Any]] = []
+    autonomy = p.get("decisionAutonomyLevel")
+    base = base_map.get(autonomy)
     if base is None:
-        raise RiskCalculationException(f"Unknown decisionAutonomyLevel: {p.get('decisionAutonomyLevel')}")
-    stake_adj = stake_map.get(p.get("decisionStakeLevel"))
+        if _has_input(autonomy):
+            unmatched.append({"field": "decisionAutonomyLevel", "value": autonomy})
+        base = 1.0
+    impact_scores = p.get("impactScores") if isinstance(p.get("impactScores"), list) else []
+    stake_from_impact = _stake_from_impact_scores(
+        [float(x) for x in impact_scores if isinstance(x, (int, float))]
+    )
+    stake_level = stake_from_impact or p.get("decisionStakeLevel")
+    stake_adj = stake_map.get(stake_level)
     if stake_adj is None:
-        raise RiskCalculationException(f"Unknown decisionStakeLevel: {p.get('decisionStakeLevel')}")
-    return {"et_base": base, "stake_adjustment": stake_adj, "value": _pf(base + stake_adj)}
+        if _has_input(stake_level):
+            unmatched.append({"field": "decisionStakeLevel", "value": stake_level})
+        stake_adj = 0.0
+    return {
+        "et_base": base,
+        "stake_level": stake_level,
+        "stake_source": "median_impact" if stake_from_impact else "payload",
+        "stake_adjustment": stake_adj,
+        "unmatched": unmatched,
+        "value": _pf(base + stake_adj),
+    }
 
 
 def calc_timing_multiplier(p: LooseInput) -> dict[str, Any]:
@@ -144,13 +295,25 @@ def calc_timing_multiplier(p: LooseInput) -> dict[str, Any]:
         "scaling": 0.05,
         "mature_deployment": 0.10,
     }
-    base = base_map.get(p.get("devStage"))
+    unmatched: list[dict[str, Any]] = []
+    stage = p.get("devStage")
+    phase = p.get("assessmentPhase")
+    base = base_map.get(stage)
+    phase_adj = phase_map.get(phase)
     if base is None:
-        raise RiskCalculationException(f"Unknown devStage: {p.get('devStage')}")
-    phase_adj = phase_map.get(p.get("assessmentPhase"))
+        if _has_input(stage):
+            unmatched.append({"field": "devStage", "value": stage})
+        base = 1.0
     if phase_adj is None:
-        raise RiskCalculationException(f"Unknown assessmentPhase: {p.get('assessmentPhase')}")
-    return {"tm_base": base, "phase_adjustment": phase_adj, "value": _pf(base + phase_adj)}
+        if _has_input(phase):
+            unmatched.append({"field": "assessmentPhase", "value": phase})
+        phase_adj = 0.0
+    return {
+        "tm_base": base,
+        "phase_adjustment": phase_adj,
+        "unmatched": unmatched,
+        "value": _pf(base + phase_adj),
+    }
 
 
 def calc_architecture_multiplier(p: LooseInput) -> dict[str, Any]:
@@ -174,19 +337,36 @@ def calc_architecture_multiplier(p: LooseInput) -> dict[str, Any]:
         "hybrid": 0.08,
         "edge_devices": 0.10,
     }
+    unmatched: list[dict[str, Any]] = []
     base = base_map.get(p.get("customizationLevel"))
     if base is None:
-        raise RiskCalculationException(f"Unknown customizationLevel: {p.get('customizationLevel')}")
+        if _has_input(p.get("customizationLevel")):
+            unmatched.append({"field": "customizationLevel", "value": p.get("customizationLevel")})
+        base = 1.00
     integ_adj = integ_map.get(p.get("integrationComplexity"))
     if integ_adj is None:
-        raise RiskCalculationException(f"Unknown integrationComplexity: {p.get('integrationComplexity')}")
-    host_adj = host_map.get(p.get("hostingType"))
-    if host_adj is None:
-        raise RiskCalculationException(f"Unknown hostingType: {p.get('hostingType')}")
+        if _has_input(p.get("integrationComplexity")):
+            unmatched.append({"field": "integrationComplexity", "value": p.get("integrationComplexity")})
+        integ_adj = 0.0
+    host_raw = p.get("hostingType")
+    host_items = host_raw if isinstance(host_raw, list) else [host_raw]
+    host_adjs: list[float] = []
+    for item in host_items:
+        key = str(item or "").strip()
+        if not key:
+            continue
+        if key in host_map:
+            host_adjs.append(host_map[key])
+        else:
+            unmatched.append({"field": "hostingType", "value": key})
+    # Document 1 §4.2 — hosting is multi-select; take the MAX adjustment.
+    host_adj = max(host_adjs) if host_adjs else 0.0
     return {
         "am_base": base,
         "integration_adj": integ_adj,
         "hosting_adj": host_adj,
+        "hosting_values": [str(x) for x in host_items if x],
+        "unmatched": unmatched,
         "value": _pf(base + integ_adj + host_adj),
     }
 
@@ -215,19 +395,28 @@ def calc_scale_multiplier(p: LooseInput) -> dict[str, Any]:
         "very_large": 0.09,
         "petabyte_scale": 0.12,
     }
-    emp_base = emp_map.get(p.get("employeeCount"))
+    unmatched: list[dict[str, Any]] = []
+    employee = p.get("employeeCount")
+    geography = p.get("geographicRegions")
+    emp_base = emp_map.get(employee)
     if emp_base is None:
-        raise RiskCalculationException(f"Unknown employeeCount: {p.get('employeeCount')}")
-    geo_factor = geo_map.get(p.get("geographicRegions"))
+        if _has_input(employee):
+            unmatched.append({"field": "employeeCount", "value": employee})
+        emp_base = 1.00
+    geo_factor = geo_map.get(geography)
     if geo_factor is None:
-        raise RiskCalculationException(f"Unknown geographicRegions: {p.get('geographicRegions')}")
-    data_adj = data_map.get(p.get("dataVolumeScale"))
-    if data_adj is None:
-        raise RiskCalculationException(f"Unknown dataVolumeScale: {p.get('dataVolumeScale')}")
+        if _has_input(geography):
+            unmatched.append({"field": "geographicRegions", "value": geography})
+        geo_factor = 1.00
+    data_raw = p.get("dataVolumeScale")
+    if _has_input(data_raw) and data_raw not in data_map:
+        unmatched.append({"field": "dataVolumeScale", "value": data_raw})
+    data_adj = data_map.get(data_raw, 0.0) if data_raw else 0.0
     return {
         "employee_base": emp_base,
         "geographic_factor": geo_factor,
         "data_volume_adj": data_adj,
+        "unmatched": unmatched,
         "value": _pf((emp_base * geo_factor) + data_adj),
     }
 
@@ -250,7 +439,14 @@ def calc_intent_multiplier(p: LooseInput) -> dict[str, Any]:
     unintentional = int(p.get("unintentionalRiskCount") or 0)
     total = intentional + unintentional
     if total == 0:
-        raise RiskCalculationException("Total risk count must be > 0 for intent multiplier")
+        return {
+            "intentional_count": 0,
+            "unintentional_count": 0,
+            "intentional_pct": 0.0,
+            "unintentional_pct": 0.0,
+            "profile": "insufficient_evidence",
+            "value": 1.0,
+        }
     intentional_pct = intentional / total
     unintentional_pct = unintentional / total
     if intentional_pct > 0.6:
@@ -270,21 +466,25 @@ def calc_intent_multiplier(p: LooseInput) -> dict[str, Any]:
 
 
 def calculate_combined_contextual_multiplier(params: LooseInput) -> dict[str, Any]:
+    # Document 1 §4.2: CM = clamp(ET × TM × AM × SM_scale × IM, 0.143, 3.1).
+    # Risk Tolerance Multiplier is a buyer input and is not applied to VTS.
     et = calc_entity_type_multiplier(params)
     tm = calc_timing_multiplier(params)
     am = calc_architecture_multiplier(params)
     sm = calc_scale_multiplier(params)
-    rtm = calc_risk_tolerance_multiplier(params)
     im = calc_intent_multiplier(params)
-    value = _pf(et["value"] * tm["value"] * am["value"] * sm["value"] * rtm["value"] * im["value"])
+    raw = float(et["value"]) * float(tm["value"]) * float(am["value"]) * float(sm["value"]) * float(im["value"])
+    lo, hi = CM_CLAMP
+    clamped = max(lo, min(hi, raw))
     return {
         "entity_type_multiplier": et,
         "timing_multiplier": tm,
         "architecture_multiplier": am,
         "scale_multiplier": sm,
-        "risk_tolerance_multiplier": rtm,
         "intent_multiplier": im,
-        "value": value,
+        "raw_value": _pf(raw),
+        "clamp": {"min": lo, "max": hi},
+        "value": _pf(clamped),
     }
 
 
@@ -297,13 +497,12 @@ def calculate_domain_weight(applicable_domains: list[dict[str, Any]]) -> dict[st
     for d in applicable_domains:
         domain = d.get("domain")
         risk_count = int(d.get("riskCount") or 0)
-        w = DOMAIN_WEIGHTS.get(str(domain))
-        if w is None:
-            raise RiskCalculationException(f"Unknown domain: {domain}")
+        canonical, w = _domain_weight_for(domain)
         weighted_sum += w * risk_count
         total_risks += risk_count
         breakdown.append({
-            "domain": domain,
+            "domain": canonical,
+            "source_domain": domain,
             "weight": w,
             "risk_count": risk_count,
             "contribution": _pf(w * risk_count),
@@ -385,8 +584,14 @@ def calculate_inherent_risk(*, L: float, I: float, CM: float, DW: float, SM: flo
 
 
 def calc_category_coverage(p: LooseInput) -> dict[str, Any]:
-    required_categories = list(p.get("requiredCategories") or [])
-    implemented_categories = list(p.get("implementedCategories") or [])
+    required_categories = [
+        c for c in (p.get("requiredCategories") or [])
+        if c not in EXCLUDED_MITIGATION_CATEGORIES
+    ]
+    implemented_categories = [
+        c for c in (p.get("implementedCategories") or [])
+        if c not in EXCLUDED_MITIGATION_CATEGORIES
+    ]
     required = set(required_categories)
     implemented = [c for c in implemented_categories if c in required]
     coverage = len(implemented) / len(required) if required else 0.0
@@ -402,7 +607,12 @@ def calc_category_coverage(p: LooseInput) -> dict[str, Any]:
 
 def calc_evidence_quality(mitigations: list[dict[str, Any]]) -> dict[str, Any]:
     if not mitigations:
-        raise RiskCalculationException("mitigations array must be non-empty")
+        return {
+            "breakdown": [],
+            "total_weighted": 0.0,
+            "total_risk_instances": 0,
+            "value": 0.0,
+        }
     weighted_sum = 0.0
     total_risk_instances = 0
     breakdown = []
@@ -422,7 +632,7 @@ def calc_evidence_quality(mitigations: list[dict[str, Any]]) -> dict[str, Any]:
         "breakdown": breakdown,
         "total_weighted": _pf(weighted_sum),
         "total_risk_instances": total_risk_instances,
-        "value": _pf(weighted_sum / total_risk_instances),
+        "value": _pf(weighted_sum / total_risk_instances) if total_risk_instances else 0.0,
     }
 
 
@@ -440,53 +650,116 @@ def calculate_mitigation_effectiveness(p: LooseInput) -> dict[str, Any]:
 
 
 def calculate_confidence_factor(p: LooseInput) -> dict[str, Any]:
-    method_map = {
-        "third_party_audit": 0.90,
-        "third_party_review": 0.93,
-        "internal_audit": 0.97,
-        "self_reported_verified": 1.00,
-        "self_reported_unverified": 1.10,
-        "no_formal_assessment": 1.15,
-    }
-    cadence_map = {
-        "continuous": 0.94,
-        "quarterly": 0.96,
-        "annually": 0.97,
-        "ad_hoc": 0.99,
-    }
-    base = method_map.get(p.get("assessmentMethod"))
-    if base is None:
-        raise RiskCalculationException(f"Unknown assessmentMethod: {p.get('assessmentMethod')}")
-    evidence_adj = []
-    factor = base
-    if p.get("complianceDocumentationComplete") is True:
-        factor *= 0.98
-        evidence_adj.append({"reason": "compliance documentation complete", "multiplier": 0.98})
+    """Document 1 §4.5 — corroboration only. Assessment method is owned by Governance."""
+    unmatched: list[dict[str, Any]] = []
+    evidence_adj: list[dict[str, Any]] = []
+    factor = 1.0
+
+    cert_file = bool(
+        p.get("complianceDocumentationComplete") is True
+        or p.get("certificationFilePresent") is True
+        or str(p.get("complianceUploadBlob") or "").strip()
+    )
+    expiry_raw = p.get("certificationExpiryDate") or p.get("certification_expiry_date")
+    expiry_ok = False
+    if cert_file:
+        expiry_ok = _cert_expiry_current(expiry_raw, p.get("certificates"))
+        if expiry_ok:
+            factor *= 0.95
+            evidence_adj.append({
+                "reason": "certification file present and in date",
+                "multiplier": 0.95,
+            })
+        else:
+            evidence_adj.append({
+                "reason": "certification file present but expired or undated — no credit",
+                "multiplier": 1.0,
+            })
+
     cadence = str(
         p.get("independentPenTestFrequency")
         or p.get("independent_pen_test_frequency")
         or ""
     ).strip().lower()
-    if cadence in cadence_map:
-        factor *= cadence_map[cadence]
+    annual_or_better = cadence in {"continuous", "quarterly", "annually", "annual", "bi_annual"}
+    if annual_or_better:
+        factor *= 0.97
         evidence_adj.append({
             "reason": f"independent pen-test cadence: {cadence}",
-            "multiplier": cadence_map[cadence],
+            "multiplier": 0.97,
         })
-    elif cadence == "none":
-        evidence_adj.append({"reason": "independent pen-test cadence: none", "multiplier": 1.0})
-    elif p.get("penetrationTestReportAvailable") is True:
-        factor *= 0.97
-        evidence_adj.append({"reason": "penetration test report available", "multiplier": 0.97})
-    if p.get("soc2Type2Current") is True:
-        factor *= 0.95
-        evidence_adj.append({"reason": "SOC2 Type 2 current", "multiplier": 0.95})
+    elif cadence:
+        unmatched.append({"field": "independentPenTestFrequency", "value": cadence})
+
+    testing = str(
+        p.get("testingResultsAvailable") or p.get("testing_results_available") or ""
+    ).strip().lower()
+    if "comprehensive" in testing:
+        factor *= 0.98
+        evidence_adj.append({
+            "reason": "testing results comprehensive",
+            "multiplier": 0.98,
+        })
+
+    trust_url = str(
+        p.get("trustCenterUrl") or p.get("trust_center_url") or ""
+    ).strip()
+    if trust_url:
+        factor *= 0.98
+        evidence_adj.append({
+            "reason": "trust-centre URL published",
+            "multiplier": 0.98,
+        })
+
+    lo, hi = 0.80, 1.20
+    clamped = max(lo, min(hi, factor))
     return {
-        "method_base": base,
+        "method_base": 1.0,
         "evidence_adjustments": evidence_adj,
         "pen_test_cadence": cadence or None,
-        "value": _pf(factor),
+        "cert_file_present": cert_file,
+        "cert_expiry_current": expiry_ok if cert_file else None,
+        "unmatched": unmatched,
+        "raw_value": _pf(factor),
+        "value": _pf(clamped),
     }
+
+
+def _cert_expiry_current(expiry_raw: Any, certificates: Any) -> bool:
+    today = datetime.now().date()
+
+    def parse_one(raw: Any) -> bool | None:
+        if raw in (None, "", False):
+            return None
+        if isinstance(raw, datetime):
+            return raw.date() >= today
+        text = str(raw).strip()[:10]
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+            try:
+                return datetime.strptime(text, fmt).date() >= today
+            except ValueError:
+                continue
+        return None
+
+    direct = parse_one(expiry_raw)
+    if direct is True:
+        return True
+    if isinstance(certificates, list):
+        found_valid = False
+        found_any = False
+        for row in certificates:
+            if not isinstance(row, dict):
+                continue
+            found_any = True
+            parsed = parse_one(row.get("expiryDate") or row.get("expiry") or row.get("valid_until"))
+            if parsed is True:
+                found_valid = True
+        if found_valid:
+            return True
+        if found_any:
+            return False
+    # File present with no expiry recorded: do not credit (Document 1 T1-04 / expiry gate).
+    return False
 
 
 def calculate_product_risk(
@@ -496,29 +769,56 @@ def calculate_product_risk(
     confidence_factor: float,
 ) -> dict[str, Any]:
     residual = inherent_risk * (1 - mitigation_effectiveness)
-    value = _pf(residual * confidence_factor)
+    raw = residual * confidence_factor
+    clamped = max(0.0, min(100.0, raw))
     return {
         "inherent_risk": inherent_risk,
         "mitigation_effectiveness": mitigation_effectiveness,
         "residual_pre_confidence": _pf(residual),
         "confidence_factor": confidence_factor,
-        "value": value,
+        "raw_value": _pf(raw),
+        "value": _pf(clamped),
     }
 
 
-def _certified_evidence_near_framework(combined: str, fw_regex: re.Pattern[str]) -> bool:
-    for m in fw_regex.finditer(combined):
-        idx = m.start()
-        win_start = max(0, idx - 100)
-        win_end = min(len(combined), idx + len(m.group(0)) + 100)
-        if CERT_EVIDENCE_NEAR_FW.search(combined[win_start:win_end]):
-            return True
-    return False
+def _structured_certificate_status(
+    p: LooseInput,
+    fw_regex: re.Pattern[str],
+) -> str:
+    """Return current, expired_or_undated, or self_attested for one framework.
+
+    Document 1 §4.5 requires the evidence tier to come from the
+    per-certificate evidence record. Free text near a framework name is never
+    treated as audited evidence.
+    """
+    certificates = p.get("certificates")
+    if not isinstance(certificates, list):
+        return "self_attested"
+    matched = False
+    for row in certificates:
+        if not isinstance(row, dict):
+            continue
+        evidence_text = " ".join(
+            str(row.get(key) or "")
+            for key in (
+                "name",
+                "certificateType",
+                "complianceType",
+                "documentClass",
+                "frameworkMapping",
+            )
+        )
+        if not fw_regex.search(evidence_text):
+            continue
+        matched = True
+        expiry = row.get("expiryDate") or row.get("expiry") or row.get("valid_until")
+        if _cert_expiry_current(expiry, [row]):
+            return "current"
+    return "expired_or_undated" if matched else "self_attested"
 
 
 def calc_certifications_score(p: LooseInput) -> dict[str, Any]:
     combined = str(p.get("certificationsSearchBlob") or "").lower()
-    u = str(p.get("complianceUploadBlob") or "").lower()
     if not combined.strip():
         legacy = []
         if p.get("soc2Certification") and p.get("soc2Certification") != "None":
@@ -557,17 +857,15 @@ def calc_certifications_score(p: LooseInput) -> dict[str, Any]:
 
     iso27001_re = re.compile(r"\biso\s*27001\b|27001:2022|\b27001\b", re.I)
     if iso27001_re.search(combined):
-        upload_hint = bool(re.search(r"27001", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, iso27001_re)
-        pts = 10 if certified else 5
-        add("ISO 27001:2022", pts, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, iso27001_re)
+        if status != "expired_or_undated":
+            add("ISO 27001:2022", 10 if status == "current" else 5, status.replace("_", "-"))
 
     iso42001_re = re.compile(r"\biso\s*42001\b|\b42001\b", re.I)
     if iso42001_re.search(combined):
-        upload_hint = bool(re.search(r"42001", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, iso42001_re)
-        pts = 8 if certified else 4
-        add("ISO 42001", pts, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, iso42001_re)
+        if status != "expired_or_undated":
+            add("ISO 42001", 8 if status == "current" else 4, status.replace("_", "-"))
 
     if re.search(r"nist", combined, re.I) and re.search(
         r"ai\s*rmf|ai\s*risk\s*management(\s*framework)?", combined, re.I
@@ -584,15 +882,15 @@ def calc_certifications_score(p: LooseInput) -> dict[str, Any]:
 
     n53_re = re.compile(r"800[\s.-]*53\b", re.I)
     if n53_re.search(combined):
-        upload_hint = bool(re.search(r"800[\s.-]*53", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, n53_re)
-        add("NIST SP 800-53 Rev 5", 10 if certified else 5, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, n53_re)
+        if status != "expired_or_undated":
+            add("NIST SP 800-53 Rev 5", 10 if status == "current" else 5, status.replace("_", "-"))
 
     n171_re = re.compile(r"800[\s.-]*171\b", re.I)
     if n171_re.search(combined):
-        upload_hint = bool(re.search(r"800[\s.-]*171", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, n171_re)
-        add("NIST SP 800-171 Rev 3", 10 if certified else 5, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, n171_re)
+        if status != "expired_or_undated":
+            add("NIST SP 800-171 Rev 3", 10 if status == "current" else 5, status.replace("_", "-"))
 
     if re.search(r"\bcmmc\b", combined, re.I):
         add("CMMC v2 Level 2+", 12)
@@ -602,15 +900,15 @@ def calc_certifications_score(p: LooseInput) -> dict[str, Any]:
 
     dora_re = re.compile(r"\bdora\b|digital operational resilience", re.I)
     if dora_re.search(combined):
-        upload_hint = bool(re.search(r"\bdora\b", u, re.I) or re.search(r"digital operational resilience", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, dora_re)
-        add("DORA", 8 if certified else 4, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, dora_re)
+        if status != "expired_or_undated":
+            add("DORA", 8 if status == "current" else 4, status.replace("_", "-"))
 
     gdpr_re = re.compile(r"\bgdpr\b|general data protection regulation", re.I)
     if gdpr_re.search(combined):
-        upload_hint = bool(re.search(r"\bgdpr\b", u, re.I))
-        certified = upload_hint or _certified_evidence_near_framework(combined, gdpr_re)
-        add("GDPR", 8 if certified else 4, "certified" if certified else "self-attested")
+        status = _structured_certificate_status(p, gdpr_re)
+        if status != "expired_or_undated":
+            add("GDPR", 8 if status == "current" else 4, status.replace("_", "-"))
 
     segment_key = normalize_cert_industry_segment_input(str(p.get("buyerIndustrySegment") or ""))
     relevant_frameworks = get_relevant_certification_framework_set(segment_key)
@@ -652,7 +950,6 @@ def calc_certifications_score(p: LooseInput) -> dict[str, Any]:
 
 
 def calc_assessment_quality_score(p: LooseInput) -> dict[str, Any]:
-    # Vocabulary matches calculate_confidence_factor, the other assessmentMethod consumer.
     method_map = {
         "third_party_audit": 20,
         "third_party_review": 15,
@@ -662,10 +959,24 @@ def calc_assessment_quality_score(p: LooseInput) -> dict[str, Any]:
         "no_formal_assessment": 0,
     }
     freq_map = {"annual": 5, "bi_annual": 3, "ad_hoc": 0}
-    base = method_map.get(p.get("assessmentMethod"), 0)
-    is_audit = p.get("assessmentMethod") in ("third_party_audit", "internal_audit")
-    freq_bonus = freq_map.get(p.get("auditFrequency"), 0) if is_audit else 0
-    return {"method_base": base, "frequency_bonus": freq_bonus, "value": base + freq_bonus}
+    unmatched: list[dict[str, Any]] = []
+    method = p.get("assessmentMethod")
+    has_method = _has_input(method)
+    if has_method and method not in method_map:
+        unmatched.append({"field": "assessmentMethod", "value": method})
+    base = method_map.get(method, 0) if has_method else 0
+    is_audit = method in ("third_party_audit", "internal_audit")
+    freq = p.get("auditFrequency")
+    freq_bonus = freq_map.get(freq, 0) if is_audit and _has_input(freq) else 0
+    if is_audit and _has_input(freq) and freq not in freq_map:
+        unmatched.append({"field": "auditFrequency", "value": freq})
+    return {
+        "method_base": base,
+        "frequency_bonus": freq_bonus,
+        "unmatched": unmatched,
+        "has_input": has_method,
+        "value": base + freq_bonus,
+    }
 
 
 def calc_policy_score(p: LooseInput) -> dict[str, Any]:
@@ -673,15 +984,49 @@ def calc_policy_score(p: LooseInput) -> dict[str, Any]:
     ir_map = {"tested_annually": 15, "documented_not_tested": 10, "basic_runbook": 5}
     privacy_map = {"comprehensive_gdpr_ccpa": 10, "standard": 6, "basic": 3}
     ethics_map = {"board_approved_operationalized": 8, "documented_not_operationalized": 5, "draft": 2}
-    retention_points = retention_map.get(p.get("dataRetentionPolicyCompleteness"), 0) if p.get("dataRetentionPolicy") else 0
-    ir_points = ir_map.get(p.get("incidentResponsePlanMaturity"), 0) if p.get("incidentResponsePlan") else 0
-    privacy_points = privacy_map.get(p.get("privacyPolicyScope"), 0) if p.get("privacyPolicy") else 0
-    ethics_points = ethics_map.get(p.get("aiEthicsMaturity"), 0) if p.get("aiEthicsPolicy") else 0
+    unmatched: list[dict[str, Any]] = []
+
+    retention_on = p.get("dataRetentionPolicy")
+    retention_level = p.get("dataRetentionPolicyCompleteness")
+    if retention_on and _has_input(retention_level) and retention_level not in retention_map:
+        unmatched.append({"field": "dataRetentionPolicyCompleteness", "value": retention_level})
+    retention_points = retention_map.get(retention_level, 0) if retention_on else 0
+
+    ir_on = p.get("incidentResponsePlan")
+    ir_level = p.get("incidentResponsePlanMaturity")
+    if ir_on and _has_input(ir_level) and ir_level not in ir_map:
+        unmatched.append({"field": "incidentResponsePlanMaturity", "value": ir_level})
+    ir_points = ir_map.get(ir_level, 0) if ir_on else 0
+
+    privacy_on = p.get("privacyPolicy")
+    privacy_level = p.get("privacyPolicyScope")
+    if privacy_on and _has_input(privacy_level) and privacy_level not in privacy_map:
+        unmatched.append({"field": "privacyPolicyScope", "value": privacy_level})
+    privacy_points = privacy_map.get(privacy_level, 0) if privacy_on else 0
+
+    ethics_on = p.get("aiEthicsPolicy")
+    ethics_level = p.get("aiEthicsMaturity")
+    if ethics_on and _has_input(ethics_level) and ethics_level not in ethics_map:
+        unmatched.append({"field": "aiEthicsMaturity", "value": ethics_level})
+    ethics_points = ethics_map.get(ethics_level, 0) if ethics_on else 0
+
+    has_input = any([
+        retention_on is not None,
+        ir_on is not None,
+        privacy_on is not None,
+        ethics_on is not None,
+        _has_input(retention_level),
+        _has_input(ir_level),
+        _has_input(privacy_level),
+        _has_input(ethics_level),
+    ])
     return {
         "data_retention_points": retention_points,
         "incident_response_points": ir_points,
         "privacy_policy_points": privacy_points,
         "ai_ethics_points": ethics_points,
+        "unmatched": unmatched,
+        "has_input": has_input,
         "value": retention_points + ir_points + privacy_points + ethics_points,
     }
 
@@ -832,13 +1177,7 @@ def calc_dpa_score(p: LooseInput) -> dict[str, Any]:
 
 
 def calc_operational_controls_score(p: LooseInput) -> dict[str, Any]:
-    rollback_map = {
-        "automated_instant": 15,
-        "automated_manual_trigger": 12,
-        "manual_documented": 8,
-        "manual_undocumented": 3,
-        "none": 0,
-    }
+    # Document 1 §5 — rollback is scored in Operational. Oversight takes MAX over chips.
     oversight_map = {
         "always_in_loop": 12,
         "monitoring_with_intervention": 10,
@@ -854,39 +1193,50 @@ def calc_operational_controls_score(p: LooseInput) -> dict[str, Any]:
         "none": 0,
     }
     version_map = {"automated_mlops_pipeline": 8, "manual_documented": 5, "basic_tracking": 2}
-    rollback_pts = rollback_map.get(p.get("rollbackProcedures"), 0)
-    oversight_pts = oversight_map.get(p.get("humanOversightCapabilities"), 0)
-    monitor_pts = monitor_map.get(p.get("continuousMonitoring"), 0)
-    version_pts = version_map.get(p.get("versioningMaturity"), 0) if p.get("modelVersionControl") else 0
+    unmatched: list[dict[str, Any]] = []
+
+    oversight_raw = p.get("humanOversightCapabilities")
+    oversight_items = oversight_raw if isinstance(oversight_raw, list) else [oversight_raw]
+    oversight_pts_list: list[float] = []
+    for item in oversight_items:
+        if not _has_input(item):
+            continue
+        pts = oversight_map.get(item)
+        if pts is None:
+            unmatched.append({"field": "humanOversightCapabilities", "value": item})
+        else:
+            oversight_pts_list.append(float(pts))
+    oversight_pts = max(oversight_pts_list) if oversight_pts_list else 0
+
+    monitor_raw = p.get("continuousMonitoring")
+    if _has_input(monitor_raw):
+        monitor_pts = monitor_map.get(monitor_raw)
+        if monitor_pts is None:
+            unmatched.append({"field": "continuousMonitoring", "value": monitor_raw})
+            monitor_pts = 0
+    else:
+        monitor_pts = 0
+
+    version_pts = 0
+    if p.get("modelVersionControl"):
+        version_pts = version_map.get(p.get("versioningMaturity"), 0)
+
+    has_input = bool(oversight_pts_list) or _has_input(monitor_raw) or bool(p.get("modelVersionControl"))
     return {
-        "rollback_points": rollback_pts,
+        "rollback_points": 0,
         "oversight_points": oversight_pts,
         "monitoring_points": monitor_pts,
         "version_control_points": version_pts,
-        "value": rollback_pts + oversight_pts + monitor_pts + version_pts,
+        "unmatched": unmatched,
+        "has_input": has_input,
+        "value": oversight_pts + monitor_pts + version_pts,
     }
 
 
 def calc_vendor_maturity_adjustment(p: LooseInput) -> dict[str, Any]:
-    current_year = datetime.now().year
-    age = current_year - int(p.get("yearFounded") or current_year)
-    age_map = [
-        {"min": 10, "points": 10},
-        {"min": 5, "points": 5},
-        {"min": 3, "points": 0},
-        {"min": 1, "points": -5},
-        {"min": 0, "points": -10},
-    ]
-    age_pts = next((e["points"] for e in age_map if age >= e["min"]), -10)
-    size_map = {
-        "5001+": 8,
-        "1001-5000": 5,
-        "201-1000": 2,
-        "51-200": 0,
-        "11-50": -3,
-        "1-10": -5,
-    }
-    size_pts = size_map.get(p.get("employeeCount"), 0)
+    # Document 1 §5 — funding and financial position only.
+    # employeeCount is owned by the scale multiplier; yearFounded by Stability.
+    unmatched: list[dict[str, Any]] = []
     funding_map = {
         "publicly_traded": 7,
         "series_d_plus": 5,
@@ -894,19 +1244,40 @@ def calc_vendor_maturity_adjustment(p: LooseInput) -> dict[str, Any]:
         "series_a": 0,
         "seed_angel": -3,
     }
-    if p.get("fundingStatus") == "bootstrapped":
-        funding_pts = 3 if p.get("revenueSufficient") else -2
-    else:
-        funding_pts = funding_map.get(p.get("fundingStatus"), 0)
-    ec = int(p.get("enterpriseCustomers") or 0)
-    cust_pts = min(10, ec / 2) if ec > 10 else (ec - 5)
+    funding_raw = p.get("fundingStatus")
+    funding_pts = 0
+    funding_present = _has_input(funding_raw)
+    if funding_present:
+        if funding_raw == "bootstrapped":
+            funding_pts = 3 if p.get("revenueSufficient") else -2
+        elif funding_raw in funding_map:
+            funding_pts = funding_map[funding_raw]
+        else:
+            unmatched.append({"field": "fundingStatus", "value": funding_raw})
+
+    fin_map = {
+        "profitable_3_years": 3,
+        "profitable_1_year": 2,
+        "break_even": 1,
+        "funded_runway_2_years": 1,
+        "funded_runway_1_year": 0,
+        "uncertain": 0,
+    }
+    financial_raw = p.get("financialStatus")
+    financial_pts = 0
+    financial_present = _has_input(financial_raw)
+    if financial_present:
+        if financial_raw in fin_map:
+            financial_pts = fin_map[financial_raw]
+        else:
+            unmatched.append({"field": "financialStatus", "value": financial_raw})
+
     return {
-        "company_age_years": age,
-        "company_age_factor": age_pts,
-        "company_size_factor": size_pts,
         "funding_stability_factor": funding_pts,
-        "customer_base_factor": _pf(cust_pts),
-        "value": _pf(age_pts + size_pts + funding_pts + cust_pts),
+        "financial_position_factor": financial_pts,
+        "unmatched": unmatched,
+        "has_input": funding_present or financial_present,
+        "value": _pf(funding_pts + financial_pts),
     }
 
 
@@ -920,20 +1291,30 @@ def calculate_governance_risk(p: LooseInput) -> dict[str, Any]:
     supply_chain = calc_supply_chain_score(p)
     adversarial = calc_adversarial_disclosure_score(p)
     dpa = calc_dpa_score(p)
-    raw_score = (
-        cert["value"]
-        + aq["value"]
-        + policy["value"]
-        + ops["value"]
-        + mat["value"]
-        + data_protection["value"]
-        + supply_chain["value"]
-        + adversarial["value"]
-        + dpa["value"]
+
+    cert["has_input"] = bool(
+        str(p.get("certificationsSearchBlob") or "").strip()
+        or (cert.get("all_detected_breakdown") or cert.get("framework_breakdown"))
     )
-    # vendor_maturity_adjustment can be negative; floor so risk never exceeds 100.
-    governance_score = max(0.0, min(100.0, raw_score))
-    governance_risk = 100 - governance_score
+
+    pillar = _normalise_pillar(
+        [
+            ("certifications_score", cert, bool(cert.get("has_input"))),
+            ("assessment_quality_score", aq, bool(aq.get("has_input"))),
+            ("policy_score", policy, bool(policy.get("has_input"))),
+            ("operational_controls_score", ops, bool(ops.get("has_input"))),
+            ("vendor_maturity_adjustment", mat, bool(mat.get("has_input"))),
+            ("data_protection_score", data_protection, False),
+            ("supply_chain_score", supply_chain, False),
+            ("adversarial_disclosure_score", adversarial, False),
+            ("dpa_score", dpa, False),
+        ],
+        GOVERNANCE_GROUP_ATTAINABLE,
+    )
+    unmatched = []
+    for block in (cert, aq, policy, ops, mat):
+        unmatched.extend(block.get("unmatched") or [])
+
     return {
         "certifications_score": cert,
         "assessment_quality_score": aq,
@@ -944,9 +1325,15 @@ def calculate_governance_risk(p: LooseInput) -> dict[str, Any]:
         "supply_chain_score": supply_chain,
         "adversarial_disclosure_score": adversarial,
         "dpa_score": dpa,
-        "raw_governance_score": _pf(raw_score),
-        "governance_score": _pf(governance_score),
-        "value": _pf(governance_risk),
+        "earned": pillar["earned"],
+        "attainable": pillar["attainable"],
+        "included_groups": pillar["included_groups"],
+        "excluded_groups": pillar["excluded_groups"],
+        "unmatched": unmatched,
+        "not_implemented": pillar["not_implemented"],
+        "calibration_version": CALIBRATION_VERSION,
+        "value": pillar["value"] if pillar["value"] is not None else 0.0,
+        "pillar": pillar,
     }
 
 
@@ -968,20 +1355,40 @@ def calc_sla_score(p: LooseInput) -> dict[str, Any]:
         "> 24 hours": 0,
     }
     resolution_map = {"< 4 hours": 7, "< 24 hours": 5, "< 72 hours": 3, "> 72 hours": 1}
-    uptime_pts = uptime_map.get(p.get("slaUptime"), 0)
-    response_pts = response_map.get(p.get("criticalIncidentResponse"), 0)
-    resolution_pts = resolution_map.get(p.get("criticalIncidentResolution"), 0)
+    unmatched: list[dict[str, Any]] = []
+    uptime_raw = p.get("slaUptime")
+    response_raw = p.get("criticalIncidentResponse")
+    resolution_raw = p.get("criticalIncidentResolution")
+    uptime_pts = 0
+    if _has_input(uptime_raw):
+        if uptime_raw in uptime_map:
+            uptime_pts = uptime_map[uptime_raw]
+        else:
+            unmatched.append({"field": "slaUptime", "value": uptime_raw})
+    response_pts = 0
+    if _has_input(response_raw):
+        if response_raw in response_map:
+            response_pts = response_map[response_raw]
+        else:
+            unmatched.append({"field": "criticalIncidentResponse", "value": response_raw})
+    resolution_pts = 0
+    if _has_input(resolution_raw):
+        if resolution_raw in resolution_map:
+            resolution_pts = resolution_map[resolution_raw]
+        else:
+            unmatched.append({"field": "criticalIncidentResolution", "value": resolution_raw})
     return {
         "uptime_points": uptime_pts,
         "response_time_points": response_pts,
         "resolution_time_points": resolution_pts,
+        "unmatched": unmatched,
+        "has_input": _has_input(uptime_raw) or _has_input(response_raw) or _has_input(resolution_raw),
         "value": uptime_pts + response_pts + resolution_pts,
     }
 
 
 def calc_incident_management_score(p: LooseInput) -> dict[str, Any]:
     plan_map = {"quarterly_drills": 12, "annual_test": 10, "documented_untested": 6}
-    # Same rollbackProcedures vocabulary as calc_operational_controls_score.
     auto_map = {
         "automated_instant": 10,
         "automated_manual_trigger": 7,
@@ -990,18 +1397,40 @@ def calc_incident_management_score(p: LooseInput) -> dict[str, Any]:
         "none": 0,
     }
     comm_map = {"proactive_status_page": 8, "email_notifications": 5, "reactive_only": 2, "none": 0}
-    plan_pts = plan_map.get(p.get("planTesting"), 0) if p.get("incidentResponsePlan") else 0
-    auto_pts = auto_map.get(p.get("rollbackProcedures"), 0)
-    comm_pts = comm_map.get(p.get("incidentCommunication"), 0)
+    unmatched: list[dict[str, Any]] = []
+    cadence = p.get("planTesting")
+    plan_pts = 0
+    if _has_input(cadence):
+        if cadence in plan_map:
+            plan_pts = plan_map[cadence]
+        else:
+            unmatched.append({"field": "planTesting", "value": cadence})
+    rollback = p.get("rollbackProcedures")
+    auto_pts = 0
+    if _has_input(rollback):
+        if rollback in auto_map:
+            auto_pts = auto_map[rollback]
+        else:
+            unmatched.append({"field": "rollbackProcedures", "value": rollback})
+    comm = p.get("incidentCommunication")
+    comm_pts = 0
+    if _has_input(comm):
+        if comm in comm_map:
+            comm_pts = comm_map[comm]
+        else:
+            unmatched.append({"field": "incidentCommunication", "value": comm})
     return {
         "plan_points": plan_pts,
         "automation_points": auto_pts,
         "communication_points": comm_pts,
+        "unmatched": unmatched,
+        "has_input": _has_input(cadence) or _has_input(rollback) or _has_input(comm),
         "value": plan_pts + auto_pts + comm_pts,
     }
 
 
 def calc_deployment_maturity_score(p: LooseInput) -> dict[str, Any]:
+    # Document 1 §6 — sole owner of deployment_scale. Product stage belongs to Timing.
     scale_map = {
         "enterprise_multi_tenant": 12,
         "enterprise_single_tenant": 10,
@@ -1009,37 +1438,53 @@ def calc_deployment_maturity_score(p: LooseInput) -> dict[str, Any]:
         "small_business": 4,
         "pilot": 2,
     }
-    readiness_map = {
-        "production_mature": 10,
-        "production_new": 8,
-        "staging": 4,
-        "testing": 2,
-        "development": 1,
-        "design": 0,
-    }
     iso_map = {"full_instance_isolation": 8, "schema_isolation": 6, "row_level_security": 4}
-    scale_pts = scale_map.get(p.get("deploymentScale"), 0)
-    readiness_pts = readiness_map.get(p.get("devStage"), 0)
-    multi_pts = iso_map.get(p.get("isolationMethod"), 0) if p.get("multiTenancySupport") else 0
+    unmatched: list[dict[str, Any]] = []
+    scale_raw = p.get("deploymentScale")
+    scale_pts = 0
+    if _has_input(scale_raw):
+        if scale_raw in scale_map:
+            scale_pts = scale_map[scale_raw]
+        else:
+            unmatched.append({"field": "deploymentScale", "value": scale_raw})
+    iso_raw = p.get("isolationMethod")
+    multi_pts = 0
+    if p.get("multiTenancySupport") and _has_input(iso_raw):
+        if iso_raw in iso_map:
+            multi_pts = iso_map[iso_raw]
+        else:
+            unmatched.append({"field": "isolationMethod", "value": iso_raw})
     return {
         "scale_points": scale_pts,
-        "production_readiness_points": readiness_pts,
+        "production_readiness_points": 0,
         "multi_tenancy_points": multi_pts,
-        "value": scale_pts + readiness_pts + multi_pts,
+        "unmatched": unmatched,
+        "has_input": _has_input(scale_raw) or bool(p.get("multiTenancySupport")),
+        "value": scale_pts + multi_pts,
     }
 
 
 def calc_stability_score(p: LooseInput) -> dict[str, Any]:
     current_year = datetime.now().year
-    age = current_year - int(p.get("yearFounded") or current_year)
-    age_map = [
-        {"min": 10, "pts": 12},
-        {"min": 5, "pts": 9},
-        {"min": 3, "pts": 6},
-        {"min": 1, "pts": 3},
-        {"min": 0, "pts": 0},
-    ]
-    age_pts = next((e["pts"] for e in age_map if age >= e["min"]), 0)
+    year_raw = p.get("yearFounded")
+    age_pts = 0
+    age = None
+    year_present = False
+    try:
+        if year_raw not in (None, ""):
+            year_present = True
+            age = current_year - int(year_raw)
+            age_map = [
+                {"min": 10, "pts": 12},
+                {"min": 5, "pts": 9},
+                {"min": 3, "pts": 6},
+                {"min": 1, "pts": 3},
+                {"min": 0, "pts": 0},
+            ]
+            age_pts = next((e["pts"] for e in age_map if age >= e["min"]), 0)
+    except (TypeError, ValueError):
+        year_present = False
+
     fin_map = {
         "profitable_3_years": 10,
         "profitable_1_year": 7,
@@ -1048,27 +1493,69 @@ def calc_stability_score(p: LooseInput) -> dict[str, Any]:
         "funded_runway_1_year": 2,
         "uncertain": 0,
     }
-    fin_pts = fin_map.get(p.get("financialStatus"), 0)
+    unmatched: list[dict[str, Any]] = []
+    financial_raw = p.get("financialStatus")
+    fin_pts = 0
+    if _has_input(financial_raw):
+        if financial_raw in fin_map:
+            fin_pts = fin_map[financial_raw]
+        else:
+            unmatched.append({"field": "financialStatus", "value": financial_raw})
+
     rate = p.get("customerRetentionRate")
-    if rate is None:
-        retention_pts = 3
-    elif rate >= 95:
-        retention_pts = 8
-    elif rate >= 90:
-        retention_pts = 6
-    elif rate >= 80:
-        retention_pts = 4
-    elif rate >= 70:
-        retention_pts = 2
-    else:
-        retention_pts = 0
+    retention_pts = 0
+    retention_present = rate is not None and rate != ""
+    if retention_present:
+        try:
+            rate_n = float(rate)
+            if rate_n >= 95:
+                retention_pts = 8
+            elif rate_n >= 90:
+                retention_pts = 6
+            elif rate_n >= 80:
+                retention_pts = 4
+            elif rate_n >= 70:
+                retention_pts = 2
+            else:
+                retention_pts = 0
+        except (TypeError, ValueError):
+            unmatched.append({"field": "customerRetentionRate", "value": rate})
+            retention_present = False
+
+    incident_pts = _incident_history_points(p)
+    raw = age_pts + fin_pts + retention_pts + incident_pts
+    value = max(0, raw)
     return {
         "company_age_years": age,
         "company_age_points": age_pts,
         "financial_health_points": fin_pts,
         "customer_retention_points": retention_pts,
-        "value": age_pts + fin_pts + retention_pts,
+        "incident_history_points": incident_pts,
+        "unmatched": unmatched,
+        "has_input": year_present or _has_input(financial_raw) or retention_present or incident_pts != 0,
+        "value": value,
     }
+
+
+def _incident_history_points(p: LooseInput) -> int:
+    """Document 1 §6 — disclosed incidents deduct; resolved incidents are halved. Floor at 0 is applied by caller."""
+    rows = p.get("disclosedIncidents")
+    if rows is None:
+        rows = p.get("security_incident_history")
+    if not isinstance(rows, list) or not rows:
+        return 0
+    severity_pts = {"critical": -6, "high": -3, "medium": -1, "low": 0}
+    total = 0.0
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        sev = str(row.get("severity") or "").strip().lower()
+        pts = float(severity_pts.get(sev, 0))
+        resolved = bool(row.get("resolved") or row.get("disclosed_and_resolved"))
+        if resolved:
+            pts *= 0.5
+        total += pts
+    return int(total) if total == int(total) else round(total)
 
 
 def calc_support_score(p: LooseInput) -> dict[str, Any]:
@@ -1079,13 +1566,28 @@ def calc_support_score(p: LooseInput) -> dict[str, Any]:
         "email_only": 2,
     }
     tam_map = {"dedicated_tam": 5, "shared_tam": 3, "standard_support": 1}
-    tier_pts = tier_map.get(p.get("supportTiers"), 0)
+    unmatched: list[dict[str, Any]] = []
+    tier_raw = p.get("supportTiers")
+    tier_pts = 0
+    if _has_input(tier_raw):
+        if tier_raw in tier_map:
+            tier_pts = tier_map[tier_raw]
+        else:
+            unmatched.append({"field": "supportTiers", "value": tier_raw})
+    tam_raw = p.get("technicalAccountManager")
+    tam_pts = 0
+    if _has_input(tam_raw):
+        if tam_raw in tam_map:
+            tam_pts = tam_map[tam_raw]
+        else:
+            unmatched.append({"field": "technicalAccountManager", "value": tam_raw})
     coverage_pts = 5 if p.get("supportsHipaaWorkflows") else 0
-    tam_pts = tam_map.get(p.get("technicalAccountManager"), 0)
     return {
         "support_tier_points": tier_pts,
         "coverage_points": coverage_pts,
         "expertise_points": tam_pts,
+        "unmatched": unmatched,
+        "has_input": _has_input(tier_raw) or _has_input(tam_raw) or bool(p.get("supportsHipaaWorkflows")),
         "value": tier_pts + coverage_pts + tam_pts,
     }
 
@@ -1096,18 +1598,34 @@ def calculate_operational_risk(p: LooseInput) -> dict[str, Any]:
     deployment = calc_deployment_maturity_score(p)
     stability = calc_stability_score(p)
     support = calc_support_score(p)
-    raw_score = sla["value"] + incident["value"] + deployment["value"] + stability["value"] + support["value"]
-    operational_score = min(100.0, raw_score)
-    operational_risk = 100 - operational_score
+    pillar = _normalise_pillar(
+        [
+            ("sla_score", sla, bool(sla.get("has_input"))),
+            ("incident_management_score", incident, bool(incident.get("has_input"))),
+            ("deployment_maturity_score", deployment, bool(deployment.get("has_input"))),
+            ("stability_score", stability, bool(stability.get("has_input"))),
+            ("support_score", support, bool(support.get("has_input"))),
+        ],
+        OPERATIONAL_GROUP_ATTAINABLE,
+    )
+    unmatched = []
+    for block in (sla, incident, deployment, stability, support):
+        unmatched.extend(block.get("unmatched") or [])
     return {
         "sla_score": sla,
         "incident_management_score": incident,
         "deployment_maturity_score": deployment,
         "stability_score": stability,
         "support_score": support,
-        "raw_operational_score": _pf(raw_score),
-        "operational_score": _pf(operational_score),
-        "value": _pf(operational_risk),
+        "earned": pillar["earned"],
+        "attainable": pillar["attainable"],
+        "included_groups": pillar["included_groups"],
+        "excluded_groups": pillar["excluded_groups"],
+        "unmatched": unmatched,
+        "not_implemented": pillar["not_implemented"],
+        "calibration_version": CALIBRATION_VERSION,
+        "value": pillar["value"] if pillar["value"] is not None else 0.0,
+        "pillar": pillar,
     }
 
 
@@ -1185,7 +1703,17 @@ def calculate_vendor_trust_score(user_input: LooseInput) -> dict[str, Any]:
         },
     )
     cm_result = calculate_combined_contextual_multiplier(user_input)
-    dw_result = calculate_domain_weight(user_input.get("applicableDomains") or [])
+    domains = user_input.get("applicableDomains") or []
+    if not domains:
+        dw_result = {
+            "breakdown": [],
+            "weighted_sum": 0.0,
+            "total_risks": 0,
+            "value": DEFAULT_DOMAIN_WEIGHT,
+            "source": "default_no_applicable_domains",
+        }
+    else:
+        dw_result = calculate_domain_weight(domains)
     sm_result = calculate_sector_modifier(user_input)
     ir_result = calculate_inherent_risk(
         L=l_result["value"],
@@ -1204,9 +1732,30 @@ def calculate_vendor_trust_score(user_input: LooseInput) -> dict[str, Any]:
     gr_result = calculate_governance_risk(user_input)
     or_result = calculate_operational_risk(user_input)
 
-    weighted_risk = (pr_result["value"] * 0.40) + (gr_result["value"] * 0.30) + (or_result["value"] * 0.30)
-    vts = _pf(max(0.0, 100 - weighted_risk), 2)
+    # Document 1 §3 declares fixed pillar weights. Missing groups are handled
+    # inside their pillar denominator; the headline weights are never redistributed.
+    weights = dict(PILLAR_WEIGHTS)
+    pr_w = weights["product"]
+    gr_w = weights["governance"]
+    or_w = weights["operational"]
+    gr_val = float(gr_result["value"] or 0)
+    or_val = float(or_result["value"] or 0)
+    weighted_risk = (pr_result["value"] * pr_w) + (gr_val * gr_w) + (or_val * or_w)
+    vts = _pf(max(0.0, min(100.0, 100 - weighted_risk)), 2)
     interpretation = interpret_trust_score(vts)
+
+    unmatched: list[dict[str, Any]] = []
+    for block in (
+        cm_result.get("entity_type_multiplier"),
+        cm_result.get("timing_multiplier"),
+        cm_result.get("architecture_multiplier"),
+        cm_result.get("scale_multiplier"),
+        cf_result,
+        gr_result,
+        or_result,
+    ):
+        if isinstance(block, dict):
+            unmatched.extend(block.get("unmatched") or [])
 
     detail: dict[str, Any] = {
         "product_risk": {
@@ -1225,9 +1774,19 @@ def calculate_vendor_trust_score(user_input: LooseInput) -> dict[str, Any]:
         "operational_risk": or_result,
         "final_formula": {
             "expression": "VTS = 100 - [(PR × 0.40) + (GR × 0.30) + (OR × 0.30)]",
-            "product_risk_contribution": _pf(pr_result["value"] * 0.40),
-            "governance_risk_contribution": _pf(gr_result["value"] * 0.30),
-            "operational_risk_contribution": _pf(or_result["value"] * 0.30),
+            "pillar_weights": weights,
+            "product_risk_contribution": _pf(pr_result["value"] * pr_w),
+            "governance_risk_contribution": _pf(gr_val * gr_w),
+            "operational_risk_contribution": _pf(or_val * or_w),
+        },
+        "score_trace": {
+            "registry_version": SCORING_VERSION,
+            "calibration_version": CALIBRATION_VERSION,
+            "unmatched_markers": unmatched,
+            "excluded_groups": {
+                "governance": gr_result.get("excluded_groups") or [],
+                "operational": or_result.get("excluded_groups") or [],
+            },
         },
     }
     coverage_meta = user_input.get("_categoryCoverageMeta")
@@ -1245,16 +1804,17 @@ def calculate_vendor_trust_score(user_input: LooseInput) -> dict[str, Any]:
         "recommended_action": interpretation["recommended_action"],
         "detail": detail,
         "scoring_version": SCORING_VERSION,
+        "calibration_version": CALIBRATION_VERSION,
     }
 
 
-def band_employee_count(raw: Any) -> str:
+def band_employee_count(raw: Any) -> str | None:
     """Map stored employee-count labels (commas, en-dashes) onto VTS size bands."""
     compact = re.sub(r"[,\s]", "", str(raw or ""))
     compact = compact.replace("–", "-").replace("—", "-").replace("−", "-")
     nums = [int(n) for n in re.findall(r"\d+", compact)]
     if not nums:
-        return "1-10"
+        return None
     lo = min(nums)
     if "+" in compact and lo >= 10000:
         return "10000+"
@@ -1273,7 +1833,7 @@ def band_employee_count(raw: Any) -> str:
     return "1-10"
 
 
-def band_geographic_regions(regions: Any) -> str:
+def band_geographic_regions(regions: Any) -> str | None:
     """Band by Global semantics first, then by enumerated region count."""
     if isinstance(regions, str):
         items = [regions] if regions.strip() else []
@@ -1284,6 +1844,8 @@ def band_geographic_regions(regions: Any) -> str:
     if any("global" in x.lower() for x in items):
         return "global"
     region_count = len(items)
+    if region_count == 0:
+        return None
     if region_count >= 5:
         return "global"
     if region_count >= 3:
@@ -1291,6 +1853,71 @@ def band_geographic_regions(regions: Any) -> str:
     if region_count == 2:
         return "national"
     return "regional"
+
+
+def derive_applicable_domains(payload: LooseInput, formula: LooseInput) -> list[dict[str, Any]]:
+    """Document 1 §4.3 — applicability from product exposure, not from vendor controls."""
+    supplied = formula.get("applicableDomains") if isinstance(formula.get("applicableDomains"), list) else None
+    if not supplied:
+        supplied = payload.get("applicableDomains") if isinstance(payload.get("applicableDomains"), list) else None
+    if supplied:
+        out = []
+        for row in supplied:
+            if not isinstance(row, dict):
+                continue
+            domain = row.get("domain")
+            if not domain:
+                continue
+            try:
+                count = int(row.get("riskCount") or 0)
+            except (TypeError, ValueError):
+                count = 0
+            out.append({"domain": domain, "riskCount": max(count, 1)})
+        if out:
+            return out
+
+    caps = " ".join(
+        str(x or "").lower()
+        for x in (
+            payload.get("ai_capabilities"),
+            payload.get("model_types"),
+            payload.get("product_description"),
+            formula.get("aiCapabilityType"),
+        )
+    )
+    generative = any(tok in caps for tok in ("generat", "llm", "gpt", "image", "text-to", "diffusion"))
+    public_facing = any(tok in caps for tok in ("public", "customer-facing", "end user", "chat"))
+    pii = str(formula.get("piiHandling") or "").lower()
+    autonomy = str(formula.get("decisionAutonomyLevel") or "")
+    scale = str(formula.get("deploymentScale") or "")
+    volume = str(formula.get("dataVolumeScale") or "")
+    residency = payload.get("data_residency_options")
+
+    domains: list[dict[str, Any]] = []
+
+    def add(name: str) -> None:
+        if not any(d["domain"] == name for d in domains):
+            domains.append({"domain": name, "riskCount": 1})
+
+    if generative or public_facing:
+        add("Malicious Actors and Misuse")
+    if pii not in ("", "none", "no", "not_applicable") or _has_input(residency):
+        add("Privacy and Security")
+    if autonomy in ("supervised", "autonomous", "fully_autonomous"):
+        add("AI System Safety, Failures and Limitations")
+    if any(tok in caps for tok in ("decision", "hiring", "credit", "people", "hr")) or autonomy in (
+        "supervised",
+        "autonomous",
+        "fully_autonomous",
+    ):
+        add("Discrimination and Toxicity")
+    if generative:
+        add("Misinformation")
+    if autonomy in ("autonomous", "fully_autonomous"):
+        add("Human-Computer Interaction")
+    if scale.startswith("enterprise") or volume == "petabyte_scale":
+        add("Socioeconomic and Environmental")
+    return domains
 
 
 def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
@@ -1313,7 +1940,10 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
             return fallback
 
     employee_raw = get("employeeCount") if get("employeeCount") is not None else get("no_of_employees")
-    year_founded = int(max(1990, min(datetime.now().year, to_num(get("yearFounded") if get("yearFounded") is not None else get("year_founded"), 2020))))
+    year_raw = get("yearFounded") if get("yearFounded") is not None else get("year_founded")
+    year_founded = None
+    if year_raw not in (None, ""):
+        year_founded = int(max(1990, min(datetime.now().year, to_num(year_raw, datetime.now().year))))
     regions = get("operatingRegions")
     if regions is None:
         regions = get("operate_regions")
@@ -1323,11 +1953,11 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
     autonomy_answer = get("decision_autonomy") if get("decision_autonomy") is not None else get("ai_autonomy_level")
     decision_autonomy_level = answers.decision_autonomy_level(autonomy_answer)
     pii_answer = get("pii_handling") if get("pii_handling") is not None else get("pii_information")
-    decision_stake_level = answers.lookup(answers.PII_STAKE_LEVEL, pii_answer, "Low")
-    pii_handling = answers.lookup(answers.PII_HANDLING, pii_answer, "moderate")
+    decision_stake_level = answers.lookup(answers.PII_STAKE_LEVEL, pii_answer, "")
+    pii_handling = answers.lookup(answers.PII_HANDLING, pii_answer, "")
 
     stage_answer = get("product_stage") if get("product_stage") is not None else get("stage_product")
-    dev_stage = answers.lookup(answers.PRODUCT_STAGE, stage_answer, "development")
+    dev_stage = answers.lookup(answers.PRODUCT_STAGE, stage_answer, "")
 
     # "No" is an answer, not an absent one — presence of text is not evidence of a policy.
     retention_answer = get("data_retention_policy")
@@ -1342,13 +1972,33 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
         get("privacy_programme_scope"), {"comprehensive_gdpr_ccpa", "standard", "basic"}, ""
     )
 
-    host_raw = lower(get("hosting_deployment") if get("hosting_deployment") is not None else get("solution_hosted"))
-    if "hybrid" in host_raw:
-        hosting_type = "hybrid"
-    elif "prem" in host_raw:
-        hosting_type = "on_premise"
+    host_src = get("hosting_deployment") if get("hosting_deployment") is not None else get("solution_hosted")
+    if isinstance(host_src, list):
+        hosting_type: Any = []
+        for item in host_src:
+            raw = str(item or "").strip().lower()
+            if "edge" in raw:
+                hosting_type.append("edge_devices")
+            elif "hybrid" in raw:
+                hosting_type.append("hybrid")
+            elif "prem" in raw:
+                hosting_type.append("on_premise")
+            elif raw:
+                hosting_type.append("cloud_hosted")
+        if not hosting_type:
+            hosting_type = "cloud_hosted"
     else:
-        hosting_type = "cloud_hosted"
+        host_raw = lower(host_src)
+        if "edge" in host_raw:
+            hosting_type = "edge_devices"
+        elif "hybrid" in host_raw:
+            hosting_type = "hybrid"
+        elif "prem" in host_raw:
+            hosting_type = "on_premise"
+        elif host_raw:
+            hosting_type = "cloud_hosted"
+        else:
+            hosting_type = None
 
     employee_count = band_employee_count(employee_raw)
     geographic_regions = band_geographic_regions(regions)
@@ -1376,14 +2026,16 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
     coverage_inputs = resolve_category_coverage_inputs(payload, use_vector=use_vector)
 
     # Likelihood / impact / severity: prefer AI Risk Intellect values injected by Node.
+    likelihood_supplied = get("likelihoodScores") if get("likelihoodScores") is not None else payload.get("likelihoodScores")
+    impact_supplied = get("impactScores") if get("impactScores") is not None else payload.get("impactScores")
     likelihood_scores = _score_list(
-        get("likelihoodScores") if get("likelihoodScores") is not None else payload.get("likelihoodScores"),
+        likelihood_supplied,
         [3, 3, 3],
         lo=1.0,
         hi=5.0,
     )
     impact_scores = _score_list(
-        get("impactScores") if get("impactScores") is not None else payload.get("impactScores"),
+        impact_supplied,
         [3, 3, 3],
         lo=1.0,
         hi=5.0,
@@ -1397,43 +2049,41 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
         hi=25.0,
     )
 
+    intentional_raw = (
+        get("intentionalRiskCount")
+        if get("intentionalRiskCount") is not None
+        else payload.get("intentionalRiskCount")
+    )
+    unintentional_raw = (
+        get("unintentionalRiskCount")
+        if get("unintentionalRiskCount") is not None
+        else payload.get("unintentionalRiskCount")
+    )
     try:
-        intentional_count = int(
-            get("intentionalRiskCount")
-            if get("intentionalRiskCount") is not None
-            else payload.get("intentionalRiskCount")
-            or 1
-        )
+        intentional_count = int(intentional_raw) if intentional_raw not in (None, "") else 0
     except (TypeError, ValueError):
-        intentional_count = 1
+        intentional_count = 0
     try:
-        unintentional_count = int(
-            get("unintentionalRiskCount")
-            if get("unintentionalRiskCount") is not None
-            else payload.get("unintentionalRiskCount")
-            or 2
-        )
+        unintentional_count = int(unintentional_raw) if unintentional_raw not in (None, "") else 0
     except (TypeError, ValueError):
-        unintentional_count = 2
+        unintentional_count = 0
     if intentional_count < 0:
-        intentional_count = 1
+        intentional_count = 0
     if unintentional_count < 0:
-        unintentional_count = 2
-    if intentional_count + unintentional_count == 0:
-        intentional_count, unintentional_count = 1, 2
+        unintentional_count = 0
 
-    return {
+    formula_input: LooseInput = {
         "likelihoodScores": likelihood_scores,
         "impactScores": impact_scores,
         "severityScores": severity_scores,
         "likelihood_score_source": as_str(
             get("likelihood_score_source") or payload.get("likelihood_score_source")
         )
-        or "default",
+        or ("payload" if _has_input(likelihood_supplied) else "insufficient_evidence_pending_prior"),
         "impact_score_source": as_str(
             get("impact_score_source") or payload.get("impact_score_source")
         )
-        or "default",
+        or ("payload" if _has_input(impact_supplied) else "insufficient_evidence_pending_prior"),
         "severity_score_source": as_str(
             get("severity_score_source") or payload.get("severity_score_source")
         )
@@ -1443,46 +2093,60 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
         "devStage": dev_stage,
         "assessmentPhase": "vendor_evaluation",
         "customizationLevel": answers.lookup(
-            answers.DEPLOYMENT_CUSTOMIZATION, get("deployment_customization"), "lightly_customized"
-        ),
+            answers.DEPLOYMENT_CUSTOMIZATION, get("deployment_customization"), ""
+        ) or None,
         "integrationComplexity": answers.lookup(
-            answers.INTEGRATION_COMPLEXITY, get("integration_complexity"), "moderate_integration"
-        ),
+            answers.INTEGRATION_COMPLEXITY, get("integration_complexity"), ""
+        ) or None,
         "hostingType": hosting_type,
         "employeeCount": employee_count,
         "geographicRegions": geographic_regions,
         "dataVolumeScale": answers.passthrough(
             get("typical_data_volume"),
             {"minimal", "moderate", "large", "very_large", "petabyte_scale"},
-            "moderate",
-        ),
-        "aiRiskAppetite": "moderate",
+            "",
+        ) or None,
         "intentionalRiskCount": intentional_count,
         "unintentionalRiskCount": unintentional_count,
-        "applicableDomains": [
-            {"domain": "Privacy & Security", "riskCount": 1},
-            {"domain": "AI System Safety", "riskCount": 1},
-            {"domain": "Accountability & Governance", "riskCount": 1},
-        ],
         "sector": vts_sector,
-        "aiCapabilityType": "administrative",
+        "aiCapabilityType": None,
         "piiHandling": pii_handling,
         "regulatoryComplexity": [],
         "deploymentScale": answers.lookup(
-            answers.DEPLOYMENT_SCALE, get("deployment_scale"), "mid_market"
-        ),
+            answers.DEPLOYMENT_SCALE, get("deployment_scale"), ""
+        ) or None,
         "patientDemographic": "general",
-        "requiredCategories": list(coverage_inputs["requiredCategories"]),
-        "implementedCategories": list(coverage_inputs["implementedCategories"]),
+        "requiredCategories": [
+            c for c in (coverage_inputs["requiredCategories"] or [])
+            if c not in EXCLUDED_MITIGATION_CATEGORIES
+        ],
+        "implementedCategories": [
+            c for c in (coverage_inputs["implementedCategories"] or [])
+            if c not in EXCLUDED_MITIGATION_CATEGORIES
+        ],
         "mitigations": list(coverage_inputs["mitigations"]),
         "_categoryCoverageMeta": coverage_inputs.get("meta") or {},
         "assessmentMethod": answers.lookup(
             answers.ASSESSMENT_METHOD,
             get("assessment_completion_level") if get("assessment_completion_level") is not None
             else get("assessment_feedback"),
-            "self_reported_unverified",
-        ),
+            "",
+        ) or None,
         "complianceDocumentationComplete": bool(compliance_upload_names),
+        "trustCenterUrl": as_str(
+            get("trustCenterUrl") if get("trustCenterUrl") is not None else get("trust_center_url")
+        ),
+        "testingResultsAvailable": as_str(
+            get("testing_results_available") if get("testing_results_available") is not None else get("test_results")
+        ),
+        "certificates": get("certificates") if isinstance(get("certificates"), list) else (
+            payload.get("certificates") if isinstance(payload.get("certificates"), list) else []
+        ),
+        "disclosedIncidents": (
+            get("disclosedIncidents") if isinstance(get("disclosedIncidents"), list)
+            else get("security_incident_history") if isinstance(get("security_incident_history"), list)
+            else []
+        ),
         "encryptionAtRest": as_str(get("encryption_at_rest")),
         "encryptionAtRestEvidenceId": as_str(get("encryption_at_rest_evidence_id")),
         "tlsInTransit": as_str(get("tls_in_transit")),
@@ -1536,66 +2200,79 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
                 "seed_angel",
                 "bootstrapped",
             },
-            "series_a",
-        ),
-        "revenueSufficient": True,
+            "",
+        ) or None,
+        "revenueSufficient": answers.yes_no(get("revenueSufficient") if get("revenueSufficient") is not None else get("revenue_sufficient"), default=False),
         "enterpriseCustomers": answers.number(
             get("enterpriseCustomers") if get("enterpriseCustomers") is not None
             else get("enterprise_customers"),
             0,
         ),
         "auditFrequency": answers.lookup(
-            answers.AUDIT_FREQUENCY, get("audit_frequency"), "ad_hoc"
+            answers.AUDIT_FREQUENCY, get("audit_frequency"), ""
+        ) or None,
+        "dataRetentionPolicy": data_retention_policy if retention_answer not in (None, "") else None,
+        "dataRetentionPolicyCompleteness": (
+            "documented_and_enforced" if data_retention_policy else None
         ),
-        "dataRetentionPolicy": data_retention_policy,
-        "dataRetentionPolicyCompleteness": "documented_and_enforced" if data_retention_policy else "informal",
-        "incidentResponsePlan": incident_response_plan_maturity is not None,
-        "incidentResponsePlanMaturity": incident_response_plan_maturity or "basic_runbook",
-        "privacyPolicy": bool(privacy_programme_scope),
-        "privacyPolicyScope": privacy_programme_scope or "basic",
-        "aiEthicsPolicy": answers.yes_no(get("documented_ai_governance_policy"), default=False),
+        "incidentResponsePlan": None if get("incident_response_plan") in (None, "") else (
+            incident_response_plan_maturity is not None
+        ),
+        "incidentResponsePlanMaturity": incident_response_plan_maturity,
+        "privacyPolicy": bool(privacy_programme_scope) if privacy_programme_scope else None,
+        "privacyPolicyScope": privacy_programme_scope or None,
+        "aiEthicsPolicy": (
+            None if get("documented_ai_governance_policy") in (None, "")
+            else answers.yes_no(get("documented_ai_governance_policy"), default=False)
+        ),
         "aiEthicsMaturity": answers.passthrough(
             get("ai_ethics_governance_maturity"),
             {"board_approved_operationalized", "documented_not_operationalized", "draft"},
-            "draft",
-        ),
+            "",
+        ) or None,
         "rollbackProcedures": answers.lookup(
             answers.ROLLBACK_CAPABILITY,
             get("rollback_capability") if get("rollback_capability") is not None
             else get("rollback_deployment_issues"),
-            "none",
-        ),
+            "",
+        ) or None,
         "humanOversightCapabilities": answers.strongest_human_oversight(get("human_oversight")),
         "continuousMonitoring": answers.passthrough(
             get("production_model_monitoring"),
             {"real_time_alerting", "daily_dashboard", "weekly_reports", "monthly_reviews", "none"},
-            "none",
+            "",
+        ) or None,
+        "modelVersionControl": (
+            None if get("versions_models") in (None, "")
+            else answers.yes_no(get("versions_models"), default=False)
         ),
-        "modelVersionControl": answers.yes_no(get("versions_models"), default=False),
         "versioningMaturity": answers.passthrough(
             get("model_versioning_method"),
             {"automated_mlops_pipeline", "manual_documented", "basic_tracking"},
-            "basic_tracking",
-        ),
+            "",
+        ) or None,
         "slaUptime": answers.lookup(
             answers.UPTIME_SLA,
             get("uptime_sla") if get("uptime_sla") is not None else get("sla_guarantee"),
-            "< 95%",
-        ),
+            "",
+        ) or None,
         "criticalIncidentResponse": as_str(get("critical_incident_response_target")),
         "criticalIncidentResolution": as_str(get("critical_incident_resolution_target")),
         "planTesting": ir_plan_testing,
         "incidentCommunication": answers.passthrough(
             get("incident_customer_communication"),
             {"proactive_status_page", "email_notifications", "reactive_only", "none"},
-            "none",
+            "",
+        ) or None,
+        "multiTenancySupport": (
+            None if get("is_multi_tenant") in (None, "")
+            else answers.yes_no(get("is_multi_tenant"), default=False)
         ),
-        "multiTenancySupport": answers.yes_no(get("is_multi_tenant"), default=False),
         "isolationMethod": answers.passthrough(
             get("tenant_isolation_model"),
             {"full_instance_isolation", "schema_isolation", "row_level_security"},
-            "row_level_security",
-        ),
+            "",
+        ) or None,
         "financialStatus": answers.passthrough(
             get("financialPosition") if get("financialPosition") is not None
             else get("financial_position"),
@@ -1607,8 +2284,8 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
                 "funded_runway_1_year",
                 "uncertain",
             },
-            "uncertain",
-        ),
+            "",
+        ) or None,
         "customerRetentionRate": answers.number(
             get("customerRetentionRate") if get("customerRetentionRate") is not None
             else get("customer_retention_rate")
@@ -1621,16 +2298,23 @@ def build_formula_input_from_payload(payload: dict[str, Any]) -> LooseInput:
                 "business_hours_email",
                 "email_only",
             },
-            "email_only",
+            "",
+        ) or None,
+        "supportsHipaaWorkflows": bool(
+            (
+                "health" in vts_sector.lower()
+                or "health" in " ".join(answers.flatten_sector_labels(sector_raw)).lower()
+            )
+            and re.search(r"\bhipaa\b|\bhitrust\b|\bbaa\b", certifications_search_blob, re.I)
         ),
-        "supportsHipaaWorkflows": "health" in vts_sector.lower()
-        or "health" in " ".join(answers.flatten_sector_labels(sector_raw)).lower(),
         "technicalAccountManager": answers.passthrough(
             get("account_management"),
             {"dedicated_tam", "shared_tam", "standard_support"},
-            "standard_support",
-        ),
+            "",
+        ) or None,
     }
+    formula_input["applicableDomains"] = derive_applicable_domains(payload, formula_input)
+    return formula_input
 
 
 def score_attestation_payload(payload: dict[str, Any]) -> dict[str, Any]:

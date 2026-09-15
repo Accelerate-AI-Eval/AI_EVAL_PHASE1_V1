@@ -100,7 +100,7 @@ export const BUYER_COTS_FORM_SECTIONS: BuyerCotsSectionConfig[] = [
       {
         key: "vendorName",
         label: "Which vendor and product?",
-        placeholder: "Choose from the AI Vendor Directory, or type a name if not listed",
+        placeholder: "Choose a vendor, then pick that vendor’s product from the dropdown",
         inputType: "vendorProduct",
         required: true,
       },
@@ -296,7 +296,7 @@ export const BUYER_COTS_FORM_SECTIONS: BuyerCotsSectionConfig[] = [
       {
         key: "deploymentModel",
         label: "What deployment model do you require?",
-        placeholder: "Enter the required deployment model",
+        placeholder: "Enter the deployment model your organization requires",
         inputType: "text",
         required: true,
       },
@@ -338,17 +338,16 @@ export const BUYER_COTS_FORM_SECTIONS: BuyerCotsSectionConfig[] = [
   {
     id: "vendorTrust",
     label: "Vendor trust",
-    subTitle: "Evidence you hold and vendor-stated positions from attestation",
+        subTitle: "Regulatory documents you hold, plus vendor-stated positions from attestation",
     fields: [
       {
         key: "vendorEvidenceReceived",
         label: "What evidence do you actually hold?",
-        placeholder: "Prefilled from the selected vendor attestation",
+        placeholder: "Select the regulatory documents you currently hold (SOC 2, ISO 27001, etc.)",
         inputType: "evidenceHold",
         optionsKey: "vendorEvidenceReceived",
-        required: false,
+        required: true,
         exclusiveValue: "Nothing yet",
-        readOnly: true,
       },
       {
         key: "monitoringDataAvailable",
