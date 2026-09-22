@@ -9,15 +9,7 @@ import {
   INVITE_MAIL_PLATFORM_NAME,
 } from "../email/inviteUserEmailHtml.js";
 import { getAccelerateAiLogoAttachment } from "../email/emailBrand.js";
-
-function capitalizeFirstLetter(str: string): string {
-  if (!str || typeof str !== "string") return str;
-  return str
-    .trim()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
+import { capitalizeWords as capitalizeFirstLetter } from "../utils/capitalizeWords.js";
 
 export type CustomerOrgPlatformRole = "vendor" | "buyer";
 

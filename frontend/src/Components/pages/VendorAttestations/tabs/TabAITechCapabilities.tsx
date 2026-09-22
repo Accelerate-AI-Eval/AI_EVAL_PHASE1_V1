@@ -38,7 +38,7 @@ export interface TabAITechCapabilitiesProps {
 }
 
 const AI_GOV_UPLOAD_HELPER =
-  "Accepted: PDF, Word, or PowerPoint (max 10MB per file). Required when you answer Yes.";
+  "Accepted: PDF, Word, or PowerPoint (max 10MB per file). You can attach this later — it does not block submission.";
 
 function TabAITechCapabilities({
   attestation,
@@ -159,8 +159,7 @@ function TabAITechCapabilities({
       {showPolicyUpload && setDocumentUpload && (
         <div className="form_fields_vendor" style={{ marginTop: "1rem" }}>
           <FormField
-            label="Upload AI Governance policy"
-            mandatory
+            label="Upload AI Governance policy (optional)"
             tooltipText={AI_GOV_UPLOAD_HELPER}
             errorText={fieldErrors?.aiGovernancePolicy}
           >

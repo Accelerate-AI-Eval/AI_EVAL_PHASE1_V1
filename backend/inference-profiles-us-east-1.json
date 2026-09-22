@@ -1,7 +1,7 @@
 {
   "region": "us-east-1",
-  "fetchedAt": "2026-09-15T11:48:36.655Z",
-  "count": 75,
+  "fetchedAt": "2026-09-22T10:41:22.781Z",
+  "count": 77,
   "profiles": [
     {
       "inferenceProfileName": "GLOBAL Amazon Nova 2 Lite",
@@ -296,6 +296,27 @@
       "profileType": "SYSTEM_DEFINED",
       "modelId": "global.cohere.embed-v4:0",
       "foundationModelId": "cohere.embed-v4:0"
+    },
+    {
+      "inferenceProfileName": "Global Moonshot AI Kimi K3",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.moonshotai.kimi-k3",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/moonshotai.kimi-k3"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-east-1::foundation-model/moonshotai.kimi-k3"
+        }
+      ],
+      "inferenceProfileId": "global.moonshotai.kimi-k3",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED",
+      "description": "Routes requests to Kimi K3 globally across all supported AWS Regions.",
+      "createdAt": "2026-09-10T18:06:35.489Z",
+      "updatedAt": "2026-09-10T18:06:35.489Z",
+      "profileType": "SYSTEM_DEFINED",
+      "modelId": "global.moonshotai.kimi-k3",
+      "foundationModelId": "moonshotai.kimi-k3"
     },
     {
       "inferenceProfileName": "Global OpenAI GPT-5.6 Luna",
@@ -722,9 +743,9 @@
       "inferenceProfileId": "us.anthropic.claude-sonnet-4-6",
       "status": "ACTIVE",
       "type": "SYSTEM_DEFINED",
-      "description": "Routes requests to Claude Sonnet 4.6 in us-east-1, us-east-2, us-west-2.",
+      "description": "Routes requests to Anthropic Claude Sonnet 4.6 in us-east-1, us-east-2 and us-west-2.",
       "createdAt": "2026-02-13T21:58:21.393Z",
-      "updatedAt": "2026-02-13T21:58:21.393Z",
+      "updatedAt": "2026-09-21T22:21:31.400Z",
       "profileType": "SYSTEM_DEFINED",
       "modelId": "us.anthropic.claude-sonnet-4-6",
       "foundationModelId": "anthropic.claude-sonnet-4-6"
@@ -1076,6 +1097,30 @@
       "profileType": "SYSTEM_DEFINED",
       "modelId": "us.mistral.pixtral-large-2502-v1:0",
       "foundationModelId": "mistral.pixtral-large-2502-v1:0"
+    },
+    {
+      "inferenceProfileName": "US Moonshot AI Kimi K3",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/us.moonshotai.kimi-k3",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:us-east-1::foundation-model/moonshotai.kimi-k3"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-east-2::foundation-model/moonshotai.kimi-k3"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-west-2::foundation-model/moonshotai.kimi-k3"
+        }
+      ],
+      "inferenceProfileId": "us.moonshotai.kimi-k3",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED",
+      "description": "Routes requests to Kimi K3 in us-east-1, us-east-2, us-west-2.",
+      "createdAt": "2026-09-17T23:05:43.666Z",
+      "updatedAt": "2026-09-17T23:05:43.666Z",
+      "profileType": "SYSTEM_DEFINED",
+      "modelId": "us.moonshotai.kimi-k3",
+      "foundationModelId": "moonshotai.kimi-k3"
     },
     {
       "inferenceProfileName": "US Nova Lite",

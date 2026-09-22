@@ -11,6 +11,7 @@ import {
 } from "../../services/certIndustrySegmentRelevance.js";
 import {
   collectComplianceUploadFileNames,
+  collectComplianceUploadCategories,
   certificationFormTextFromGetter,
 } from "../../services/complianceCertBlobs.js";
 import {
@@ -666,7 +667,7 @@ export async function generateVendorAttestationReport(
     );
   }
 
-  // Likelihood / impact / severity come from AI Risk Intellect when the Controls API key is set.
+  // Domains and likelihood / impact / severity come from AIRI when the Controls API key is set.
   // Best-effort: scoring still runs with formula defaults if RI is unconfigured or unreachable.
   let scoringPayload: Record<string, unknown> = {
     ...formulaPayload,
@@ -694,11 +695,13 @@ export async function generateVendorAttestationReport(
       likelihood_score_value: scoringPayload.likelihood_score_value,
       impact_score_value: scoringPayload.impact_score_value,
       severity_score_value: scoringPayload.severity_score_value,
+      applicable_domains_source: scoringPayload.applicable_domains_source ?? "local fallback",
+      applicableDomains: scoringPayload.applicableDomains,
       riLabel: top5.liSeverityScore?.label ?? null,
     });
   } catch (err) {
     console.error(
-      "getTop5RisksWithMitigations failed during VTS; scoring with formula default L/I:",
+      "getTop5RisksWithMitigations failed during VTS; scoring with local domain and default L/I fallbacks:",
       err,
     );
   }
@@ -760,20 +763,12 @@ export async function generateVendorAttestationReport(
   let factorExplanations: FactorExplanation[] | undefined;
   try {
     const formulaInput = buildFormulaInputFromPayload(scoringPayload);
-    const detail = formula.detail ?? {};
     const vtsForFactors: VtsFormulaResult = {
       vendor_trust_score: formulaVts,
       product_risk: Number(formula.product_risk || 0),
       governance_risk: Number(formula.governance_risk || 0),
       operational_risk: Number(formula.operational_risk || 0),
-      detail: {
-        governance_risk: (detail.governance_risk ?? {}) as VtsFormulaResult["detail"]["governance_risk"],
-        operational_risk: (detail.operational_risk ?? {}) as VtsFormulaResult["detail"]["operational_risk"],
-        product_risk: (detail.product_risk ?? {
-          confidence_factor: { value: 0 },
-          mitigation_effectiveness: { value: 0 },
-        }) as VtsFormulaResult["detail"]["product_risk"],
-      },
+      detail: (formula.detail ?? {}) as VtsFormulaResult["detail"],
     };
     factorExplanations = buildFactorExplanations(vtsForFactors, formulaInput);
   } catch (err) {
@@ -979,7 +974,11 @@ function buildFormulaInputFromPayload(payload: Record<string, unknown>): LooseIn
   const complianceUploadNames = collectComplianceUploadFileNames(payload);
   const complianceUploadBlob = complianceUploadNames.join(" ").toLowerCase();
   const certFormBlob = certificationFormTextFromGetter(get).toLowerCase();
-  const certificationsSearchBlob = `${certFormBlob} ${complianceUploadBlob}`.trim();
+  const certCategoriesBlob = collectComplianceUploadCategories(payload).join(" ").toLowerCase();
+  const certificationsSearchBlob = [certFormBlob, certCategoriesBlob, complianceUploadBlob]
+    .filter((part) => part.trim())
+    .join(" ")
+    .trim();
   const buyerIndustrySegment = normalizeCertIndustrySegmentInput(
     asStr(
       get("buyerIndustrySegment") ??
@@ -1027,11 +1026,14 @@ function buildFormulaInputFromPayload(payload: Record<string, unknown>): LooseIn
       payload.unintentionalRiskCount ?? get("unintentionalRiskCount"),
       2,
     ),
-    applicableDomains: [
-      { domain: "Privacy & Security", riskCount: 1 },
-      { domain: "AI System Safety", riskCount: 1 },
-      { domain: "Accountability & Governance", riskCount: 1 },
-    ],
+    applicableDomains:
+      Array.isArray(payload.applicableDomains) && payload.applicableDomains.length > 0
+        ? payload.applicableDomains
+        : [
+            { domain: "Privacy & Security", riskCount: 1 },
+            { domain: "AI System Safety", riskCount: 1 },
+            { domain: "Accountability & Governance", riskCount: 1 },
+          ],
     sector: vtsSector,
     aiCapabilityType: "administrative",
     piiHandling: answers.lookup(answers.PII_HANDLING, piiAnswer, "moderate"),

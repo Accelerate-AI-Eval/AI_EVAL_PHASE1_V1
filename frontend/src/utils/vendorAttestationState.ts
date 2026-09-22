@@ -7,6 +7,7 @@ import type {
   VendorSelfAttestationFormState,
   DocumentUploadState,
 } from "../types/vendorSelfAttestation";
+import { normalizeVendorMaturityStage } from "../constants/vendorOnboardingData";
 
 export const defaultDocumentUpload: DocumentUploadState = {
   "0": [],
@@ -35,7 +36,7 @@ export function mapApiCompanyProfile(api: Record<string, unknown>): AttestationC
     vendorName: (api.vendorName as string) ?? (api.vendor_name as string) ?? "",
     vendorType: (api.vendorType as string) ?? "",
     sector: sectorNorm,
-    vendorMaturity: (api.vendorMaturity as string) ?? "",
+    vendorMaturity: normalizeVendorMaturityStage(api.vendorMaturity as string),
     companyWebsite: (api.companyWebsite as string) ?? "",
     companyDescription: (api.companyDescription as string) ?? "",
     employeeCount: (api.employeeCount as string) ?? "",
@@ -91,6 +92,33 @@ export function withVendorNameFallback(
   return companyProfile;
 }
 
+/**
+ * Copies answers already given during onboarding onto the attestation payload, so questions
+ * that exist on both forms are not asked a second time under their attestation field names.
+ * Mutates and returns `attestation`; existing attestation answers always win.
+ */
+export function carryOverOnboardingAnswers(
+  attestation: VendorSelfAttestationPayload,
+  companyApi: Record<string, unknown>,
+): VendorSelfAttestationPayload {
+  if (!attestation.trust_centre_url && companyApi.trustCentreUrl)
+    attestation.trust_centre_url = String(companyApi.trustCentreUrl);
+
+  if (!attestation.security_incidents?.length && Array.isArray(companyApi.securityIncidents)) {
+    attestation.security_incidents =
+      companyApi.securityIncidents as VendorSelfAttestationPayload["security_incidents"];
+  }
+  if (!attestation.has_public_security_incident) {
+    const onboardingAnswer = companyApi.hasPublicSecurityIncident;
+    if (typeof onboardingAnswer === "string" && onboardingAnswer.trim()) {
+      attestation.has_public_security_incident = onboardingAnswer.trim().toLowerCase();
+    } else if (attestation.security_incidents?.length) {
+      attestation.has_public_security_incident = "yes";
+    }
+  }
+  return attestation;
+}
+
 export function buildFormStateFromApi(
   result: {
     companyProfile?: Record<string, unknown>;
@@ -109,13 +137,7 @@ export function buildFormStateFromApi(
     result.attestation && Object.keys(result.attestation).length > 0
       ? { ...(result.attestation as VendorSelfAttestationPayload) }
       : {};
-  if (!attestation.trust_centre_url && companyApi.trustCentreUrl)
-    attestation.trust_centre_url = String(companyApi.trustCentreUrl);
-  if (!attestation.security_incidents?.length && Array.isArray(companyApi.securityIncidents)) {
-    attestation.security_incidents = companyApi.securityIncidents as VendorSelfAttestationPayload["security_incidents"];
-    if (!attestation.has_public_security_incident && attestation.security_incidents?.length)
-      attestation.has_public_security_incident = "yes";
-  }
+  carryOverOnboardingAnswers(attestation, companyApi);
   const docUpload = result.attestation?.document_uploads;
   let documentUpload: DocumentUploadState = defaultDocumentUpload;
   if (docUpload && typeof docUpload === "object") {

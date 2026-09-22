@@ -144,7 +144,10 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
     opr = _num(formula.get("operational_risk"))
     weighted = _num(formula.get("weighted_risk"))
     vts = _num(formula.get("vendor_trust_score"))
-    pr_w, gr_w, or_w = 0.40, 0.30, 0.30
+    pillar_weights = _dict(final.get("pillar_weights"))
+    pr_w = _num(pillar_weights.get("product"), 0.40)
+    gr_w = _num(pillar_weights.get("governance"), 0.30)
+    or_w = _num(pillar_weights.get("operational"), 0.30)
     pr_c = _num(final.get("product_risk_contribution"), pr * pr_w)
     gr_c = _num(final.get("governance_risk_contribution"), gr * gr_w)
     or_c = _num(final.get("operational_risk_contribution"), opr * or_w)
@@ -170,9 +173,9 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         "  OR_WEIGHT            = 0.30",
         "  BASE_SCORE           = 100",
         "  L/I clamp            = 1.0 .. 5.0",
-        "  L/I default stub     = [3, 3, 3]   (used when Risk Intellect scores are missing)",
-        "  S default stub       = [9, 9, 9]   (or LxI per risk when lengths match)",
-        "  Intent defaults      = intentional=1, unintentional=2",
+        "  L/I missing          = product pillar excluded, weight redistributed (no stub)",
+        "  S missing            = derived as LxI when L/I are present, else absent",
+        "  Intent defaults      = intentional=0, unintentional=0 -> insufficient_evidence",
         "  assessmentPhase      = vendor_evaluation",
         "  applicableDomains    = derived from product exposure (Document 1 §4.3)",
         "  aiCapabilityType     = administrative      (hardcoded; Healthcare SM lookup)",
@@ -186,7 +189,8 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         "  Product risk:        PR = clamp(IR x (1 - ME) x CF, 0, 100)",
         "  Governance risk:     GR = 100 x (1 - gov_earned / gov_attainable)",
         "  Operational risk:    OR = 100 x (1 - ops_earned / ops_attainable)",
-        "  Certifications cap   = 25 (attainable 23)",
+        "  Group attainable     = sum of that group's own line items (no clipping)",
+        "  Certifications       = measured against the frameworks relevant to the buyer segment",
         "  CM clamp             = 0.143 .. 3.1  (no risk-tolerance multiplier on VTS)",
         "  CF                   = 1.0 x 0.95 cert-in-date x 0.97 pen-test x 0.98 testing x 0.98 trust-centre",
         "                       clamped to [0.80, 1.20]; assessment method is Governance-only",
@@ -225,9 +229,9 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
         f"  PR (product risk)      = {pr:.4f}",
         f"  GR (governance risk)   = {gr:.4f}",
         f"  OR (operational risk)  = {opr:.4f}",
-        f"  PR x 0.40              = {pr:.4f} x 0.40 = {pr_c:.4f}",
-        f"  GR x 0.30              = {gr:.4f} x 0.30 = {gr_c:.4f}",
-        f"  OR x 0.30              = {opr:.4f} x 0.30 = {or_c:.4f}",
+        f"  PR x {pr_w:.2f}              = {pr:.4f} x {pr_w:.2f} = {pr_c:.4f}",
+        f"  GR x {gr_w:.2f}              = {gr:.4f} x {gr_w:.2f} = {gr_c:.4f}",
+        f"  OR x {or_w:.2f}              = {opr:.4f} x {or_w:.2f} = {or_c:.4f}",
         f"  weighted_risk          = {pr_c:.4f} + {gr_c:.4f} + {or_c:.4f} = {weighted:.4f}",
         f"  VTS                    = max(0, 100 - {weighted:.4f}) = {vts:.2f}",
         "",
@@ -281,7 +285,7 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
             f"  residual               = IR x (1 - ME) = {ir_val:.4f} x (1 - {me_val:.4f}) = {residual:.4f}",
             f"  PR                     = residual x CF = {residual:.4f} x {cf_val:.4f} = {pr:.4f}",
             "",
-            "GOVERNANCE RISK  (score parts are hardcoded point maps; risk = 100 - score)",
+            "GOVERNANCE RISK  (risk = 100 x (1 - earned / attainable))",
             f"  certifications         = {gr_block.get('certifications_score')}",
             f"  assessment_quality     = {gr_block.get('assessment_quality_score')}",
             f"  policy                 = {gr_block.get('policy_score')}",
@@ -291,19 +295,19 @@ def _vts_formula_console_lines(formula: dict[str, Any]) -> list[str]:
             f"  supply_chain           = {gr_block.get('supply_chain_score')}",
             f"  adversarial_disclosure = {gr_block.get('adversarial_disclosure_score')}",
             f"  dpa                    = {gr_block.get('dpa_score')}",
-            f"  raw_governance_score   = {gr_block.get('raw_governance_score')}",
-            f"  governance_score       = {gr_block.get('governance_score')}   (clamped 0..100)",
-            f"  GR                     = 100 - {gr_block.get('governance_score')} = {gr:.4f}",
+            f"  earned / attainable    = {gr_block.get('earned')} / {gr_block.get('attainable')}",
+            f"  excluded groups        = {gr_block.get('excluded_groups')}",
+            f"  GR                     = {gr:.4f}",
             "",
-            "OPERATIONAL RISK  (score parts are hardcoded point maps; risk = 100 - score)",
+            "OPERATIONAL RISK  (risk = 100 x (1 - earned / attainable))",
             f"  sla                    = {or_block.get('sla_score')}",
             f"  incident_management    = {or_block.get('incident_management_score')}",
             f"  deployment_maturity    = {or_block.get('deployment_maturity_score')}",
             f"  stability              = {or_block.get('stability_score')}",
             f"  support                = {or_block.get('support_score')}",
-            f"  raw_operational_score  = {or_block.get('raw_operational_score')}",
-            f"  operational_score      = {or_block.get('operational_score')}   (capped at 100)",
-            f"  OR                     = 100 - {or_block.get('operational_score')} = {opr:.4f}",
+            f"  earned / attainable    = {or_block.get('earned')} / {or_block.get('attainable')}",
+            f"  excluded groups        = {or_block.get('excluded_groups')}",
+            f"  OR                     = {opr:.4f}",
             "",
         ]
     )

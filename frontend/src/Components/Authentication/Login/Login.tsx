@@ -119,6 +119,8 @@ const Login = () => {
         const msg = (result.message ?? "").toLowerCase();
         const isInvited =
           msg.includes("invited") ||
+          msg.includes("hasn't been activated") ||
+          msg.includes("has not been activated") ||
           result.code === "invited";
         const isInactive =
           result.code === "inactive" || msg.includes("inactive");
@@ -129,7 +131,8 @@ const Login = () => {
           msg.includes("account not found");
         if (isInvited) {
           toast.error(
-            "This account was invited. Please complete signup from your invitation email.",
+            result.message ||
+              "This account hasn't been activated yet — please check your email for the invitation",
             { autoClose: 5000 },
           );
         } else if (isInactive) {

@@ -25,6 +25,8 @@ import StepVendorSelfAttestationPrev, {
 import { VENDOR_SELF_ATTESTATION } from "../../../constants/vendorAttestionData";
 import { ATTESTATION_SECTION_FIELDS } from "../../../constants/vendorAttestationFields";
 import { DOCUMENT_CATEGORIES } from "../../../constants/vendorAttestationDocumentConstants";
+import { normalizeVendorMaturityStage } from "../../../constants/vendorOnboardingData";
+import { carryOverOnboardingAnswers } from "../../../utils/vendorAttestationState";
 import type {
   AttestationCompanyProfile,
   VendorSelfAttestationPayload,
@@ -104,10 +106,27 @@ function hasValue(v: unknown): boolean {
 
 const CERTIFICATION_CATEGORY_VALUES = new Set<string>(DOCUMENT_CATEGORIES.map((c) => c.value));
 
+function certificationsFromDocumentUpload(docUpload: DocumentUploadState): string[] {
+  return (docUpload?.["2"]?.categories ?? []).filter(
+    (c) => CERTIFICATION_CATEGORY_VALUES.has(c) && c.toLowerCase() !== "none",
+  );
+}
+
 function selectedCertificationCategories(formState: VendorSelfAttestationFormState): string[] {
   return (formState.documentUpload?.["2"]?.categories ?? []).filter((c) =>
     CERTIFICATION_CATEGORY_VALUES.has(c),
   );
+}
+
+/** Selected certifications with no evidence attached. These carry the most score, so the
+ * "attach evidence for each" label has to be enforced rather than advisory. */
+function certificationCategoriesMissingEvidence(
+  formState: VendorSelfAttestationFormState,
+): string[] {
+  const byCategory = formState.documentUpload?.["2"]?.byCategory ?? {};
+  return selectedCertificationCategories(formState)
+    .filter((c) => c.toLowerCase() !== "none")
+    .filter((c) => (byCategory[c]?.length ?? 0) === 0);
 }
 
 /** Validate one attestation step (2–9) using required flags from VENDOR_SELF_ATTESTATION. */
@@ -225,12 +244,7 @@ function isVendorAttestationStepValid(
   if (sectionKey === "compliance_certifications") {
     const regulatoryCategories = selectedCertificationCategories(formState);
     if (regulatoryCategories.length === 0) return false;
-  }
-  if (sectionKey === "ai_technical_capabilities") {
-    if (formState.attestation.documented_ai_governance_policy === "Yes") {
-      const n = formState.documentUpload?.aiGovernancePolicy?.length ?? 0;
-      if (n < 1) return false;
-    }
+    if (certificationCategoriesMissingEvidence(formState).length > 0) return false;
   }
   return isAttestationStepValid(
     stepIndex,
@@ -296,15 +310,14 @@ function getStepFieldErrors(
     const regulatoryCategories = selectedCertificationCategories(formState);
     if (regulatoryCategories.length === 0) {
       errors.regulatoryCertificationMaterial = "Select at least one certification type and upload materials";
+    } else {
+      const missingEvidence = certificationCategoriesMissingEvidence(formState);
+      if (missingEvidence.length > 0) {
+        errors.regulatoryCertificationMaterial = `Attach evidence for ${missingEvidence.join(", ")}`;
+      }
     }
   }
   if (sectionKey === "ai_technical_capabilities") {
-    if (
-      formState.attestation.documented_ai_governance_policy === "Yes" &&
-      !(formState.documentUpload?.aiGovernancePolicy?.length ?? 0)
-    ) {
-      errors.aiGovernancePolicy = "Upload your AI governance policy document";
-    }
     if (!(formState.attestation.versions_models ?? "").trim())
       errors.versions_models = "This field is required";
     if (
@@ -400,7 +413,7 @@ function mapApiCompanyProfile(
     vendorName: (api.vendorName as string) ?? (api.vendor_name as string) ?? "",
     vendorType: (api.vendorType as string) ?? "",
     sector: sectorNorm,
-    vendorMaturity: (api.vendorMaturity as string) ?? "",
+    vendorMaturity: normalizeVendorMaturityStage(api.vendorMaturity as string),
     companyWebsite: (api.companyWebsite as string) ?? "",
     companyDescription: (api.companyDescription as string) ?? "",
     employeeCount: (api.employeeCount as string) ?? "",
@@ -748,6 +761,10 @@ const VendorAttestationsMainForm = () => {
             Object.keys(result.companyProfile).length > 0
               ? mapApiCompanyProfile(result.companyProfile)
               : defaultCompanyProfile;
+          // Raw source kept alongside the mapped profile: the onboarding-only answers that
+          // the attestation re-asks are not part of AttestationCompanyProfile.
+          let companyProfileApiRaw: Record<string, unknown> =
+            (result.companyProfile as Record<string, unknown> | undefined) ?? {};
 
           const missingVendorName = !(companyProfile.vendorName ?? "").trim();
           const hasCompanyProfileData =
@@ -775,6 +792,10 @@ const VendorAttestationsMainForm = () => {
                 const fromOnboarding = mapApiCompanyProfile(
                   onboardingJson.data as Record<string, unknown>,
                 );
+                companyProfileApiRaw = {
+                  ...(onboardingJson.data as Record<string, unknown>),
+                  ...companyProfileApiRaw,
+                };
                 companyProfile = hasCompanyProfileData
                   ? {
                       ...companyProfile,
@@ -808,13 +829,15 @@ const VendorAttestationsMainForm = () => {
           } else {
             setAttestationId(null);
           }
-          const attestation: VendorSelfAttestationPayload =
+          const attestation: VendorSelfAttestationPayload = carryOverOnboardingAnswers(
             attestationData && typeof attestationData === "object"
               ? {
                   ...defaultAttestation,
                   ...(attestationData as VendorSelfAttestationPayload),
                 }
-              : defaultAttestation;
+              : { ...defaultAttestation },
+            companyProfileApiRaw,
+          );
           const docUpload = attestationData?.document_uploads;
           let documentUpload: DocumentUploadState = {
             ...defaultDocumentUpload,
@@ -1261,6 +1284,9 @@ const VendorAttestationsMainForm = () => {
         document_uploads: docUpload,
         is_draft: isDraft,
         companyProfile: latestState.companyProfile,
+        // The certification question was replaced by the upload-step category picker,
+        // so the selection has to be promoted onto the scored field explicitly.
+        security_certifications: certificationsFromDocumentUpload(docUpload),
       };
       const productName = attestation.product_name;
       payload.product_name =

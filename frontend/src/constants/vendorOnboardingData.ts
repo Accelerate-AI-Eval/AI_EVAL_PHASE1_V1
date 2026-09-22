@@ -11,6 +11,11 @@ export const EMPLOYEE_COUNTS = [
   { label: "10,000+", value: "10,000+" },
 ];
 
+/**
+ * @deprecated Superseded by `VENDOR_MATURITY_STAGE`, which is the single vocabulary for
+ * `vendorMaturity` across onboarding and attestation. Retained only so records saved with
+ * these values can still be read back — see `normalizeVendorMaturityStage`.
+ */
 export const VENDOR_MATURITY_LEVELS = [
   {
     label: "Startup - Early-stage, innovative solutions",
@@ -151,6 +156,26 @@ export const VENDOR_MATURITY_STAGE = [
   { label: "Mature Private Company", value: "Mature Private Company" },
   { label: "Bootstrapped / Self-Funded", value: "Bootstrapped / Self-Funded" },
 ];
+
+/** Legacy `VENDOR_MATURITY_LEVELS` value -> canonical `VENDOR_MATURITY_STAGE` value. */
+const LEGACY_VENDOR_MATURITY_STAGE: Record<string, string> = {
+  "Startup - Early-stage, innovative solutions": "Startup (Pre-Seed/Seed)",
+  "Growth Stage - Scaling customer base": "Growth Stage (Series B/C)",
+  "Established - Proven track record": "Established (Series D+/Pre-IPO)",
+  "Enterprise - Large-scale global operations": "Publicly Traded",
+};
+
+/**
+ * Resolves a stored `vendorMaturity` to a `VENDOR_MATURITY_STAGE` value.
+ * Unrecognised values are returned unchanged so they stay visible rather than
+ * being silently replaced by whichever option happens to render first.
+ */
+export const normalizeVendorMaturityStage = (value: string | null | undefined): string => {
+  const raw = (value ?? "").trim();
+  if (!raw) return "";
+  if (VENDOR_MATURITY_STAGE.some((option) => option.value === raw)) return raw;
+  return LEGACY_VENDOR_MATURITY_STAGE[raw] ?? raw;
+};
 
 export const PRIMARY_CONTACT_ROLE = [
   {

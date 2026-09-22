@@ -219,7 +219,7 @@ function buyerFormulaReadinessRows(merged: Record<string, unknown>): React.React
         ) : null}
         {hasIrs ? (
           <div className="vendor_preview_row">
-            <dt className="vendor_preview_label">Implementation risk score</dt>
+            <dt className="vendor_preview_label">Implementation readiness score</dt>
             <dd className="vendor_preview_value">{Math.round(irsNum)}/100</dd>
           </div>
         ) : null}

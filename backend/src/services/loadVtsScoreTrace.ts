@@ -47,6 +47,23 @@ function resolveStoredLlmModelId(
   return null;
 }
 
+/** Pillar weights the stored score was calculated with; null when not recorded. */
+function readPillarWeights(
+  detail: unknown,
+): { product: number; governance: number; operational: number } | null {
+  if (detail == null || typeof detail !== "object") return null;
+  const final = (detail as Record<string, unknown>).final_formula;
+  if (final == null || typeof final !== "object") return null;
+  const raw = (final as Record<string, unknown>).pillar_weights;
+  if (raw == null || typeof raw !== "object") return null;
+  const w = raw as Record<string, unknown>;
+  const product = Number(w.product);
+  const governance = Number(w.governance);
+  const operational = Number(w.operational);
+  if (![product, governance, operational].every(Number.isFinite)) return null;
+  return { product, governance, operational };
+}
+
 type ProfileRow = {
   id: string;
   trust_score: number;
@@ -102,14 +119,16 @@ async function buildLoadedTrace(row: ProfileRow): Promise<LoadedVtsTrace> {
     }
   }
 
+  const scoringResultDetail = (report?.scoringResult as Record<string, unknown> | undefined)?.detail;
+  const pillarWeights = readPillarWeights(row.formula_detail ?? scoringResultDetail ?? null);
+
   const rawFactorExplanations = trustScoreBlock?.factorExplanations;
   let factorExplanations = Array.isArray(rawFactorExplanations)
     ? rawFactorExplanations
     : undefined;
 
   if (!factorExplanations?.length) {
-    const scoringResult = report?.scoringResult as Record<string, unknown> | undefined;
-    const detailSource = row.formula_detail ?? scoringResult?.detail ?? null;
+    const detailSource = row.formula_detail ?? scoringResultDetail ?? null;
     const rebuilt = rebuildFactorExplanationsFromStoredDetail({
       storedTrustScore: Number(row.trust_score ?? 0),
       productRisk:
@@ -159,6 +178,7 @@ async function buildLoadedTrace(row: ProfileRow): Promise<LoadedVtsTrace> {
     attestationId: row.attestation_id ?? null,
     factorExplanations,
     generatedAt: row.created_at,
+    pillarWeights,
   });
 
   return {

@@ -27,6 +27,29 @@ export function collectComplianceUploadFileNames(payload: Record<string, unknown
   return names;
 }
 
+/**
+ * Certification categories the vendor selected on the upload step. These are the vendor's
+ * actual claim; the file names alone do not carry it, so a claim with no file attached would
+ * otherwise be invisible to scoring.
+ */
+export function collectComplianceUploadCategories(payload: Record<string, unknown>): string[] {
+  const docUploads =
+    payload.document_uploads && typeof payload.document_uploads === "object"
+      ? (payload.document_uploads as Record<string, unknown>)
+      : payload.documentUpload && typeof payload.documentUpload === "object"
+        ? (payload.documentUpload as Record<string, unknown>)
+        : null;
+  if (!docUploads?.["2"] || typeof docUploads["2"] !== "object" || Array.isArray(docUploads["2"])) {
+    return [];
+  }
+  const slot2 = docUploads["2"] as Record<string, unknown>;
+  const categories = Array.isArray(slot2.categories) ? slot2.categories : [];
+  return categories
+    .filter((c): c is string => typeof c === "string")
+    .map((c) => c.trim())
+    .filter((c) => c && c.toLowerCase() !== "none");
+}
+
 export function certificationFormTextFromGetter(get: (k: string) => unknown): string {
   const parts: string[] = [];
   const walk = (v: unknown) => {
@@ -60,8 +83,14 @@ export function buildCertificationsSearchBlobsFromPayload(payload: Record<string
   const complianceUploadBlob = complianceUploadNames.join(" ").toLowerCase();
   const get = (k: string) => payload[k];
   const certFormBlob = certificationFormTextFromGetter(get).toLowerCase();
+  // Selected categories join detection only. They must stay out of complianceUploadBlob, which
+  // is what distinguishes an evidenced certification from a self-attested one.
+  const categoriesBlob = collectComplianceUploadCategories(payload).join(" ").toLowerCase();
   return {
-    certificationsSearchBlob: `${certFormBlob} ${complianceUploadBlob}`.trim(),
+    certificationsSearchBlob: [certFormBlob, categoriesBlob, complianceUploadBlob]
+      .filter((part) => part.trim())
+      .join(" ")
+      .trim(),
     complianceUploadBlob,
   };
 }

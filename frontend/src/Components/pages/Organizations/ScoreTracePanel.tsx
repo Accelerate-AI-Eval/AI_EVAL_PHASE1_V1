@@ -30,11 +30,16 @@ type ScoreTraceComponent = {
 
 type FactorExplanation = {
   category: "Product" | "Governance" | "Operational";
+  group: string;
   factor: string;
   status: "present" | "missing" | "weak" | "strong";
+  /** Evidence points the line item can award. */
   maxPoints: number;
   awardedPoints: number;
+  /** Points off the category score — the factors in a category sum to 100 − category score. */
   deduction: number;
+  /** Trust-score points the gap costs — the factors in a category sum to that category's deduction. */
+  scoreImpact: number;
   vendorAnswer: string;
   reason: string;
   improvement: string;
@@ -948,7 +953,7 @@ export default function ScoreTracePanel({
                               {catHints.map((f, fi) => (
                                 <div key={fi} className={`stp_cat_factor_hint stp_factor_${f.status}`}>
                                   <span className="stp_cat_factor_hint_name">{f.factor}</span>
-                                  <span className="stp_cat_factor_hint_ded">−{f.deduction}</span>
+                                  <span className="stp_cat_factor_hint_ded">−{f.deduction.toFixed(1)}</span>
                                 </div>
                               ))}
                             </div>
@@ -1136,6 +1141,8 @@ export default function ScoreTracePanel({
                                 const subKey = CATEGORY_TO_SUBSCORE_KEY[c.category];
                                 const catSc = subKey ? trace.rawSubScores[subKey] : undefined;
                                 if (driverFactors.length > 0) {
+                                  const categoryLoss = driverFactors.reduce((s, f) => s + f.deduction, 0);
+                                  const scoreLoss = driverFactors.reduce((s, f) => s + f.scoreImpact, 0);
                                   return (
                                     <div className="stp_driver_factor_block">
                                       <p className="stp_driver_factor_header">
@@ -1146,10 +1153,14 @@ export default function ScoreTracePanel({
                                           <li key={fi} className={`stp_driver_factor_item stp_factor_${f.status}`}>
                                             <span className="stp_driver_factor_name">{f.factor}</span>
                                             <span className={`stp_driver_factor_status stp_factor_status_${f.status}`}>{f.status}</span>
-                                            <span className="stp_driver_factor_ded">−{f.deduction} pts</span>
+                                            <span className="stp_driver_factor_ded">−{f.deduction.toFixed(1)} pts</span>
                                           </li>
                                         ))}
                                       </ul>
+                                      <p className="stp_driver_factor_total">
+                                        Totals −{categoryLoss.toFixed(1)} on the {displayCategoryName(c.category).toLowerCase()} score,
+                                        which removes {scoreLoss.toFixed(1)} points from the trust score.
+                                      </p>
                                     </div>
                                   );
                                 }
@@ -1222,7 +1233,7 @@ export default function ScoreTracePanel({
                       ? "Estimated risk reduction — not applied until buyer data is updated and scoring reruns."
                       : isScs
                         ? "Estimated readiness lift — not applied until deal inputs are updated and scoring reruns."
-                        : "Estimated score lift — not applied until evidence is submitted and scoring reruns."}
+                        : "Trust-score points recovered by closing each gap — not applied until evidence is submitted and scoring reruns."}
                   </p>
                   <div className="stp_cards_list">
                     {/* IRS improvement cards — grouped by category */}
@@ -1319,13 +1330,13 @@ export default function ScoreTracePanel({
                                     <div className="stp_improve_card_top">
                                       <span className="stp_lift_badge">
                                         {f.status === "missing" ? "Missing" : f.status === "weak" ? "Weak" : "Partial"}
-                                        {" · "}+{f.estimatedLift} pts potential
+                                        {" · "}+{f.estimatedLift.toFixed(1)} pts on the trust score
                                       </span>
                                       <span className="stp_improve_title">{f.factor}</span>
                                     </div>
                                     <div className="stp_improve_card_body">
                                       <div className="stp_factor_score_row">
-                                        <span className="stp_field_label">Score</span>
+                                        <span className="stp_field_label">Evidence</span>
                                         <span className="stp_factor_pts">{f.awardedPoints} / {f.maxPoints} pts</span>
                                         <div className="stp_factor_bar_track">
                                           <div className="stp_factor_bar_fill" style={{ width: `${(f.awardedPoints / f.maxPoints) * 100}%` }} />
@@ -1407,7 +1418,11 @@ export default function ScoreTracePanel({
                               <span className="stp_factor_row_name">{f.factor}{f.internalOnly && <span className="stp_factor_internal_tag"> (internal)</span>}</span>
                               <span className="stp_factor_row_pts">{f.awardedPoints}/{f.maxPoints}</span>
                               <span className={`stp_factor_row_status stp_factor_status_${f.status}`}>{f.status}</span>
-                              {f.deduction > 0 && <span className="stp_factor_row_deduction">−{f.deduction} pts</span>}
+                              {f.deduction > 0 && (
+                                <span className="stp_factor_row_deduction">
+                                  −{f.deduction.toFixed(1)} cat / −{f.scoreImpact.toFixed(1)} VTS
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>

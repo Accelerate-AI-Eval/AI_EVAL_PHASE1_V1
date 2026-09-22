@@ -997,8 +997,8 @@ const Organizations = () => {
                                             Math.min(
                                               100,
                                               // Type 2 stores sales risk; readiness = 100 − SRS.
-                                              // Type 3 stores IRS readiness; implementation risk = 100 − IRS.
-                                              100 - rawScore,
+                                              // Type 3 stores IRS as implementation readiness; show as stored.
+                                              isBuyerCots ? rawScore : 100 - rawScore,
                                             ),
                                           ),
                                         );
@@ -1010,7 +1010,7 @@ const Organizations = () => {
                                   const scoreLabel = isVendorCots
                                     ? "Readiness"
                                     : isBuyerCots
-                                      ? "Implementation Risk"
+                                      ? "Implementation Readiness"
                                       : "Score";
                                   const showAdminScoreBlock =
                                     isSystemAdmin &&
@@ -1091,10 +1091,10 @@ const Organizations = () => {
                                                 });
                                                 setScoreTraceOpen(true);
                                               }}
-                                              aria-label={`${isBuyerCots ? "Implementation risk" : "Readiness"} explainability for ${title}`}
+                                              aria-label={`${isBuyerCots ? "Implementation readiness" : "Readiness"} explainability for ${title}`}
                                               title={
                                                 isBuyerCots
-                                                  ? "Implementation Risk Explainability"
+                                                  ? "Implementation Readiness Explainability"
                                                   : "Readiness Explainability"
                                               }
                                             >

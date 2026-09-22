@@ -75,10 +75,19 @@ export type VtsTraceInput = {
   factorExplanations?: FactorExplanation[];
   /** When the stored VTS was calculated (profile report created_at). */
   generatedAt?: string | Date | null;
+  /**
+   * Pillar weights the score was actually calculated with. A pillar with nothing
+   * measured is dropped and its weight shared out, so these are not always
+   * 0.40 / 0.30 / 0.30.
+   */
+  pillarWeights?: { product: number; governance: number; operational: number } | null;
 };
+
+const DEFAULT_PILLAR_WEIGHTS = { product: 0.4, governance: 0.3, operational: 0.3 };
 
 export function buildVtsScoreTrace(input: VtsTraceInput): ScoreTrace {
   const { storedTrustScore, scoreByCategory, reportId, factorExplanations } = input;
+  const weights = input.pillarWeights ?? DEFAULT_PILLAR_WEIGHTS;
   const hasFactorDetail = Array.isArray(factorExplanations) && factorExplanations.length > 0;
   const warnings: string[] = [];
   const missingEvidence: string[] = [];
@@ -98,9 +107,9 @@ export function buildVtsScoreTrace(input: VtsTraceInput): ScoreTrace {
     const operationalRisk = Math.max(0, Math.min(100, 100 - opsScore!));
 
     // Each sub-risk deducts from the base VTS of 100
-    const productContrib    = -(productRisk    * 0.40);
-    const governanceContrib = -(governanceRisk * 0.30);
-    const operationalContrib= -(operationalRisk* 0.30);
+    const productContrib    = -(productRisk    * weights.product);
+    const governanceContrib = -(governanceRisk * weights.governance);
+    const operationalContrib= -(operationalRisk* weights.operational);
 
     // Reconcile
     const recomputed = round2(Math.max(0, 100 + productContrib + governanceContrib + operationalContrib));
@@ -118,7 +127,7 @@ export function buildVtsScoreTrace(input: VtsTraceInput): ScoreTrace {
         "Product Risk (Likelihood × Impact × Contextual Multipliers)",
         "Product",
         productContrib,
-        `Product score = ${productScore}/100; Product risk = ${productRisk}. Deducts ${round2(productRisk * 0.40)} from base VTS (weight 40%).`,
+        `Product score = ${productScore}/100; Product risk = ${productRisk}. Deducts ${round2(productRisk * weights.product)} from base VTS (weight ${Math.round(weights.product * 100)}%).`,
         "vendor_attestation",
         "Vendor attestation profile",
       ),
@@ -129,7 +138,7 @@ export function buildVtsScoreTrace(input: VtsTraceInput): ScoreTrace {
         "Governance Risk (Certifications + Policies + Controls + Maturity)",
         "Governance",
         governanceContrib,
-        `Governance score = ${govScore}/100; Governance risk = ${governanceRisk}. Deducts ${round2(governanceRisk * 0.30)} from base VTS (weight 30%). ` +
+        `Governance score = ${govScore}/100; Governance risk = ${governanceRisk}. Deducts ${round2(governanceRisk * weights.governance)} from base VTS (weight ${Math.round(weights.governance * 100)}%). ` +
           `Includes: certifications (SOC 2, ISO 27001, HIPAA, etc.), assessment quality, data retention/incident response policies, operational controls, vendor maturity.`,
         "vendor_attestation",
         "Vendor attestation profile",
@@ -141,7 +150,7 @@ export function buildVtsScoreTrace(input: VtsTraceInput): ScoreTrace {
         "Operational Risk (SLAs + Incident Management + Stability + Support)",
         "Operational",
         operationalContrib,
-        `Operational score = ${opsScore}/100; Operational risk = ${operationalRisk}. Deducts ${round2(operationalRisk * 0.30)} from base VTS (weight 30%). ` +
+        `Operational score = ${opsScore}/100; Operational risk = ${operationalRisk}. Deducts ${round2(operationalRisk * weights.operational)} from base VTS (weight ${Math.round(weights.operational * 100)}%). ` +
           `Includes: SLA uptime commitment, incident response maturity, deployment scale, company stability, support tier.`,
         "vendor_attestation",
         "Vendor attestation profile",

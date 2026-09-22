@@ -9,7 +9,7 @@ import ChipMultiSelect from "../../UI/ChipMultiSelect";
 import YearPicker from "../../UI/YearPicker";
 import {
   VENDOR_TYPES,
-  VENDOR_MATURITY_LEVELS,
+  VENDOR_MATURITY_STAGE,
   EMPLOYEE_COUNTS,
   HEADQUARTERS_LOCATION,
   OPERATING_REGIONS,
@@ -114,7 +114,7 @@ const StepCompanyProfileAttestation = ({
                 value={companyProfile.vendorMaturity || ""}
                 onChange={handleChange}
                 default_option="Select vendor maturity stage"
-                options={VENDOR_MATURITY_LEVELS}
+                options={VENDOR_MATURITY_STAGE}
                 required
               />
             </FormField>

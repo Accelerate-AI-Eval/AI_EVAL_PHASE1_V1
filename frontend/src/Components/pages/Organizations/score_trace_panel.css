@@ -1079,6 +1079,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.stp_driver_factor_total {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--stp-border, #e5e7eb);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #4b5563;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Category group header in Improvement Plan (Section E) */
 .stp_improve_group_header {
   font-size: 10px;

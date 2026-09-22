@@ -12,6 +12,7 @@ import {
 } from "../../email/onboardingEmailHtml.js";
 import { getAccelerateAiLogoAttachment } from "../../email/emailBrand.js";
 import { onboardingPathSegmentFromOrgType } from "../../utils/onboardingPathFromOrgType.js";
+import { capitalizeWords as capitalizeFirstLetter } from "../../utils/capitalizeWords.js";
 
 const userSignup = async (req: Request, res: Response) => {
   const userData = req.body ?? {};
@@ -21,11 +22,6 @@ const userSignup = async (req: Request, res: Response) => {
   const email = (emailFromBody || emailFromToken).toLowerCase();
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
-  }
-
-  function capitalizeFirstLetter(str: string): string {
-    if (!str || typeof str !== "string") return str;
-    return str.trim().split(/\s+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
   }
 
   try {

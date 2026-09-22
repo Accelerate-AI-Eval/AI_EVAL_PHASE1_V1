@@ -38,6 +38,13 @@ const Select = ({
   const normalizedOptions: Option[] = options.map((option) =>
     typeof option === "string" ? { label: option, value: option } : option,
   );
+  // A controlled <select> whose value matches no <option> loses the value on the next
+  // change, so an unrecognised stored value is surfaced instead of being dropped.
+  const isUnlistedValue =
+    value !== "" && !normalizedOptions.some((option) => String(option.value) === value);
+  const renderedOptions: Option[] = isUnlistedValue
+    ? [...normalizedOptions, { label: value, value }]
+    : normalizedOptions;
   const controlId = id || name;
   const hasStringLabel =
     typeof labelName === "string" ? labelName.trim().length > 0 : labelName != null;
@@ -64,7 +71,7 @@ const Select = ({
         <option value="" disabled>
           {default_option}
         </option>
-        {normalizedOptions.map((option) => (
+        {renderedOptions.map((option) => (
           <option key={String(option.value)} value={option.value}>
             {option.label}
           </option>

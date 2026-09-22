@@ -336,10 +336,8 @@ export default function BuyerVendorRiskReport() {
   const storedScore = hasImplementationScore
     ? implementationRiskScore
     : report?.overallRiskScore ?? 0;
-  // Stored IRS is readiness (higher = better). Show residual implementation risk for buyers.
-  const score = hasImplementationScore
-    ? Math.round(Math.max(0, Math.min(100, 100 - implementationRiskScore)))
-    : storedScore;
+  // Stored IRS is implementation readiness (higher = better). Show that number, not 100 − IRS.
+  const score = storedScore;
 
   if (loading && !report && !error) {
     return (
@@ -381,11 +379,11 @@ export default function BuyerVendorRiskReport() {
 
   if (!report) return null;
 
-  /** Circle color: IRS lower is better; vendor trust score higher is better. */
+  /** Circle color: IRS / overall score higher is better (readiness). */
   const scoreClass = hasImplementationScore
-    ? implementationRiskScore < 50
+    ? implementationRiskScore >= 76
       ? "bvr_score_high"
-      : implementationRiskScore < 75
+      : implementationRiskScore >= 51
         ? "bvr_score_mid"
         : "bvr_score_low"
     : score >= 80
@@ -503,7 +501,7 @@ export default function BuyerVendorRiskReport() {
               ) : null}
               <p className="bvr_recommendation_sub">
                 {hasImplementationScore
-                  ? `Implementation risk score: ${Math.round(score)}/100`
+                  ? `Implementation readiness score: ${Math.round(score)}/100`
                   : `Overall risk score: ${Math.round(score)}/100 (higher indicates stronger alignment / lower residual risk)`}
               </p>
             </div>

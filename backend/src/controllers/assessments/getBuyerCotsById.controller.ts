@@ -190,14 +190,7 @@ const getBuyerCotsById = async (req: Request, res: Response) => {
       }
       return {};
     })();
-    const operatingRegionsVal = r.geographic_regions;
-    const operatingRegions = Array.isArray(operatingRegionsVal)
-      ? operatingRegionsVal
-      : operatingRegionsVal != null && typeof operatingRegionsVal === "object"
-        ? (operatingRegionsVal as string[])
-        : typeof operatingRegionsVal === "string"
-          ? operatingRegionsVal
-          : "";
+    const operatingRegions = toStringList(r.geographic_regions);
     const data: Record<string, unknown> = {
       assessmentId: r.assessmentId,
       type: "cots_buyer",

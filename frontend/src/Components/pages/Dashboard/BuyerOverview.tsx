@@ -19,7 +19,6 @@ import { BASE_URL, formatGovDate, getAssessmentLabel } from "./utils";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay";
 import DashboardTypewriterGreeting from "../../UI/DashboardTypewriterGreeting";
-import { invertScore100 } from "../../../utils/completeReportGrade";
 import "./dashboard.css";
 import "../UserManagement/user_management.css";
 
@@ -528,9 +527,9 @@ const BuyerOverview = () => {
         reportsByAssessmentId[selectedAssessmentId]?.score ??
         null)
     : null;
-  const assessmentMetricTitle = selectedAssessmentId ? "Implementation risk score" : "Assessments";
+  const assessmentMetricTitle = selectedAssessmentId ? "Implementation readiness score" : "Assessments";
   const assessmentMetricValue = selectedAssessmentId
-    ? (selectedAssessmentDashboardScore != null ? invertScore100(selectedAssessmentDashboardScore) : "")
+    ? (selectedAssessmentDashboardScore != null ? selectedAssessmentDashboardScore : "")
     : buyerAssessments.length;
 
   if (loading) {
@@ -891,7 +890,7 @@ const BuyerOverview = () => {
                     <tr>
                       <th>Vendor</th>
                       <th>Product</th>
-                      <th>Implementation risk</th>
+                      <th>Implementation readiness</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -911,7 +910,7 @@ const BuyerOverview = () => {
                             <td>{String(a.productName ?? a.product_in_scope ?? a.productInScope ?? "—")}</td>
                             <td>
                               {reportMeta?.implementationRiskScore != null
-                                ? `${invertScore100(reportMeta.implementationRiskScore)}/100`
+                                ? `${Math.round(reportMeta.implementationRiskScore)}/100`
                                 : "—"}
                             </td>
                             <td>

@@ -58,6 +58,9 @@ export interface Top5RisksWithMitigations {
   mitigationsByRiskId: Record<string, MitigationRow[]>;
   /** Risks always come from the local AI-Q risk_mappings catalog. */
   source?: "local_db";
+  /** Applicable scoring domains aggregated from AIRI risk records. */
+  applicableDomains?: RiApplicableDomain[];
+  applicableDomainsSource?: "risk_intellect";
   /**
    * Extra: when Controls AI Risk API key is set, intent is calculated from
    * AI Risk Intellect (matched to local top risks) and used in type 2/3 scores.
@@ -68,6 +71,11 @@ export interface Top5RisksWithMitigations {
    * Used by VTS product-risk (L × I). Fallback is hardcoded 3/3 when RI has no scores.
    */
   liSeverityScore?: RiLiSeverityScore;
+}
+
+export interface RiApplicableDomain {
+  domain: string;
+  riskCount: number;
 }
 
 /** Per-risk L/I/S arrays from Risk Intellect for VTS formula input. */
@@ -86,6 +94,25 @@ export interface RiLiSeverityScore {
 const DEFAULT_LIKELIHOOD_SCORES = [3, 3, 3];
 const DEFAULT_IMPACT_SCORES = [3, 3, 3];
 const DEFAULT_SEVERITY_SCORES = [9, 9, 9];
+
+/** Build the risk-count-weighted domain input expected by the VTS formula. */
+export function buildApplicableDomainsFromRiRisks(
+  risks: RiRiskExportDto[],
+): RiApplicableDomain[] {
+  const byDomain = new Map<string, RiApplicableDomain>();
+  for (const risk of risks) {
+    const domain = String(risk.domain ?? "").trim();
+    if (!domain) continue;
+    const key = domain.toLowerCase();
+    const current = byDomain.get(key);
+    if (current) {
+      current.riskCount += 1;
+    } else {
+      byDomain.set(key, { domain, riskCount: 1 });
+    }
+  }
+  return [...byDomain.values()];
+}
 
 function toStr(v: unknown): string {
   if (v == null) return "";
@@ -285,17 +312,36 @@ export function applyLiSeverityScoreToPayload(
   };
 }
 
+/** Inject AIRI-derived applicable domains used by the VTS domain weighting. */
+export function applyApplicableDomainsToPayload(
+  payload: Record<string, unknown>,
+  domains: RiApplicableDomain[] | undefined,
+  source: Top5RisksWithMitigations["applicableDomainsSource"],
+): Record<string, unknown> {
+  if (source !== "risk_intellect" || !domains?.length) return payload;
+  return {
+    ...payload,
+    applicableDomains: domains,
+    applicable_domains_source: source,
+    applicableDomainsSource: source,
+  };
+}
+
 /**
- * Apply all Risk Intellect enrichments (intent + L/I/S) onto a scoring payload.
+ * Apply all Risk Intellect enrichments (intent + L/I/S + domains) to a scoring payload.
  */
 export function applyRiEnrichmentToPayload(
   payload: Record<string, unknown>,
   top5: Top5RisksWithMitigations | null | undefined,
 ): Record<string, unknown> {
   if (!top5) return payload;
-  return applyLiSeverityScoreToPayload(
-    applyIntentScoreToPayload(payload, top5.intentScore),
-    top5.liSeverityScore,
+  return applyApplicableDomainsToPayload(
+    applyLiSeverityScoreToPayload(
+      applyIntentScoreToPayload(payload, top5.intentScore),
+      top5.liSeverityScore,
+    ),
+    top5.applicableDomains,
+    top5.applicableDomainsSource,
   );
 }
 
@@ -424,8 +470,8 @@ function extractMappingIds(payload: Record<string, unknown>): number[] {
 
 /**
  * After local top-5 risks are selected, call AI Risk Intellect (when API key is set)
- * to resolve Intentional/Unintentional intent and likelihood / impact / severity
- * for those risks. Intent is used by type 2/3; L/I/S is used by VTS product risk.
+ * to resolve domains, Intentional/Unintentional intent, and likelihood / impact /
+ * severity for those risks. Domains and L/I/S are used by VTS product risk.
  */
 async function enrichIntentFromRiskIntellect(
   top5: Top5RisksWithMitigations,
@@ -490,11 +536,13 @@ async function enrichIntentFromRiskIntellect(
 
     let matchedWithRiIntent = 0;
     let matchedWithRiScores = 0;
+    const matchedRiRisks = new Set<RiRiskExportDto>();
     for (const row of top5.top5Risks) {
       const rid = (row.risk_id ?? "").trim();
       if (!rid) continue;
       const match = byCatalogId.get(rid);
       if (!match) continue;
+      matchedRiRisks.add(match);
       if (match.intent) {
         row.intent = match.intent;
         matchedWithRiIntent += 1;
@@ -535,6 +583,12 @@ async function enrichIntentFromRiskIntellect(
         ? "risk_intellect"
         : "default",
     );
+    const matchedDomainRows = [...matchedRiRisks].filter((risk) =>
+      Boolean(risk.domain.trim()),
+    );
+    const applicableDomains = buildApplicableDomainsFromRiRisks(
+      matchedDomainRows.length > 0 ? matchedDomainRows : riResult.risks,
+    );
 
     console.log("[type-01 VTS] likelihood/impact from AI Risk Intellect", {
       formula: "L = avg(likelihoodScores 1–5), I = avg(impactScores 1–5), S = avg(severity or L×I)",
@@ -556,12 +610,19 @@ async function enrichIntentFromRiskIntellect(
       },
       source: liSeverityScore.source,
       label: liSeverityScore.label,
+      applicableDomains,
     });
 
     return {
       ...top5,
       intentScore: computeIntentScore(intentsForScore, source),
       liSeverityScore,
+      ...(applicableDomains.length > 0
+        ? {
+            applicableDomains,
+            applicableDomainsSource: "risk_intellect" as const,
+          }
+        : {}),
     };
   } catch (err) {
     console.error("enrichIntentFromRiskIntellect failed; using local/default intent:", err);
@@ -620,9 +681,9 @@ export function formatTop5RisksForPrompt(top5: Top5RisksWithMitigations | null):
 
 /**
  * 1. Fetch top risks from the AI-Q local risk_mappings DB (primary).
- * 2. Extra: when AI Risk Intellect API key is set, calculate intent and
- *    likelihood / impact / severity from RI for those risks.
- * 3. Intent score is used for type 2/3 (SRS / IRS); L/I/S is used for type 1 VTS.
+ * 2. Extra: when AI Risk Intellect API key is set, calculate domains, intent,
+ *    and likelihood / impact / severity from RI for those risks.
+ * 3. Intent is used for type 2/3; domains and L/I/S are used for type 1 VTS.
  */
 export async function getTop5RisksWithMitigations(
   payload: Record<string, unknown>,

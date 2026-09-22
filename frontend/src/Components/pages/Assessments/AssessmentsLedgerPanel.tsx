@@ -44,7 +44,7 @@ export type LedgerRowVM = {
   leadName: string;
   /** Stored formula score used for letter grade (type 2 SRS / type 3 IRS). */
   riskScore: number | null;
-  /** Score shown in the ledger: type 2 readiness, type 3 implementation risk. */
+  /** Score shown in the ledger: type 2 sales confidence, type 3 implementation readiness. */
   displayScore: number | null;
   /** Fallback label when no numeric score (Pending / Generate report / —). */
   riskDisplay: string;
@@ -90,7 +90,7 @@ export type AssessmentsLedgerPanelProps = {
   showNewAssessment?: boolean;
   onNewAssessment?: () => void;
   newAssessmentLabel?: string;
-  /** Column header for the score badge (vendor: Readiness, buyer: Implementation risk). */
+  /** Column header for the score badge (vendor: Readiness, buyer: Implementation readiness). */
   scoreColumnLabel?: string;
 };
 
@@ -138,11 +138,14 @@ function RiskScoreGradeBadge({
     );
   }
   const letter = normalizeDisplayLetterGrade(
-    gradeFromOverallRiskScore(riskScore ?? shown, riskGradeProfile),
+    gradeFromOverallRiskScore(
+      riskGradeProfile === "buyer" ? shown : (riskScore ?? shown),
+      riskGradeProfile,
+    ),
   );
   const gradeClass = riskGradeBadgeClass(letter);
   const scoreText = String(Math.round(shown));
-  const titlePrefix = riskGradeProfile === "buyer" ? "Implementation risk" : "Readiness";
+  const titlePrefix = riskGradeProfile === "buyer" ? "Implementation readiness" : "Readiness";
   return (
     <span
       className={`vd_list_grade_badge ${gradeClass}`}

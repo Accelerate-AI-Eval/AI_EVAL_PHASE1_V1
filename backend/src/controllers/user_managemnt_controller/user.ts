@@ -18,15 +18,7 @@ import {
   INVITE_MAIL_PLATFORM_NAME,
 } from "../../email/inviteUserEmailHtml.js";
 
-/** Capitalize first letter of each word (e.g. "system admin" -> "System Admin"). */
-function capitalizeFirstLetter(str: string): string {
-  if (!str || typeof str !== "string") return str;
-  return str
-    .trim()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
+import { capitalizeWords as capitalizeFirstLetter } from "../../utils/capitalizeWords.js";
 
 export const inviteUser = async (req: Request, res: Response) => {
   const BASE_URL = process.env.BASE_URL;

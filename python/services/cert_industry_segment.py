@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-CERTIFICATIONS_SCORE_CAP = 25
-
 CERT_FRAMEWORK_KEYS = {
     "SOC2_T2": "SOC 2 Type 2",
     "SOC2_T1": "SOC 2 Type 1",
@@ -22,6 +20,33 @@ CERT_FRAMEWORK_KEYS = {
 }
 
 _K = CERT_FRAMEWORK_KEYS
+
+# Highest award each framework can earn. Used as the attainable denominator so a
+# vendor is measured against the certifications that are relevant to the buyer,
+# rather than against a flat cap that discards anything beyond it.
+CERT_FRAMEWORK_MAX_POINTS: dict[str, float] = {
+    _K["SOC2_T2"]: 15,
+    _K["SOC2_T1"]: 8,
+    _K["HIPAA_HITRUST"]: 15,
+    _K["HIPAA_BAA"]: 10,
+    _K["ISO27001"]: 10,
+    _K["ISO42001"]: 8,
+    _K["NIST_AI_RMF"]: 5,
+    _K["NIST_CSF"]: 5,
+    _K["NIST_800_53"]: 10,
+    _K["NIST_800_171"]: 10,
+    _K["CMMC"]: 12,
+    _K["PCI"]: 10,
+    _K["DORA"]: 8,
+    _K["GDPR"]: 8,
+}
+
+# Tiers of the same certification. Only the highest tier is attainable, so the
+# denominator does not double-count SOC 2 Type 1 alongside SOC 2 Type 2.
+CERT_MUTUALLY_EXCLUSIVE_TIERS: list[tuple[str, ...]] = [
+    (_K["SOC2_T2"], _K["SOC2_T1"]),
+    (_K["HIPAA_HITRUST"], _K["HIPAA_BAA"]),
+]
 
 CERT_RELEVANCE_FRAMEWORKS_BY_SEGMENT: dict[str, set[str]] = {
     "federal government (us)": {

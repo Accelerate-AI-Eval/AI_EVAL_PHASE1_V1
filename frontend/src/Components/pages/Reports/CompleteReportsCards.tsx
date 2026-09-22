@@ -126,7 +126,7 @@ function CompleteReportsCards({
       if (report.source === "buyer_vendor_risk") {
         const irs = reportContextScoreFromListPayload(row);
         if (irs == null) return null;
-        return isVendorPortalSession() ? irs : Math.round(Math.max(0, Math.min(100, 100 - irs)));
+        return irs;
       }
       if (isVendorPortalSession() && implementationRiskScoreFromReportPayload(row) != null) {
         return implementationRiskScoreFromReportPayload(row);
@@ -143,12 +143,7 @@ function CompleteReportsCards({
 
       if (report.source === "buyer_vendor_risk") {
         const irs = reportContextScoreFromListPayload(report);
-        const report_context_score =
-          irs == null
-            ? null
-            : isVendorPortalSession()
-              ? irs
-              : Math.round(Math.max(0, Math.min(100, 100 - irs)));
+        const report_context_score = irs == null ? null : irs;
         setScoreByReportId((prev) => ({ ...prev, [report.id]: report_context_score }));
         onViewReport(report);
         return;

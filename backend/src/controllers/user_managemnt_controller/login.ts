@@ -42,8 +42,23 @@ const userLogin = async (req: Request, res: Response) => {
     }
     const user_table = row.user;
 
-    if (!user_table.user_password || user_table.user_password.trim() === "") {
-      return res.status(401).json({ message: "User not found" });
+    const accountStatus = String(user_table.account_status ?? "").trim().toLowerCase();
+    const signupCompleted = String(user_table.user_signup_completed ?? "").trim().toLowerCase();
+    const notActivatedResponse = {
+      code: "invited",
+      message:
+        "This account hasn't been activated yet — please check your email for the invitation",
+    };
+    const storedPasswordHash = user_table.user_password;
+    if (storedPasswordHash == null || storedPasswordHash.trim() === "") {
+      return res.status(401).json(notActivatedResponse);
+    }
+    if (
+      accountStatus === "invited" ||
+      accountStatus === "expired" ||
+      signupCompleted !== "true"
+    ) {
+      return res.status(401).json(notActivatedResponse);
     }
 
     const user = await db
@@ -61,25 +76,14 @@ const userLogin = async (req: Request, res: Response) => {
     }
 
     const userStatus = String(usertable.userStatus ?? "").trim().toLowerCase();
-    const signupCompleted = String(usertable.user_signup_completed ?? "").trim().toLowerCase();
-    const onboardingCompleted = String(usertable.user_onboarding_completed ?? "").trim().toLowerCase();
-
-    if (
-      userStatus !== "active" ||
-      signupCompleted !== "true" ||
-      onboardingCompleted !== "true"
-    ) {
-      return res.status(401).json({ message: "User not found" });
+    if (userStatus !== "active") {
+      return res.status(401).json({
+        code: "inactive",
+        message: "This account is inactive. Contact your administrator.",
+      });
     }
 
-    if (!usertable.user_password || usertable.user_password.trim() === "") {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    const passwordMatch = await bcrypt.compare(
-      userPassword,
-      user_table.user_password,
-    );
+    const passwordMatch = await bcrypt.compare(userPassword, storedPasswordHash);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Password is mismatched" });
     }

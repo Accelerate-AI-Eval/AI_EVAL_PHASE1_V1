@@ -1,7 +1,7 @@
 /**
  * Letter grade from a risk-like score (0-100, higher = worse).
  * - `vendor`: mirrors backend `interpretSalesRiskScore` via dealProbability = 100 - risk.
- * - `buyer`: mirrors backend `buyerImplementationRiskScore` readiness grade via IRS = 100 - risk.
+ * - `buyer`: mirrors backend `buyerImplementationRiskScore` / Python `_interpret` on stored IRS (higher = more ready).
  */
 export type CompleteReportLetterGrade = "A" | "B" | "C" | "D" | "F";
 export type CompleteReportGradingProfile = "vendor" | "buyer";
@@ -19,10 +19,9 @@ export function gradeFromOverallRiskScore(
 ): CompleteReportLetterGrade {
   const s = Math.max(0, Math.min(100, Math.round(Number(score))));
   if (profile === "buyer") {
-    const irs = Math.max(0, Math.min(100, Math.round(100 - s)));
-    if (irs >= 76) return "A";
-    if (irs >= 51) return "B";
-    if (irs >= 26) return "C";
+    if (s >= 76) return "A";
+    if (s >= 51) return "B";
+    if (s >= 26) return "C";
     return "D";
   }
   const dealProbability = Math.max(0, Math.min(100, Math.round(100 - s)));

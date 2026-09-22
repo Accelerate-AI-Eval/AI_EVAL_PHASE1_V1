@@ -308,10 +308,14 @@ function mapRowToLedgerVM(
   }
   const leadName = getCompletedByDisplay(row) || "—";
   const storedScore = getReportRiskScoreFromRow(row);
-  // Type 2 stores sales risk → show readiness (100 − SRS).
-  // Type 3 stores IRS readiness → show implementation risk (100 − IRS).
+  // Type 2 stores sales risk → show sales confidence / readiness (100 − SRS).
+  // Type 3 stores IRS as implementation readiness (higher = better) — show as stored.
   const reportScore =
-    storedScore == null ? null : Math.round(Math.max(0, Math.min(100, 100 - storedScore)));
+    storedScore == null
+      ? null
+      : isBuyerRow
+        ? storedScore
+        : Math.round(Math.max(0, Math.min(100, 100 - storedScore)));
   const hasReport = storedScore != null;
   const riskDisplay =
     reportScore != null
@@ -1407,7 +1411,7 @@ const Assessments = () => {
                 showNewAssessment={!isAssessmentViewOnly}
                 onNewAssessment={handleNewAssessment}
                 newAssessmentLabel="Assessment"
-                scoreColumnLabel="Implementation risk"
+                scoreColumnLabel="Implementation readiness"
               />
             );
           })()}
