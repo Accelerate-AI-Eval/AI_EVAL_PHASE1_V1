@@ -76,6 +76,8 @@ export type BuyerVendorRiskReport = {
   implementationRiskDecision?: string;
   implementationRiskRecommendedAction?: string;
   implementationRiskBreakdown?: Record<string, unknown>;
+  implementationRiskDetail?: Record<string, unknown>;
+  irsScoringVersion?: string;
   /** Human-readable readiness profile from IRS formula. */
   readinessProfile?: string;
   implementationRiskSource?: Record<string, unknown>;
@@ -1030,6 +1032,8 @@ export async function generateBuyerVendorRiskReport(
         implementationRiskDecision: implementationRisk.decision,
         implementationRiskRecommendedAction: implementationRisk.recommendedAction,
         implementationRiskBreakdown: implementationRisk.breakdown,
+        implementationRiskDetail: implementationRisk.detail,
+        irsScoringVersion: implementationRisk.scoring_version,
         readinessProfile: implementationRisk.readiness_profile,
         implementationRiskSource: implementationRisk.source,
         vendorName: vendorName || "Vendor",
@@ -1057,6 +1061,8 @@ export async function generateBuyerVendorRiskReport(
     implementationRiskDecision: implementationRisk.decision,
     implementationRiskRecommendedAction: implementationRisk.recommendedAction,
     implementationRiskBreakdown: implementationRisk.breakdown,
+    implementationRiskDetail: implementationRisk.detail,
+    irsScoringVersion: implementationRisk.scoring_version,
     readinessProfile: implementationRisk.readiness_profile,
     implementationRiskSource: implementationRisk.source,
     vendorName: vendorName || "Vendor",

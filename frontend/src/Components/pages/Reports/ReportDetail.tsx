@@ -33,6 +33,7 @@ import {
   AdminLlmModelLabel,
   resolveStoredLlmModelId,
 } from "../../UI/AdminLlmModelInfo"
+import { formatScore2, formatScore2OutOf100 } from "../../../utils/scoreFormat"
 import { mixSrgbHex } from "../../../utils/mixSrgbHex"
 import { riskScopeFromRow, type ReportRiskScope } from "../../../utils/reportRiskScope"
 import {
@@ -752,37 +753,47 @@ function scoreDisplayForRow(r: DbRisk, fallbackScore?: number): string {
     o.reportContextScore,
   ]
   for (const n of candidates) {
-    if (typeof n === "number" && !Number.isNaN(n)) return `${Math.round(n)}/100`
+    if (typeof n === "number" && !Number.isNaN(n)) return formatScore2OutOf100(n)
     if (typeof n === "string") {
       const t = n.trim()
       if (!t) continue
       if (/^-?\d/.test(t)) {
         const clean = t.replace(/%$/, "")
-        return clean.includes("/") ? clean : `${clean}/100`
+        if (clean.includes("/")) {
+          const [num] = clean.split("/")
+          const parsed = Number(num)
+          return Number.isFinite(parsed) ? formatScore2OutOf100(parsed) : clean
+        }
+        return formatScore2OutOf100(Number(clean))
       }
       // Handle decorated strings like "Risk score: 10/100" or "Score 10%".
       const embedded = t.match(/(-?\d+(?:\.\d+)?)\s*(?:\/\s*100|%|(?:\b|$))/i)
       if (embedded?.[1]) {
         const parsed = Number(embedded[1])
-        if (!Number.isNaN(parsed)) return `${Math.round(parsed)}/100`
+        if (!Number.isNaN(parsed)) return formatScore2OutOf100(parsed)
       }
     }
     if (n && typeof n === "object") {
       const obj = n as Record<string, unknown>
       const nested = [obj.score, obj.risk_score, obj.riskScore, obj.value]
       for (const v of nested) {
-        if (typeof v === "number" && !Number.isNaN(v)) return `${Math.round(v)}/100`
+        if (typeof v === "number" && !Number.isNaN(v)) return formatScore2OutOf100(v)
         if (typeof v === "string" && /^-?\d/.test(v.trim())) {
           const clean = v.trim().replace(/%$/, "")
-          return clean.includes("/") ? clean : `${clean}/100`
+          if (clean.includes("/")) {
+            const [num] = clean.split("/")
+            const parsed = Number(num)
+            return Number.isFinite(parsed) ? formatScore2OutOf100(parsed) : clean
+          }
+          return formatScore2OutOf100(Number(clean))
         }
       }
     }
   }
   const derived = derivedScoreFromResidualRisk(residualRiskForRow(r))
-  if (typeof derived === "number" && !Number.isNaN(derived)) return `${derived}/100`
+  if (typeof derived === "number" && !Number.isNaN(derived)) return formatScore2OutOf100(derived)
   if (typeof fallbackScore === "number" && !Number.isNaN(fallbackScore)) {
-    return `${Math.round(fallbackScore)}/100`
+    return formatScore2OutOf100(fallbackScore)
   }
   return "—"
 }
@@ -795,18 +806,18 @@ function scorePercentValueFromDisplay(display: string): number | null {
   if (!m?.[0]) return null
   const n = Number(m[0])
   if (Number.isNaN(n)) return null
-  return Math.max(0, Math.min(100, Math.round(n)))
+  return Math.max(0, Math.min(100, n))
 }
 
 function scoreFractionLabelFromDisplay(display: string): string {
   const v = scorePercentValueFromDisplay(display)
   if (v == null) return "—"
-  return `${v}/100`
+  return formatScore2OutOf100(v)
 }
 
 function renderRiskScoreCircle(
   display: string,
-  options?: { color?: string; labelFormat?: "percent" | "fraction"; className?: string },
+  options?: { color?: string; labelFormat?: "score" | "fraction"; className?: string },
 ): React.ReactNode {
   const value = scorePercentValueFromDisplay(display)
   if (value == null) return "—"
@@ -817,7 +828,7 @@ function renderRiskScoreCircle(
     "--score-color": color,
   } as React.CSSProperties
   const label =
-    options?.labelFormat === "fraction" ? scoreFractionLabelFromDisplay(display) : `${value}%`
+    options?.labelFormat === "fraction" ? scoreFractionLabelFromDisplay(display) : formatScore2(value)
   /* SVG ring (not conic-gradient) so html2canvas / PDF keeps the gauge look. */
   const size = 100
   const stroke = 10
@@ -1491,9 +1502,8 @@ function ReportDetail() {
                       </span>
                     </span>
                     <span className="report_context_score">
-                      {renderRiskScoreCircle(`${alignmentScoreDisplay}/100`, {
+                      {renderRiskScoreCircle(`${formatScore2(alignmentScoreDisplay)}/100`, {
                         color: contextMeterColor,
-                        labelFormat: "percent",
                         className: "report_context_score_circle",
                       })}
                     </span>
@@ -1513,7 +1523,7 @@ function ReportDetail() {
             {customerRiskReportApprovalHeading(overallScore, overallLevel)}
           </h2>
           <p className="report_approval_summary_sub">
-            Overall alignment score: {alignmentScoreDisplay}
+            Overall alignment score: {formatScore2(alignmentScoreDisplay)}
             /100 (higher indicates stronger alignment / lower residual risk)
           </p>
         </section>
@@ -1772,7 +1782,7 @@ function ReportDetail() {
               </span>
               <span className="report_overall_risk_score_wrap">
                 {renderRiskScoreCircle(
-                  `${usePortalStyleUi ? alignmentScoreDisplay : overallScore}/100`,
+                  `${formatScore2(usePortalStyleUi ? alignmentScoreDisplay : overallScore)}/100`,
                 )}
               </span>
             </span>

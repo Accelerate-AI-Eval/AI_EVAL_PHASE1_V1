@@ -38,6 +38,12 @@ function toIsoTimestamp(value: unknown): string | null {
   return null;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value != null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 /** Stored score time — never wall-clock of the explainability request. */
 function resolveScoreCalculatedAt(
   report: Record<string, unknown> | null | undefined,
@@ -314,6 +320,15 @@ export async function getIrsScoreTrace(req: Request, res: Response): Promise<voi
       vendorTrustScore:            Number(rawBreakdown.vendorTrustScore            ?? 50),
       intentMultiplier:            Number(rawBreakdown.intentMultiplier ?? 1) || 1,
     };
+    let traceBreakdown = storedBreakdown;
+    let scoringDetail =
+      asRecord(reportRaw.implementationRiskDetail) ??
+      asRecord(reportRaw.irsScoringDetail) ??
+      null;
+    let traceScoringVersion =
+      typeof reportRaw.irsScoringVersion === "string" && reportRaw.irsScoringVersion.trim()
+        ? reportRaw.irsScoringVersion.trim()
+        : null;
 
     // Reconstruct the buyer payload with camelCase keys (mirrors buildBuyerContextForReport)
     const buyerPayload = await enrichBuyerCotsScoringPayload(
@@ -372,58 +387,53 @@ export async function getIrsScoreTrace(req: Request, res: Response): Promise<voi
       row.assessment_updated_at,
     );
 
-    let probe = buildIrsScoreTrace({
+    let usedLiveScoringDetail = false;
+    if (!scoringDetail) {
+      try {
+        const attestation = await findAttestationForBuyerVendorProduct(vendorName, productName);
+        const fresh = await scoreCotsBuyerWithPython({
+          buyerPayload,
+          attestationRow: attestation,
+          vendorName,
+          productName,
+          timeoutMs: 15_000,
+        });
+        const intentMultiplier = Number(fresh.breakdown.intentMultiplier ?? 1);
+        traceBreakdown = {
+          vendorRisk: Number(fresh.breakdown.vendorRisk ?? 0),
+          organizationalReadinessGap: Number(fresh.breakdown.organizationalReadinessGap ?? 0),
+          integrationRisk: Number(fresh.breakdown.integrationRisk ?? 0),
+          vendorTrustScore: Number(fresh.breakdown.vendorTrustScore ?? 50),
+          intentMultiplier: Number.isFinite(intentMultiplier) ? intentMultiplier : 1,
+        };
+        usedAttestation = Boolean(fresh.source.usedAttestation);
+        scoringDetail = fresh.detail ?? null;
+        traceScoringVersion = fresh.scoring_version ?? traceScoringVersion;
+        usedLiveScoringDetail = scoringDetail != null;
+      } catch (freshErr) {
+        console.warn(
+          "getIrsScoreTrace: live Python IRS detail unavailable; using legacy trace fallback:",
+          freshErr instanceof Error ? freshErr.message : freshErr,
+        );
+      }
+    }
+
+    const probe = buildIrsScoreTrace({
       buyerPayload,
-      storedBreakdown,
+      storedBreakdown: traceBreakdown,
       storedScore,
       usedAttestation,
       vendorName,
       productName,
       generatedAt: calculatedAt,
+      scoringDetail,
+      scoringVersion: traceScoringVersion,
     });
-    const needsRefresh = probe.warnings.some(
-      (w) =>
-        w.includes("reconciliation mismatch") ||
-        w.includes("canonical formula from breakdown"),
-    );
-
-    let irsRefreshed = false;
-    if (needsRefresh) {
-      const refreshed = await refreshStaleIrsOnReport({
-        assessmentId,
-        report: reportRaw,
-        buyerPayload,
-        vendorName,
-        productName,
-        storedBreakdown,
-        storedScore,
-      });
-      storedBreakdown = refreshed.storedBreakdown;
-      storedScore = refreshed.storedScore;
-      usedAttestation = refreshed.usedAttestation;
-      irsRefreshed = refreshed.refreshed;
-      if (irsRefreshed) {
-        calculatedAt = resolveScoreCalculatedAt(refreshed.report) ?? new Date().toISOString();
-      }
-      probe = buildIrsScoreTrace({
-        buyerPayload,
-        storedBreakdown,
-        storedScore,
-        usedAttestation,
-        vendorName,
-        productName,
-        generatedAt: calculatedAt,
-      });
-      if (irsRefreshed) {
-        probe.warnings = [
-          `Stored readiness score was updated to ${storedScore} so buyer report and Explainability use the same IRS formula.`,
-          ...probe.warnings.filter(
-            (w) =>
-              !w.includes("reconciliation mismatch") &&
-              !w.includes("canonical formula from breakdown"),
-          ),
-        ];
-      }
+    if (usedLiveScoringDetail) {
+      probe.warnings = [
+        "Explainability used live Python irs-2.x scoring detail because the stored report did not include implementationRiskDetail. The saved report was not modified.",
+        ...probe.warnings,
+      ];
     }
 
     const irsFactorExplanations = buildIrsFactorExplanations(probe);
@@ -431,7 +441,7 @@ export async function getIrsScoreTrace(req: Request, res: Response): Promise<voi
 
     res.status(200).json({
       success: true,
-      data: { ...probe, irsFactorExplanations, irsRefreshed, llmModelId },
+      data: { ...probe, irsFactorExplanations, irsRefreshed: false, llmModelId },
     });
   } catch (e) {
     console.error("getIrsScoreTrace:", e);

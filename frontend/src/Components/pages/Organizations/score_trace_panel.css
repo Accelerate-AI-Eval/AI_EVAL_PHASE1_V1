@@ -196,8 +196,8 @@
 }
 
 .stp_score_circle {
-  width: 78px;
-  height: 78px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -212,7 +212,7 @@
 .stp_score_circle.stp_score_poor   { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
 
 .stp_score_number {
-  font-size: 1.7rem;
+  font-size: 1.2rem;
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -1117,7 +1117,7 @@
 
 .stp_waterfall_row {
   display: grid;
-  grid-template-columns: 11rem 1fr 3.5rem;
+  grid-template-columns: 11rem 1fr 4.75rem;
   align-items: center;
   gap: 0.625rem;
   padding: 0.5rem 0.875rem;

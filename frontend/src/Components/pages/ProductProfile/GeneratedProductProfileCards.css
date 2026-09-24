@@ -86,8 +86,8 @@
 
 .generated_profile_trust_ring {
   --trust-score: 0;
-  width: 112px;
-  height: 112px;
+  width: 124px;
+  height: 124px;
   border-radius: 999px;
   background: conic-gradient(
     var(--nav-active, #225bff) calc(var(--trust-score) * 1%),
@@ -100,8 +100,8 @@
 }
 
 .generated_profile_trust_ring_inner {
-  width: 94px;
-  height: 94px;
+  width: 106px;
+  height: 106px;
   border-radius: 999px;
   background: var(--surface-color);
   border: 1px solid var(--border-subtle, #e2e6ec);
@@ -113,9 +113,15 @@
 }
 
 .generated_profile_trust_ring_value {
-  font-size: 2.1rem;
+  display: block;
+  width: 100%;
+  padding: 0 0.35rem;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 1.55rem;
   font-weight: 700;
-  letter-spacing: -0.03rem;
+  letter-spacing: -0.04rem;
   color: var(--text-primary, #1a1f36);
   font-variant-numeric: tabular-nums;
 }
@@ -457,6 +463,107 @@
   font-weight: 500;
 }
 
+.generated_profile_subprocessors {
+  gap: 0.5rem;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table_wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--app-border-color, var(--border-subtle, #e2dcd6));
+  background: var(--surface-color, #fff);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.8125rem;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table th,
+.generated_profile_subprocessors .preview_subprocessor_table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--app-border-color, var(--border-subtle, #e2dcd6));
+  overflow-wrap: anywhere;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table th {
+  background: var(--surface-muted, #f8fafc);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table tbody tr:last-child th,
+.generated_profile_subprocessors .preview_subprocessor_table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--app-bg-color, #f8f4ed) 35%, var(--surface-color, #fff));
+}
+
+.generated_profile_subprocessors .preview_subprocessor_col_name {
+  width: 22%;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_table th.preview_subprocessor_col_name {
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_col_purpose {
+  width: 32%;
+  color: var(--text-secondary, #3c4257);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_col_region {
+  width: 16%;
+  color: var(--text-secondary, #3c4257);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_col_source {
+  width: 30%;
+  color: var(--text-secondary, #3c4257);
+}
+
+.generated_profile_subprocessors .preview_subprocessor_link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  color: var(--nav-active, var(--main-dark-color, #225bff));
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_link span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_link:hover {
+  text-decoration: underline;
+}
+
+.generated_profile_subprocessors .preview_subprocessor_link svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .generated_profile_subprocessors .preview_subprocessor_table {
+    table-layout: auto;
+    min-width: 36rem;
+  }
+}
+
 .generated_profile_product_info_use_case_v {
   margin: 0;
   font-size: 0.9rem;
@@ -706,5 +813,34 @@ html[data-theme="dark"] .generated_profile_trust_cat_value {
 html[data-theme="dark"] .generated_profile_glance_chip {
   background: var(--surface-muted, #221f2e);
   border-color: var(--border-subtle, #403c52);
+  color: var(--text-secondary, #c8c4d6);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_table_wrap {
+  background: var(--surface-elevated, #1e2433);
+  border-color: var(--border-subtle, #334155);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_table th,
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_table td {
+  border-bottom-color: var(--border-subtle, #334155);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_table th {
+  background: var(--surface-muted, #221f2e);
+  color: var(--text-muted, #9a95ab);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_table tbody tr:nth-child(even) td {
+  background: var(--surface-muted, #221f2e);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_col_name {
+  color: var(--text-primary, #ebe9f3);
+}
+
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_col_purpose,
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_col_region,
+html[data-theme="dark"] .generated_profile_subprocessors .preview_subprocessor_col_source {
   color: var(--text-secondary, #c8c4d6);
 }

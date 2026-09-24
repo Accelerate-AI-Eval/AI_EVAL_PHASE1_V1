@@ -431,7 +431,10 @@
 
 .product_profile_trust_score {
   color: #16a34a;
-  font-size: 1.25rem;
+  font-size: 1.12rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: -0.02rem;
 }
 
 .product_profile_verified {
@@ -922,7 +925,7 @@
   align-items: flex-end;
   text-align: right;
   flex-shrink: 0;
-  min-width: 5rem;
+  min-width: 6.75rem;
 }
 
 .product_profile_card_trust_label_top {
@@ -937,11 +940,14 @@
 
 .product_profile_card_trust_value_top {
   display: block;
-  font-size: 1.45rem;
+  width: 100%;
+  font-size: 1.2rem;
   font-weight: 800;
   line-height: 1.15;
   color: #16a34a;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02rem;
+  white-space: nowrap;
 }
 
 .product_profile_card_trust_value_top_muted {

@@ -958,9 +958,227 @@ export type IrsTraceInput = {
   generatedAt?: string | Date | null;
   /** Linked vendor attestation, used when rollback/monitoring/testing live there. */
   attestationRow?: Record<string, unknown> | null;
+  /** Python irs-2.x scoring detail. Preferred source for explainability. */
+  scoringDetail?: Record<string, unknown> | null;
+  /** Python scoring version for the stored/live IRS calculation. */
+  scoringVersion?: string | null;
 };
 
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v != null && typeof v === "object" && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : null;
+}
+
+function finiteNumber(v: unknown): number | null {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function componentName(raw: string): string {
+  return raw
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function pythonSourceForCategory(category: string): ScoreTraceComponent["sourceType"] {
+  return category === "VendorRisk" ? "vendor_attestation" : "assessment_answer";
+}
+
+function pythonSourceForComponent(
+  category: string,
+  row: Record<string, unknown>,
+): ScoreTraceComponent["sourceType"] {
+  if (category === "VendorRisk" && row.default_disclosed === true) return "system_default";
+  return pythonSourceForCategory(category);
+}
+
+function pythonFieldForComponent(category: string, name: string): string {
+  const map: Record<string, string> = {
+    base: "vendorTrustScore, riskAppetite",
+    maturity_gap: "vendorMaturity, buyerEmployeeCount, vendorEmployeeCount",
+    cert_gap: "regulatoryRequirements, vendorCertifications, vendorEvidenceReceived",
+    track_record: "airiRecords",
+    financial: "financialPosition, retentionRate, enterpriseCustomers",
+    ai_gov: "aiGovernanceMaturity, decisionStakes, humanReviewLevel",
+    data_gov: "dataGovernanceMaturity, dataSensitivity, trainingUseOfData",
+    skills: "aiSkillsAvailability, implementationCapacity, integrationSystems",
+    change_mgmt: "changeManagementCapability, usersInScope, outputExposure",
+    budget_realism: "budgetRange, vendorContractValueBand, deploymentModel",
+    technical: "integrationSystems, integrationAccessLevels",
+    use_case_gap: "useCaseTypes, vendorAiCapabilities",
+    deployment_fit: "deploymentModel, vendorHosting, dataSubjectJurisdictions",
+    lock_in: "dataExportCapability, contractsInPlace, contractNoticePeriod",
+    rollback: "rollbackCapability, unavailabilityImpact, pilotStatus",
+    scaling: "usersInScope, vendorDeploymentScale, pilotStatus",
+  };
+  if (category === "VendorRisk" && name === "base") return "vendorTrustScore";
+  return map[name] ?? name;
+}
+
+function addMissingEvidenceForPythonFactor(
+  out: string[],
+  label: string,
+  category: string,
+  riskValue: number,
+): void {
+  if (riskValue < 15) return;
+  const subject = `${label} is contributing ${round2(riskValue)} risk points`;
+  if (category === "VendorRisk") {
+    out.push(`${subject} — improve vendor trust evidence, certifications, maturity, or financial/track-record signals.`);
+  } else if (category === "OrgReadiness") {
+    out.push(`${subject} — strengthen buyer readiness inputs such as governance, skills, change management, or budget realism.`);
+  } else {
+    out.push(`${subject} — reduce implementation complexity through better deployment fit, rollback, integration, scaling, or lock-in controls.`);
+  }
+}
+
+function componentsFromPythonPillar(opts: {
+  pillar: Record<string, unknown> | null;
+  pillarWeight: number;
+  category: "VendorRisk" | "OrgReadiness" | "Integration";
+  labelPrefix: string;
+  sourceLabelPrefix?: string;
+  missingEvidence: string[];
+}): ScoreTraceComponent[] {
+  const { pillar, pillarWeight, category, labelPrefix, sourceLabelPrefix, missingEvidence } = opts;
+  const rows = Array.isArray(pillar?.components) ? pillar.components : [];
+  const redistributed = asRecord(pillar?.redistributed_weights) ?? {};
+  const components: ScoreTraceComponent[] = [];
+
+  for (const rowRaw of rows) {
+    const row = asRecord(rowRaw);
+    if (!row || row.included !== true) continue;
+    const name = String(row.name ?? "").trim();
+    if (!name) continue;
+    const value = finiteNumber(row.value);
+    if (value == null) continue;
+    const leafWeight = finiteNumber(redistributed[name]) ?? finiteNumber(row.weight) ?? 0;
+    if (leafWeight <= 0 || pillarWeight <= 0) continue;
+
+    const impact = -(value * leafWeight * pillarWeight);
+    const label = `${labelPrefix}: ${componentName(name)}`;
+    const reasonRaw = String(row.reason ?? "").trim();
+    const reason =
+      reasonRaw && reasonRaw !== "no_input"
+        ? `${label} risk = ${round2(value)}. ${reasonRaw}`
+        : `${label} risk = ${round2(value)}. Contribution uses Python irs-2.x redistributed leaf weight ${Math.round(leafWeight * 100)}% and pillar weight ${Math.round(pillarWeight * 100)}%.`;
+    components.push(
+      component(
+        label,
+        category,
+        impact,
+        reason,
+        pythonSourceForComponent(category, row),
+        `${sourceLabelPrefix ?? "field"}: ${pythonFieldForComponent(category, name)}`,
+      ),
+    );
+    addMissingEvidenceForPythonFactor(missingEvidence, label, category, value);
+  }
+
+  return components;
+}
+
+function buildIrsScoreTraceFromPythonDetail(input: IrsTraceInput): ScoreTrace | null {
+  const detail = asRecord(input.scoringDetail);
+  if (!detail) return null;
+  const finalFormula = asRecord(detail.final_formula);
+  if (!finalFormula) return null;
+  const weights = asRecord(finalFormula?.weights);
+  if (!weights) return null;
+
+  const vendorWeight = finiteNumber(weights.vendor_risk) ?? W_VENDOR;
+  const orgWeight = finiteNumber(weights.organizational_readiness) ?? W_ORG;
+  const integrationWeight = finiteNumber(weights.integration_risk) ?? W_INT;
+  const warnings: string[] = [];
+  const missingEvidence: string[] = [];
+  const storedBreakdown = input.storedBreakdown;
+  const storedScore = Math.round(Math.max(0, Math.min(100, input.storedScore)));
+
+  if (!input.usedAttestation) {
+    warnings.push(
+      `Vendor Trust Score defaulted to ${storedBreakdown.vendorTrustScore} — no linked attestation found for ${input.vendorName} / ${input.productName}. Actual readiness may differ significantly.`,
+    );
+    missingEvidence.push("Vendor attestation not linked — linking an attestation could significantly change the readiness score.");
+  }
+
+  const computedScore = finiteNumber(finalFormula.score);
+  if (computedScore != null && Math.abs(Math.round(computedScore) - storedScore) >= 1) {
+    warnings.push(
+      `Stored readiness score is ${storedScore}; Python irs-2.x detail computes ${Math.round(computedScore)} from the current scoring detail. The headline uses the stored score so it matches the assessment card.`,
+    );
+  }
+
+  const orgGap = finiteNumber(storedBreakdown.organizationalReadinessGap) ?? 0;
+  const integrationRisk = finiteNumber(storedBreakdown.integrationRisk) ?? 0;
+  const vendorTrustScore = finiteNumber(storedBreakdown.vendorTrustScore) ?? 50;
+
+  const components: ScoreTraceComponent[] = [
+    ...componentsFromPythonPillar({
+      pillar: asRecord(detail.vendor_risk),
+      pillarWeight: vendorWeight,
+      category: "VendorRisk",
+      labelPrefix: "Vendor Risk",
+      sourceLabelPrefix: "field",
+      missingEvidence,
+    }),
+    ...componentsFromPythonPillar({
+      pillar: asRecord(detail.organizational_readiness_gap),
+      pillarWeight: orgWeight,
+      category: "OrgReadiness",
+      labelPrefix: "Organizational Readiness",
+      sourceLabelPrefix: "field",
+      missingEvidence,
+    }),
+    ...componentsFromPythonPillar({
+      pillar: asRecord(detail.integration_risk),
+      pillarWeight: integrationWeight,
+      category: "Integration",
+      labelPrefix: "Integration Risk",
+      sourceLabelPrefix: "field",
+      missingEvidence,
+    }),
+  ];
+
+  const dispute = asRecord(asRecord(detail.vendor_risk)?.dispute);
+  const disputeValue = finiteNumber(dispute?.value) ?? 0;
+  if (disputeValue > 0 && vendorWeight > 0) {
+    components.push(
+      component(
+        "Vendor Risk: Disputed Evidence Adjustment",
+        "VendorRisk",
+        -(disputeValue * vendorWeight),
+        `Disputed evidence added ${round2(disputeValue)} vendor-risk points before the IRS calculation.`,
+        "assessment_answer",
+        "field: trainingUseOfDataStance, monitoringDataStance, auditLogsStance, dataExportStance",
+      ),
+    );
+  }
+
+  return {
+    scoreType: "buyer_implementation_risk",
+    finalScore: storedScore,
+    formula: "",
+    scoringVersion: input.scoringVersion?.trim() || "irs-2.0",
+    rawSubScores: {
+      vendorRisk: finiteNumber(storedBreakdown.vendorRisk) ?? 0,
+      orgReadinessGap: orgGap,
+      integrationRisk,
+      vendorTrustScore,
+    },
+    components,
+    warnings,
+    missingEvidence,
+    generatedAt: toIsoTimestamp(input.generatedAt) ?? new Date().toISOString(),
+    internalOnly: true,
+  };
+}
+
 export function buildIrsScoreTrace(input: IrsTraceInput): ScoreTrace {
+  const pythonTrace = buildIrsScoreTraceFromPythonDetail(input);
+  if (pythonTrace) return pythonTrace;
+
   const { buyerPayload, storedBreakdown, storedScore, usedAttestation, vendorName, productName } = input;
   const warnings: string[] = [];
   const missingEvidence: string[] = [];

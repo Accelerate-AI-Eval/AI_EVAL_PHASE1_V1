@@ -18,6 +18,7 @@ import type { AssessmentRow } from "./types";
 import { BASE_URL, formatGovDate, getAssessmentLabel } from "./utils";
 import { formatFrameworkMappingFrameworkForDisplay } from "../../../utils/frameworkMappingFrameworkDisplay";
 import { frameworkControlsDisplayLines } from "../../../utils/frameworkMappingControlsDisplay";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import DashboardTypewriterGreeting from "../../UI/DashboardTypewriterGreeting";
 import "./dashboard.css";
 import "../UserManagement/user_management.css";
@@ -910,7 +911,7 @@ const BuyerOverview = () => {
                             <td>{String(a.productName ?? a.product_in_scope ?? a.productInScope ?? "—")}</td>
                             <td>
                               {reportMeta?.implementationRiskScore != null
-                                ? `${Math.round(reportMeta.implementationRiskScore)}/100`
+                                ? `${formatScore2(reportMeta.implementationRiskScore)}/100`
                                 : "—"}
                             </td>
                             <td>

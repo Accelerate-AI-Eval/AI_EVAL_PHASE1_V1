@@ -1,6 +1,7 @@
 import { Banknote, CalendarClock, Gauge, Layers, ListTree } from "lucide-react";
 import { ShowMoreList } from "../../UI/ShowMoreText";
 import { ensureSpaceAfterColon } from "../../../utils/summarizeRiskPoints";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import "../Assessments/BuyerAssessment/buyer_vendor_risk_report.css";
 
 export type IraPayload = {
@@ -97,6 +98,11 @@ function RecBadge({ value }: { value: string }) {
   return <span className={`ira_rec_badge ${cls}`}>{v || "—"}</span>;
 }
 
+function formatIraScore(value: unknown): string {
+  const n = Number(value);
+  return Number.isFinite(n) ? formatScore2(n) : "—";
+}
+
 export default function ImplementationRiskAssessmentReportBody({ data }: { data: IraPayload }) {
   const sr = data.scoreAndRecommendation ?? {};
   const bd = data.breakdown ?? {};
@@ -113,7 +119,7 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
         </h2>
         <div className="ira_score_row">
           <span className="ira_score_label">Score</span>
-          <span className="ira_score_value">{sr.overallScore ?? "—"}</span>
+          <span className="ira_score_value">{formatIraScore(sr.overallScore)}</span>
           <span className="ira_score_out_of">/ 100</span>
           <span className="ira_score_label">Recommendation</span>
           <RecBadge value={sr.recommendation ?? ""} />
@@ -141,19 +147,19 @@ export default function ImplementationRiskAssessmentReportBody({ data }: { data:
           <div className="bvr_reco_priority_body" role="row">
             <div className="bvr_reco_priority_col" role="cell">
               <div className="bvr_reco_priority_item">
-                <p className="ira_breakdown_score">{bd.vendorFit?.score ?? "—"}/100</p>
+                <p className="ira_breakdown_score">{formatIraScore(bd.vendorFit?.score)}/100</p>
                 <p className="bvr_exec_text ira_body_text">{bd.vendorFit?.summary ?? "—"}</p>
               </div>
             </div>
             <div className="bvr_reco_priority_col" role="cell">
               <div className="bvr_reco_priority_item">
-                <p className="ira_breakdown_score">{bd.orgReadinessGap?.score ?? "—"}/100</p>
+                <p className="ira_breakdown_score">{formatIraScore(bd.orgReadinessGap?.score)}/100</p>
                 <p className="bvr_exec_text ira_body_text">{bd.orgReadinessGap?.summary ?? "—"}</p>
               </div>
             </div>
             <div className="bvr_reco_priority_col" role="cell">
               <div className="bvr_reco_priority_item">
-                <p className="ira_breakdown_score">{bd.integrationRisk?.score ?? "—"}/100</p>
+                <p className="ira_breakdown_score">{formatIraScore(bd.integrationRisk?.score)}/100</p>
                 <p className="bvr_exec_text ira_body_text">{bd.integrationRisk?.summary ?? "—"}</p>
               </div>
             </div>

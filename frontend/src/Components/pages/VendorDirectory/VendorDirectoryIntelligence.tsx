@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Building2, CircleChevronLeft, Plus, Sparkles } from "lucide-react";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import { mergeMissingProfileSectionsFromAttestation } from "../../../utils/mergeProductProfileReportFromAttestation";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import GeneratedProductProfileCards from "../ProductProfile/GeneratedProductProfileCards";
 import LoadingMessage from "../../UI/LoadingMessage";
 import "../../../styles/card.css";
@@ -237,10 +238,10 @@ const VendorDirectoryIntelligence = () => {
                 <h2 className="vendor_intel_hero_product">{productName || "Product"}</h2>
               </div>
             </div>
-            <div className="vendor_intel_hero_score" aria-label={`Trust score ${visibleReport.trustScore.overallScore} out of 100`}>
+            <div className="vendor_intel_hero_score" aria-label={`Trust score ${formatScore2(visibleReport.trustScore.overallScore)} out of 100`}>
               <span className="vendor_intel_hero_score_label">Trust Score</span>
               <div className="vendor_intel_hero_score_value_wrap">
-                <span className="vendor_intel_hero_score_value">{visibleReport.trustScore.overallScore}</span>
+                <span className="vendor_intel_hero_score_value">{formatScore2(visibleReport.trustScore.overallScore)}</span>
                 <span className="vendor_intel_hero_score_scale">/100</span>
               </div>
               {visibleReport.scoringSource ? (

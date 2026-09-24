@@ -559,12 +559,67 @@
   max-width: 100%;
 }
 
+.organizationPreview .org_preview_onboarding_tab {
+  gap: 1.5rem;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_card {
+  padding: 1.35rem 1.45rem;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_card_title {
+  margin-bottom: 1rem;
+  padding-bottom: 0.7rem;
+}
+
+.organizationPreview .org_preview_onboarding_tab .org_preview_completed_by {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-subtle, #e2e6ec);
+  border-radius: 10px;
+  background: var(--surface-elevated, #ffffff);
+  color: var(--text-secondary, #3c4257);
+  line-height: 1.4;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_list {
+  gap: 0.9rem;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_row {
+  align-items: start;
+  gap: 0.65rem 1.35rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-subtle, #e2e6ec);
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_label,
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_value {
+  line-height: 1.45;
+}
+
+.organizationPreview .org_preview_onboarding_tab .vendor_preview_value {
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 960px) {
   .organizationPreview .vendor_preview_sections.org_preview_tab_content {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
     align-items: start;
+  }
+
+  .organizationPreview .vendor_preview_sections.org_preview_tab_content.org_preview_onboarding_tab {
+    gap: 1.5rem;
   }
 
   .organizationPreview .vendor_preview_sections.org_preview_tab_content > .organizationPreviewEmpty {

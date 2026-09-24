@@ -31,6 +31,7 @@ import {
   gradeFromOverallRiskScore,
   normalizeDisplayLetterGrade,
 } from "../../../utils/completeReportGrade";
+import { formatScore2 } from "../../../utils/scoreFormat";
 
 export type AssessmentStatusScope = "all" | "completed" | "in_progress";
 
@@ -123,7 +124,7 @@ function RiskScoreGradeBadge({
   riskDisplay: string;
   riskGradeProfile: "buyer" | "vendor";
 }) {
-  const shown = displayScore ?? (riskScore != null ? Math.round(Math.max(0, Math.min(100, 100 - riskScore))) : null);
+  const shown = displayScore ?? (riskScore != null ? Math.max(0, Math.min(100, 100 - riskScore)) : null);
   if (shown == null || !Number.isFinite(shown)) {
     return (
       <span
@@ -144,7 +145,7 @@ function RiskScoreGradeBadge({
     ),
   );
   const gradeClass = riskGradeBadgeClass(letter);
-  const scoreText = String(Math.round(shown));
+  const scoreText = formatScore2(shown);
   const titlePrefix = riskGradeProfile === "buyer" ? "Implementation readiness" : "Readiness";
   return (
     <span

@@ -2707,8 +2707,8 @@ html[data-theme="dark"] .report_metric_label_icon {
   --score: 0;
   --score-color: #4f6bff;
   position: relative;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3.2rem;
+  height: 3.2rem;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
@@ -2726,28 +2726,34 @@ html[data-theme="dark"] .report_metric_label_icon {
 .report_risk_score_circle_inner {
   position: relative;
   z-index: 1;
-  width: 1.95rem;
-  height: 1.95rem;
+  width: 2.55rem;
+  height: 2.55rem;
   border-radius: 50%;
   background: transparent;
   display: inline-grid;
   place-items: center;
   color: var(--score-color);
-  font-size: 0.78rem;
+  box-sizing: border-box;
+  padding: 0 0.2rem;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.62rem;
   line-height: 1;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02rem;
 }
 
 .report_context_score_circle {
-  width: 3.35rem;
-  height: 3.35rem;
+  width: 4.05rem;
+  height: 4.05rem;
   margin-left: 0.4rem;
 }
 
 .report_context_score_circle .report_risk_score_circle_inner {
-  width: 2.72rem;
-  height: 2.72rem;
-  font-size: 0.72rem;
+  width: 3.35rem;
+  height: 3.35rem;
+  font-size: 0.68rem;
 }
 
 .report_risk_assessment_table .report_risk_badge {

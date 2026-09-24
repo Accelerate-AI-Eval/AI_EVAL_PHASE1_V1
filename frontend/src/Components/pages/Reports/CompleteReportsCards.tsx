@@ -12,6 +12,7 @@ import {
   resolveScoreSubtitleForCompleteReport,
   type CompleteReportRiskMeterGrading,
 } from "../../../utils/completeReportGrade";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import {
   isReportTimeExpired,
   reportArchivedStatusText,
@@ -118,7 +119,7 @@ function CompleteReportsCards({
         // Vendor COTS analysis reports store SRS as overallRiskScore (not IRS).
         const listSrs =
           row.overallRiskScore != null && Number.isFinite(Number(row.overallRiskScore))
-            ? Math.round(Number(row.overallRiskScore))
+            ? Number(row.overallRiskScore)
             : null;
         const srs = listSrs ?? overallRiskScoreFromReportJson(row.report);
         return srs != null ? Math.round(srs) : null;
@@ -165,7 +166,7 @@ function CompleteReportsCards({
             const irs = implementationRiskScoreFromReportPayload(payload);
             const listSrs =
               report.overallRiskScore != null && Number.isFinite(Number(report.overallRiskScore))
-                ? Math.round(Number(report.overallRiskScore))
+                ? Number(report.overallRiskScore)
                 : null;
             const srs = listSrs ?? overallRiskScoreFromReportJson(rep);
             const report_context_score =
@@ -293,9 +294,7 @@ function CompleteReportsCards({
             <span className="complete_rpr_card_risk_label">
               {isVendorPortalSession()
                 ? "READINESS SCORE"
-                : report.source === "buyer_vendor_risk" || meterGrading === "vendor_cots_irs"
-                  ? "RISK SCORE"
-                  : "READINESS SCORE"}
+                : "READINESS SCORE"}
             </span>
             <span className="complete_rpr_card_risk_value_wrap">
               <span className="complete_rpr_card_risk_value_row">
@@ -303,7 +302,7 @@ function CompleteReportsCards({
                   className="complete_rpr_card_risk_value"
                   style={meterColor ? { color: meterColor } : undefined}
                 >
-                  {isFetching ? "…" : report_context_score != null ? `(${report_context_score}/100)` : "—"}
+                  {isFetching ? "…" : report_context_score != null ? formatScore2(report_context_score) : "—"}
                 </span>
                 {showRationaleInfo && scoreRationale ? (
                   <button

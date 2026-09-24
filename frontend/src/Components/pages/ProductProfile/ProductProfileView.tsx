@@ -32,6 +32,7 @@ import "../MyVendors/MyVendors.css";
 import "../Assessments/assessments.css";
 import "./product_profile.css";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
+import { formatScore2Percent } from "../../../utils/scoreFormat";
 
 function formatVal(val: unknown): string {
   if (val == null || val === "") return "Not specified.";
@@ -481,7 +482,7 @@ function ProductProfileView({
     });
     if (scores.length === 0) return null;
     const sum = scores.reduce((a, b) => a + b, 0);
-    return Math.round(sum / scores.length);
+    return sum / scores.length;
   }, [currentProducts, storedReports]);
 
   /** On product detail, prefer company profile from loaded attestation; otherwise vendor form state. */
@@ -800,9 +801,9 @@ function ProductProfileView({
           icon={<Shield size={24} />}
           primary={
             averageTrustScore != null
-              ? `${averageTrustScore}%`
+              ? formatScore2Percent(averageTrustScore)
               : reportToShow?.trustScore
-                ? `${reportToShow.trustScore.overallScore}%`
+                ? formatScore2Percent(reportToShow.trustScore.overallScore)
                 : trustScore
           }
           secondary={
@@ -1201,7 +1202,7 @@ function ProductProfileView({
                 <div className="product_profile_product_cards">
                   {paginatedCurrentProducts.map((product) => {
                     const score = resolveProductTrustScore(product, storedReports);
-                    const trustScoreDisplay = score != null ? `${score}%` : "—";
+                    const trustScoreDisplay = score != null ? formatScore2Percent(score) : "—";
                     return (
                       <ProductProfileProductListCard
                         key={product.id}
@@ -1247,7 +1248,7 @@ function ProductProfileView({
                 <div className="product_profile_product_cards">
                   {paginatedArchivedProducts.map((product) => {
                     const score = resolveProductTrustScore(product, storedReports);
-                    const trustScoreDisplay = score != null ? `${score}%` : "—";
+                    const trustScoreDisplay = score != null ? formatScore2Percent(score) : "—";
                     return (
                       <ProductProfileProductListCard
                         key={product.id}

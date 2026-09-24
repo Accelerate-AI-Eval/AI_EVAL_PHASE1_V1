@@ -16,9 +16,11 @@ import {
   FileCheck,
   IdCard,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import { sortReportSectionsForDisplay } from "../../../utils/productProfileSectionDisplayOrder";
+import { formatScore2Percent } from "../../../utils/scoreFormat";
 import {
   AdminLlmModelLabel,
   resolveStoredLlmModelId,
@@ -167,6 +169,47 @@ function pickAtGlanceValue(
   return "—";
 }
 
+type SubProcessorDisplay = {
+  name: string;
+  purpose: string;
+  region: string;
+  source: string;
+};
+
+function parseSubProcessorsForDisplay(value: string): SubProcessorDisplay[] {
+  const raw = String(value ?? "").trim();
+  if (!raw || /^not specified$/i.test(raw)) return [];
+  return raw
+    .split(/\s*;\s*/)
+    .map((row) => row.trim())
+    .filter(Boolean)
+    .map((row) => {
+      const parts = row
+        .split(/\s+(?:—|-)\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+      return {
+        name: parts[0] ?? row,
+        purpose: parts[1] ?? "",
+        region: parts[2] ?? "",
+        source: parts.slice(3).join(" — "),
+      };
+    })
+    .filter((row) => row.name.length > 0);
+}
+
+function subProcessorHref(raw: string): string {
+  const url = raw.trim();
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  if (/^[\w.-]+\.[a-z]{2,}([/:?#].*)?$/i.test(url)) return `https://${url}`;
+  return "";
+}
+
+function isSubProcessorsField(sectionId: number, label: string): boolean {
+  return sectionId === 9 && /sub[-\s]?processors?/i.test(String(label ?? ""));
+}
+
 function pickValueAcrossSections(
   sections: GeneratedProductProfileReport["sections"],
   hints: string[],
@@ -261,9 +304,9 @@ function GeneratedProductProfileCards({
   const hasProductInformationSection = sections.some((s) => s.id === 1);
   const scoreValue =
     typeof trustScore.overallScore === "number" && Number.isFinite(trustScore.overallScore)
-      ? Math.max(0, Math.min(100, Math.round(trustScore.overallScore)))
+      ? Math.max(0, Math.min(100, trustScore.overallScore))
       : null;
-  const scoreNumber = scoreValue != null ? `${scoreValue}%` : "—";
+  const scoreNumber = scoreValue != null ? formatScore2Percent(scoreValue) : "—";
   const atAGlance = useMemo(() => {
     const pricing = pickAtGlanceValue(sections, ["pricing", "price", "commercial"]);
     const version = pickAtGlanceValue(sections, ["version", "release"]);
@@ -297,7 +340,7 @@ function GeneratedProductProfileCards({
               <div
                 className="generated_profile_trust_ring"
                 style={{ "--trust-score": `${scoreValue ?? 0}` } as CSSProperties}
-                aria-label={scoreValue != null ? `Overall trust score ${scoreValue}%` : "Overall trust score not available"}
+                aria-label={scoreValue != null ? `Overall trust score ${formatScore2Percent(scoreValue)}` : "Overall trust score not available"}
               >
                 <div className="generated_profile_trust_ring_inner">
                   <span className="generated_profile_trust_ring_value">{scoreNumber}</span>
@@ -507,6 +550,55 @@ function GeneratedProductProfileCards({
                         {cleanItems.map(([label, value]) => {
                           const displayLabel =
                             sec.id === 4 ? displayLabelForGovernanceItem(label) : label;
+                          if (isSubProcessorsField(sec.id, displayLabel)) {
+                            const subProcessors = parseSubProcessorsForDisplay(value);
+                            if (subProcessors.length > 0) {
+                              return (
+                                <div key={label} className="generated_profile_product_info_row generated_profile_subprocessors">
+                                  <p className="generated_profile_product_info_k">{displayLabel}</p>
+                                  <div className="preview_subprocessor_table_wrap">
+                                    <table className="preview_subprocessor_table">
+                                      <thead>
+                                        <tr>
+                                          <th scope="col" className="preview_subprocessor_col_name">Name</th>
+                                          <th scope="col" className="preview_subprocessor_col_purpose">Purpose</th>
+                                          <th scope="col" className="preview_subprocessor_col_region">Region</th>
+                                          <th scope="col" className="preview_subprocessor_col_source">Source</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {subProcessors.map((processor, index) => {
+                                          const href = subProcessorHref(processor.source);
+                                          return (
+                                            <tr key={`${processor.name}-${index}`}>
+                                              <td className="preview_subprocessor_col_name">{processor.name}</td>
+                                              <td className="preview_subprocessor_col_purpose">{processor.purpose || "—"}</td>
+                                              <td className="preview_subprocessor_col_region">{processor.region || "—"}</td>
+                                              <td className="preview_subprocessor_col_source">
+                                                {href ? (
+                                                  <a
+                                                    className="preview_subprocessor_link"
+                                                    href={href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                  >
+                                                    <ExternalLink size={12} aria-hidden />
+                                                    <span>{processor.source}</span>
+                                                  </a>
+                                                ) : (
+                                                  processor.source || "—"
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          }
                           return (
                             <div key={label} className="generated_profile_product_info_row">
                               <p className="generated_profile_product_info_k">{displayLabel}</p>

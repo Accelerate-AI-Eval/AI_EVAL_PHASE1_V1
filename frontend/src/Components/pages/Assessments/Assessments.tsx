@@ -28,6 +28,7 @@ import Modal from "../../UI/Modal";
 import LoadingMessage from "../../UI/LoadingMessage";
 import ClickTooltip from "../../UI/ClickTooltip";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import "../../../styles/page_tabs.css";
 import "../../../styles/popovers.css";
 import "../Organizations/organization.css";
@@ -315,11 +316,11 @@ function mapRowToLedgerVM(
       ? null
       : isBuyerRow
         ? storedScore
-        : Math.round(Math.max(0, Math.min(100, 100 - storedScore)));
+        : Math.max(0, Math.min(100, 100 - storedScore));
   const hasReport = storedScore != null;
   const riskDisplay =
     reportScore != null
-      ? `${reportScore} /100`
+      ? `${formatScore2(reportScore)} /100`
       : isDraft
         ? "Pending"
         : statusKind === "expired"

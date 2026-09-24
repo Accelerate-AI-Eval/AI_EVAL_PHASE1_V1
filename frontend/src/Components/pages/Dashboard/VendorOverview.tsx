@@ -27,6 +27,7 @@ import {
   normalizeDisplayLetterGrade,
   type CompleteReportLetterGrade,
 } from "../../../utils/completeReportGrade";
+import { formatScore2 } from "../../../utils/scoreFormat";
 import "./dashboard.css";
 import "../UserManagement/user_management.css";
 import ClickTooltip from "../../UI/ClickTooltip";
@@ -611,7 +612,7 @@ const VendorOverview = () => {
               const label = att.generated_profile_report?.trustScore?.label;
               const scoreNum =
                 score != null && !Number.isNaN(Number(score))
-                  ? Math.round(Number(score))
+                  ? Number(score)
                   : null;
               const labelUpper =
                 label &&
@@ -655,7 +656,7 @@ const VendorOverview = () => {
                     {scoreNum != null ? (
                       <>
                         <span className="vendor_portal_attestation_score_num">
-                          {scoreNum}
+                          {formatScore2(scoreNum)}
                         </span>
                         <span className="vendor_portal_attestation_score_label">
                           {trustSubtitle}

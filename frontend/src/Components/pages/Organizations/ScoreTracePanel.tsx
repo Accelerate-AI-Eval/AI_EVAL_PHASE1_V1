@@ -14,6 +14,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { CircleX, AlertTriangle, TrendingUp } from "lucide-react";
 import { AdminLlmModelLabel } from "../../UI/AdminLlmModelInfo";
 import LoadingMessage from "../../UI/LoadingMessage";
+import { formatScore2, roundScore2 } from "../../../utils/scoreFormat";
 import "./score_trace_panel.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -307,8 +308,9 @@ function sanitizeEvidenceLabel(
 }
 
 function formatContribution(n: number): string {
-  if (n === 0) return "±0.0";
-  return n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1);
+  const rounded = roundScore2(n) ?? 0;
+  if (rounded === 0) return "±0.00";
+  return rounded > 0 ? `+${rounded.toFixed(2)}` : rounded.toFixed(2);
 }
 
 function riskRatingLabel(score: number): string {
@@ -381,9 +383,9 @@ function buildIrsInsight(trace: ScoreTrace): string {
   text += ".";
 
   const gaps: string[] = [];
-  if (orgGap !== undefined && orgGap > 50)  gaps.push(`organizational readiness (gap: ${Math.round(orgGap)})`);
-  if (intRisk !== undefined && intRisk > 40) gaps.push(`integration complexity (risk: ${Math.round(intRisk)})`);
-  if (vts !== undefined && vts < 50)         gaps.push(`vendor trust score (${Math.round(vts)}/100)`);
+  if (orgGap !== undefined && orgGap > 50)  gaps.push(`organizational readiness (gap: ${formatScore2(orgGap)})`);
+  if (intRisk !== undefined && intRisk > 40) gaps.push(`integration complexity (risk: ${formatScore2(intRisk)})`);
+  if (vts !== undefined && vts < 50)         gaps.push(`vendor trust score (${formatScore2(vts)}/100)`);
 
   if (gaps.length > 0) {
     text += ` The primary risk drivers are ${gaps.join(" and ")}.`;
@@ -401,7 +403,7 @@ function buildIrsInsight(trace: ScoreTrace): string {
 /** Deterministic SCS insight — no LLM, derived from type 2 readiness (100 − sales risk) */
 function buildScsInsight(trace: ScoreTrace): string {
   const { rawSubScores, finalScore } = trace;
-  const readiness = Math.round(finalScore);
+  const readiness = finalScore;
   const cfr = rawSubScores.customerFrictionScore;
   const impl = rawSubScores.implementationScore;
   const comp = rawSubScores.competitiveScore;
@@ -411,14 +413,14 @@ function buildScsInsight(trace: ScoreTrace): string {
   }
 
   const scored: { name: string; score: number }[] = [];
-  if (cfr !== undefined) scored.push({ name: "customer-friction posture", score: Math.round(cfr) });
-  if (impl !== undefined) scored.push({ name: "implementation readiness for the deal", score: Math.round(impl) });
-  if (comp !== undefined) scored.push({ name: "competitive positioning", score: Math.round(comp) });
+  if (cfr !== undefined) scored.push({ name: "customer-friction posture", score: cfr });
+  if (impl !== undefined) scored.push({ name: "implementation readiness for the deal", score: impl });
+  if (comp !== undefined) scored.push({ name: "competitive positioning", score: comp });
   scored.sort((a, b) => b.score - a.score);
   const strongest = scored[0];
   const weakest = scored[scored.length - 1];
 
-  let text = `Overall readiness is ${readiness}/100`;
+  let text = `Overall readiness is ${formatScore2(readiness)}/100`;
   if (readiness >= 80) text += " — this deal presents a strong confidence profile";
   else if (readiness >= 65) text += " — the deal can proceed with targeted risk mitigations";
   else if (readiness >= 50) text += " — material sales risks should be addressed before close";
@@ -426,10 +428,10 @@ function buildScsInsight(trace: ScoreTrace): string {
   text += ".";
 
   if (strongest) {
-    text += ` Strongest area: ${strongest.name} (${strongest.score}/100).`;
+    text += ` Strongest area: ${strongest.name} (${formatScore2(strongest.score)}/100).`;
   }
   if (weakest && strongest && weakest.score < strongest.score) {
-    text += ` Biggest drag: ${weakest.name} (${weakest.score}/100).`;
+    text += ` Biggest drag: ${weakest.name} (${formatScore2(weakest.score)}/100).`;
   }
   return text;
 }
@@ -447,9 +449,9 @@ function buildAiInsight(trace: ScoreTrace): string {
   }
 
   const scored: { name: string; label: string; score: number }[] = [];
-  if (productScore !== undefined) scored.push({ name: "product capability", label: "Product", score: Math.round(productScore) });
-  if (govScore     !== undefined) scored.push({ name: "governance maturity", label: "Governance", score: Math.round(govScore) });
-  if (opsScore     !== undefined) scored.push({ name: "operational readiness", label: "Operational", score: Math.round(opsScore) });
+  if (productScore !== undefined) scored.push({ name: "product capability", label: "Product", score: productScore });
+  if (govScore     !== undefined) scored.push({ name: "governance maturity", label: "Governance", score: govScore });
+  if (opsScore     !== undefined) scored.push({ name: "operational readiness", label: "Operational", score: opsScore });
 
   scored.sort((a, b) => b.score - a.score);
   const strongest = scored[0];
@@ -458,18 +460,18 @@ function buildAiInsight(trace: ScoreTrace): string {
   let text = "";
 
   if (strongest.score >= 80) {
-    text += `The vendor demonstrates strong ${strongest.name} (${strongest.score}/100)`;
+    text += `The vendor demonstrates strong ${strongest.name} (${formatScore2(strongest.score)}/100)`;
   } else if (strongest.score >= 60) {
-    text += `The vendor shows acceptable ${strongest.name} (${strongest.score}/100)`;
+    text += `The vendor shows acceptable ${strongest.name} (${formatScore2(strongest.score)}/100)`;
   } else {
     text += `All scoring categories currently require improvement`;
   }
 
   if (scored.length > 1 && weakest.score < strongest.score) {
     if (weakest.score < 50) {
-      text += `, but is significantly constrained by ${weakest.name} (${weakest.score}/100)`;
+      text += `, but is significantly constrained by ${weakest.name} (${formatScore2(weakest.score)}/100)`;
     } else if (weakest.score < 70) {
-      text += ` with moderate constraints from ${weakest.name} (${weakest.score}/100)`;
+      text += ` with moderate constraints from ${weakest.name} (${formatScore2(weakest.score)}/100)`;
     }
   }
   text += ".";
@@ -727,12 +729,12 @@ export default function ScoreTracePanel({
       ? "Vendor Trust Score Explainability"
       : isScs
         ? "Readiness Explainability"
-        : "Implementation Risk Explainability";
+        : "Implementation Readiness Explainability";
   const scoreTypeLabel = isVts
     ? "Vendor Trust Score"
     : isScs
       ? "Readiness Score"
-      : "Implementation Risk Score";
+      : "Implementation Readiness Score";
 
   const subScoreEntries = trace
     ? (Object.entries(trace.rawSubScores).filter(([, v]) => v !== undefined) as [string, number][])
@@ -804,27 +806,22 @@ export default function ScoreTracePanel({
 
   const cardHeadline =
     typeof cardScore === "number" && Number.isFinite(cardScore)
-      ? Math.round(Math.max(0, Math.min(100, cardScore)))
+      ? roundScore2(Math.max(0, Math.min(100, cardScore)))
       : null;
   const scsReadiness = trace
-    ? Math.round(
+    ? roundScore2(
         Number.isFinite(trace.finalScore)
           ? trace.finalScore
           : Math.max(0, Math.min(100, 100 - Number(trace.rawSubScores.salesRiskScore ?? 0))),
       )
     : 0;
-  const irsImplementationRisk = trace
-    ? Math.round(Math.max(0, Math.min(100, 100 - trace.finalScore)))
-    : 0;
   const headlineScore =
     cardHeadline ??
-    (trace ? (isScs ? scsReadiness : isIrs ? irsImplementationRisk : Math.round(trace.finalScore)) : 0);
-  // Type 2 readiness and type 1 VTS: higher is better. Type 3 implementation risk: higher is worse.
-  const ratingScore = isIrs ? Math.max(0, Math.min(100, 100 - headlineScore)) : headlineScore;
+    (trace ? (isScs ? scsReadiness : roundScore2(trace.finalScore)) : 0);
+  // Type 1 VTS, Type 2 readiness, and Type 3 implementation readiness: higher is better.
+  const ratingScore = headlineScore;
   const projectedScore = trace
-    ? isIrs
-      ? Math.max(0, headlineScore - totalLift)
-      : Math.min(headlineScore + totalLift, 100)
+    ? Math.min(headlineScore + totalLift, 100)
     : null;
 
   const generatedAt = (() => {
@@ -880,7 +877,7 @@ export default function ScoreTracePanel({
                 {/* Score row */}
                 <div className="stp_exec_score_row">
                   <div className={`stp_score_circle ${scoreCircleClass(ratingScore)}`}>
-                    <span className="stp_score_number">{headlineScore}</span>
+                    <span className="stp_score_number">{formatScore2(headlineScore)}</span>
                     <span className="stp_score_denom">/ 100</span>
                   </div>
                   <div className="stp_exec_score_meta">
@@ -929,7 +926,7 @@ export default function ScoreTracePanel({
                       const key = CATEGORY_TO_SUBSCORE_KEY[cat];
                       const score = key ? trace.rawSubScores[key] : undefined;
                       if (score === undefined) return null;
-                      const pct   = Math.round(score);
+                      const pct   = Math.max(0, Math.min(100, score));
                       const rKey  = categoryRatingKey(pct);
                       const rLabel = categoryRatingLabel(pct);
                       const catHints = trace.factorExplanations
@@ -942,7 +939,7 @@ export default function ScoreTracePanel({
                         <div key={cat} className={`stp_cat_card stp_cat_${rKey}`}>
                           <div className="stp_cat_card_header">
                             <span className="stp_cat_name">{cat}</span>
-                            <span className="stp_cat_score">{pct}<span className="stp_cat_score_denom">/100</span></span>
+                            <span className="stp_cat_score">{formatScore2(pct)}<span className="stp_cat_score_denom">/100</span></span>
                           </div>
                           <div className="stp_cat_progress">
                             <div className="stp_cat_progress_fill" style={{ width: `${pct}%` }} />
@@ -953,7 +950,7 @@ export default function ScoreTracePanel({
                               {catHints.map((f, fi) => (
                                 <div key={fi} className={`stp_cat_factor_hint stp_factor_${f.status}`}>
                                   <span className="stp_cat_factor_hint_name">{f.factor}</span>
-                                  <span className="stp_cat_factor_hint_ded">−{f.deduction.toFixed(1)}</span>
+                                  <span className="stp_cat_factor_hint_ded">−{formatScore2(f.deduction)}</span>
                                 </div>
                               ))}
                             </div>
@@ -971,21 +968,21 @@ export default function ScoreTracePanel({
                       const key = SCS_CATEGORY_TO_SUBSCORE_KEY[cat];
                       const score = key ? trace.rawSubScores[key] : undefined;
                       if (score === undefined) return null;
-                      const pct = Math.round(score);
+                      const pct = Math.max(0, Math.min(100, score));
                       const rKey = categoryRatingKey(pct);
                       const rLabel = categoryRatingLabel(pct);
                       return (
                         <div key={cat} className={`stp_cat_card stp_cat_${rKey}`}>
                           <div className="stp_cat_card_header">
                             <span className="stp_cat_name">{SCS_CATEGORY_DISPLAY[cat]}</span>
-                            <span className="stp_cat_score">{pct}<span className="stp_cat_score_denom">/100</span></span>
+                            <span className="stp_cat_score">{formatScore2(pct)}<span className="stp_cat_score_denom">/100</span></span>
                           </div>
                           <div className="stp_cat_progress">
                             <div className="stp_cat_progress_fill" style={{ width: `${pct}%` }} />
                           </div>
                           <span className={`stp_cat_rating_label stp_cat_rating_${rKey}`}>{rLabel}</span>
                           <span className="stp_cat_readiness_note">
-                            Readiness {pct}/100
+                            Readiness {formatScore2(pct)}/100
                           </span>
                         </div>
                       );
@@ -1001,7 +998,7 @@ export default function ScoreTracePanel({
                       const subKey   = IRS_CATEGORY_TO_SUBSCORE_KEY[cat];
                       const rawVal   = subKey ? trace.rawSubScores[subKey] : undefined;
                       if (rawVal === undefined) return null;
-                      const risk = Math.round(subKey === "vendorTrustScore" ? 100 - rawVal : rawVal);
+                      const risk = roundScore2(subKey === "vendorTrustScore" ? 100 - rawVal : rawVal);
                       const rKey      = categoryRatingKey(Math.max(0, 100 - risk));
                       const rLabel    = categoryRatingLabel(Math.max(0, 100 - risk));
                       // Hide VendorRisk card in vendor mode (internalOnly)
@@ -1017,7 +1014,7 @@ export default function ScoreTracePanel({
                           <div className="stp_cat_card_header">
                             <span className="stp_cat_name">{IRS_CATEGORY_DISPLAY[cat]}</span>
                             <span className="stp_cat_score">
-                              {risk}<span className="stp_cat_score_denom">/100</span>
+                              {formatScore2(risk)}<span className="stp_cat_score_denom">/100</span>
                             </span>
                           </div>
                           <div className="stp_cat_progress">
@@ -1026,18 +1023,18 @@ export default function ScoreTracePanel({
                           <span className={`stp_cat_rating_label stp_cat_rating_${rKey}`}>{rLabel}</span>
                           {cat !== "VendorRisk" && (
                             <span className="stp_cat_readiness_note">
-                              Risk {risk}/100
+                              Risk {formatScore2(risk)}/100
                             </span>
                           )}
                           {cat === "VendorRisk" && (
-                            <span className="stp_cat_readiness_note">Vendor risk {risk}/100</span>
+                            <span className="stp_cat_readiness_note">Vendor risk {formatScore2(risk)}/100</span>
                           )}
                           {catHints.length > 0 && (
                             <div className="stp_cat_factor_hints">
                               {catHints.map((f, fi) => (
                                 <div key={fi} className={`stp_cat_factor_hint stp_factor_${f.status}`}>
                                   <span className="stp_cat_factor_hint_name">{f.factor}</span>
-                                  <span className="stp_cat_factor_hint_ded">−{f.deduction}</span>
+                                  <span className="stp_cat_factor_hint_ded">−{formatScore2(f.deduction)}</span>
                                 </div>
                               ))}
                             </div>
@@ -1061,10 +1058,10 @@ export default function ScoreTracePanel({
                       <div className="stp_wf_bar_wrap">
                         <div className="stp_wf_bar stp_wf_bar_base" style={{ width: "100%" }} />
                       </div>
-                      <span className="stp_wf_value stp_wf_value_base">100</span>
+                      <span className="stp_wf_value stp_wf_value_base">100.00</span>
                     </div>
                     {components.map((c, idx) => {
-                      const pct = Math.abs(Math.round(c.contribution));
+                      const pct = Math.abs(c.contribution);
                       const isNeg = c.contribution < 0;
                       return (
                         <div key={idx} className={`stp_waterfall_row ${isNeg ? "stp_wf_neg" : "stp_wf_pos"}`}>
@@ -1084,7 +1081,7 @@ export default function ScoreTracePanel({
                       <div className="stp_wf_bar_wrap">
                         <div className="stp_wf_bar stp_wf_bar_final" style={{ width: `${trace.finalScore}%` }} />
                       </div>
-                      <span className="stp_wf_value stp_wf_value_final">{trace.finalScore}</span>
+                      <span className="stp_wf_value stp_wf_value_final">{formatScore2(trace.finalScore)}</span>
                     </div>
                   </div>
                 </section>
@@ -1123,7 +1120,7 @@ export default function ScoreTracePanel({
                             <div className="stp_card_top_right">
                               {typeof categoryScore === "number" && (
                                 <span className={`stp_subscore_chip ${severity === "negative" ? "stp_chip_poor" : severity === "moderate" ? "stp_chip_medium" : "stp_chip_good"}`}>
-                                  {Math.round(categoryScore)}/100
+                                  {formatScore2(categoryScore)}/100
                                 </span>
                               )}
                               <span className="stp_category_pill">{displayCategoryName(c.category)}</span>
@@ -1146,20 +1143,20 @@ export default function ScoreTracePanel({
                                   return (
                                     <div className="stp_driver_factor_block">
                                       <p className="stp_driver_factor_header">
-                                        {displayCategoryName(c.category)} score is {catSc !== undefined ? `${Math.round(catSc)}/100` : "—"} because:
+                                        {displayCategoryName(c.category)} score is {catSc !== undefined ? `${formatScore2(catSc)}/100` : "—"} because:
                                       </p>
                                       <ul className="stp_driver_factor_list">
                                         {driverFactors.map((f, fi) => (
                                           <li key={fi} className={`stp_driver_factor_item stp_factor_${f.status}`}>
                                             <span className="stp_driver_factor_name">{f.factor}</span>
                                             <span className={`stp_driver_factor_status stp_factor_status_${f.status}`}>{f.status}</span>
-                                            <span className="stp_driver_factor_ded">−{f.deduction.toFixed(1)} pts</span>
+                                            <span className="stp_driver_factor_ded">−{formatScore2(f.deduction)} pts</span>
                                           </li>
                                         ))}
                                       </ul>
                                       <p className="stp_driver_factor_total">
-                                        Totals −{categoryLoss.toFixed(1)} on the {displayCategoryName(c.category).toLowerCase()} score,
-                                        which removes {scoreLoss.toFixed(1)} points from the trust score.
+                                        Totals −{formatScore2(categoryLoss)} on the {displayCategoryName(c.category).toLowerCase()} score,
+                                        which removes {formatScore2(scoreLoss)} points from the trust score.
                                       </p>
                                     </div>
                                   );
@@ -1179,7 +1176,7 @@ export default function ScoreTracePanel({
                                       </span>
                                       {matchedFactor.estimatedLift > 0 && (
                                         <span className="stp_irs_factor_lift">
-                                          Fix → recover {matchedFactor.estimatedLift.toFixed(1)} pts
+                                          Fix → recover {formatScore2(matchedFactor.estimatedLift)} pts
                                         </span>
                                       )}
                                       {matchedFactor.improvement !== "No action needed." && (
@@ -1230,7 +1227,7 @@ export default function ScoreTracePanel({
                   </h3>
                   <p className="stp_improve_disclaimer">
                     {isIrs
-                      ? "Estimated risk reduction — not applied until buyer data is updated and scoring reruns."
+                      ? "Estimated readiness lift — not applied until buyer data is updated and scoring reruns."
                       : isScs
                         ? "Estimated readiness lift — not applied until deal inputs are updated and scoring reruns."
                         : "Trust-score points recovered by closing each gap — not applied until evidence is submitted and scoring reruns."}
@@ -1250,7 +1247,7 @@ export default function ScoreTracePanel({
                               <div className="stp_improve_card_top">
                                 <span className="stp_lift_badge">
                                   {f.status === "missing" ? "Missing" : f.status === "weak" ? "Weak" : "Partial"}
-                                  {" · "}+{f.estimatedLift.toFixed(1)} pts potential
+                                  {" · "}+{formatScore2(f.estimatedLift)} pts potential
                                 </span>
                                 <span className="stp_improve_title">{f.factor}</span>
                               </div>
@@ -1290,7 +1287,7 @@ export default function ScoreTracePanel({
                               <div className="stp_improve_card_top">
                                 <span className="stp_lift_badge">
                                   {f.status === "missing" ? "High risk" : f.status === "weak" ? "Elevated" : "Partial"}
-                                  {" · "}+{f.estimatedLift.toFixed(1)} pts potential
+                                  {" · "}+{formatScore2(f.estimatedLift)} pts potential
                                 </span>
                                 <span className="stp_improve_title">{f.factor}</span>
                               </div>
@@ -1330,7 +1327,7 @@ export default function ScoreTracePanel({
                                     <div className="stp_improve_card_top">
                                       <span className="stp_lift_badge">
                                         {f.status === "missing" ? "Missing" : f.status === "weak" ? "Weak" : "Partial"}
-                                        {" · "}+{f.estimatedLift.toFixed(1)} pts on the trust score
+                                        {" · "}+{formatScore2(f.estimatedLift)} pts on the trust score
                                       </span>
                                       <span className="stp_improve_title">{f.factor}</span>
                                     </div>
@@ -1367,7 +1364,7 @@ export default function ScoreTracePanel({
                           <div key={idx} className="stp_improve_card">
                             <div className="stp_improve_card_top">
                               {opp.lift !== null
-                                ? <span className="stp_lift_badge">+{opp.lift} pts potential</span>
+                                ? <span className="stp_lift_badge">+{formatScore2(opp.lift)} pts potential</span>
                                 : <span className="stp_lift_badge stp_lift_badge_soft">Potential improvement</span>
                               }
                               <span className="stp_improve_title">{opp.title}</span>
@@ -1420,7 +1417,7 @@ export default function ScoreTracePanel({
                               <span className={`stp_factor_row_status stp_factor_status_${f.status}`}>{f.status}</span>
                               {f.deduction > 0 && (
                                 <span className="stp_factor_row_deduction">
-                                  −{f.deduction.toFixed(1)} cat / −{f.scoreImpact.toFixed(1)} VTS
+                                  −{formatScore2(f.deduction)} cat / −{formatScore2(f.scoreImpact)} VTS
                                 </span>
                               )}
                             </div>
@@ -1448,7 +1445,7 @@ export default function ScoreTracePanel({
                                 {f.factor}{f.internalOnly && <span className="stp_factor_internal_tag"> (internal)</span>}
                               </span>
                               <span className={`stp_factor_row_status stp_factor_status_${f.status}`}>{f.status}</span>
-                              {f.deduction > 0 && <span className="stp_factor_row_deduction">−{f.deduction} pts</span>}
+                              {f.deduction > 0 && <span className="stp_factor_row_deduction">−{formatScore2(f.deduction)} pts</span>}
                             </div>
                           ))}
                         </div>
@@ -1464,32 +1461,32 @@ export default function ScoreTracePanel({
               {projectedScore !== null && totalLift > 0 && (
                 <section className="stp_section">
                   <h3 className="stp_section_title">
-                    {isIrs ? "Projected Score / Risk Reduction" : "Projected Score"}
+                    {isIrs ? "Projected Readiness" : "Projected Score"}
                   </h3>
                   <div className="stp_projected_block">
                     <div className="stp_projected_row">
                       <div className="stp_projected_item">
                         <span className="stp_projected_label">Current Score</span>
-                        <span className={`stp_projected_value stp_projected_current stp_risk_${riskRatingKey(ratingScore)}`}>{headlineScore}</span>
+                        <span className={`stp_projected_value stp_projected_current stp_risk_${riskRatingKey(ratingScore)}`}>{formatScore2(headlineScore)}</span>
                       </div>
                       <div className="stp_projected_arrow">→</div>
                       <div className="stp_projected_item">
-                        <span className="stp_projected_label">{isIrs ? "Potential Reduction" : "Potential Lift"}</span>
+                        <span className="stp_projected_label">Potential Lift</span>
                         <span className="stp_projected_value stp_projected_lift">
-                          {isIrs ? "−" : "+"}
-                          {Math.min(
-                            Math.round(totalLift),
-                            isIrs ? headlineScore : 100 - headlineScore,
-                          )}
+                          +
+                          {formatScore2(Math.min(
+                            totalLift,
+                            Math.max(0, 100 - headlineScore),
+                          ))}
                         </span>
                       </div>
                       <div className="stp_projected_arrow">→</div>
                       <div className="stp_projected_item">
                         <span className="stp_projected_label">
-                          Projected Score{(!isIrs && projectedScore >= 100) || (isIrs && projectedScore <= 0) ? " (capped)" : ""}
-                          {isIrs && ` · ${riskRatingLabel(Math.max(0, Math.min(100, 100 - projectedScore)))}`}
+                          Projected Score{projectedScore >= 100 ? " (capped)" : ""}
+                          {isIrs && ` · ${riskRatingLabel(projectedScore)}`}
                         </span>
-                        <span className="stp_projected_value stp_projected_final">{projectedScore}</span>
+                        <span className="stp_projected_value stp_projected_final">{formatScore2(projectedScore)}</span>
                       </div>
                     </div>
                     <div className="stp_projected_bar_track">
@@ -1504,7 +1501,7 @@ export default function ScoreTracePanel({
                     </div>
                     <p className="stp_projected_disclaimer">
                       {isIrs
-                        ? "Projected implementation risk if identified gaps are remediated. Lower score = lower implementation risk. Actual score may differ after reassessment."
+                        ? "Projected implementation readiness if identified gaps are remediated. Higher score = higher readiness. Actual score may differ after reassessment."
                         : isScs
                           ? "Projected readiness if deal risks are reduced. Higher score = higher readiness. Actual score may differ after rescoring."
                         : "Projected score is an estimate based on missing evidence hints. Actual score may differ after rescoring."}

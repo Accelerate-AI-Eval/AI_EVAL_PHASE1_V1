@@ -40,6 +40,7 @@ import {
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import { mergeMissingProfileSectionsFromAttestation } from "../../../utils/mergeProductProfileReportFromAttestation";
 import { vendorTrustGradeColorFromTrustScore } from "../../../utils/completeReportGrade";
+import { formatScore2Percent } from "../../../utils/scoreFormat";
 
 const BASE_URL =
   import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -498,21 +499,21 @@ function trustGradeFromScore(score: number | undefined): {
   if (rounded >= 90)
     return {
       letter: "A",
-      scoreText: String(rounded),
+      scoreText: formatScore2Percent(score),
       gradeClass: "vd_premium_grade_a",
       letterColor,
     };
   if (rounded >= 80)
     return {
       letter: "B",
-      scoreText: String(rounded),
+      scoreText: formatScore2Percent(score),
       gradeClass: "vd_premium_grade_b",
       // AI Vendor Directory requirement: B grade should use Product Profile green.
       letterColor: PRODUCT_PROFILE_GREEN,
     };
   return {
     letter: "C",
-    scoreText: String(rounded),
+    scoreText: formatScore2Percent(score),
     gradeClass: "vd_premium_grade_c",
     letterColor,
   };
@@ -1966,7 +1967,7 @@ const VendorDirectory = () => {
                       type="button"
                       className="vendor_directory_product_card"
                       onClick={() => handleProductClick(p)}
-                      aria-label={`View details for ${p.productName}${p.trustScore != null ? `, Trust score ${p.trustScore}%` : ""}`}
+                      aria-label={`View details for ${p.productName}${p.trustScore != null ? `, Trust score ${formatScore2Percent(p.trustScore)}` : ""}`}
                     >
                       <span
                         className="vendor_directory_product_card_icon"
@@ -1997,13 +1998,13 @@ const VendorDirectory = () => {
                       {p.trustScore != null && (
                         <div
                           className="vendor_directory_product_card_trust_badge"
-                          aria-label={`Trust score ${p.trustScore}%`}
+                          aria-label={`Trust score ${formatScore2Percent(p.trustScore)}`}
                         >
                           <span className="vendor_directory_product_card_trust_label">
                             Trust score
                           </span>
                           <span className="vendor_directory_product_card_trust_value">
-                            {p.trustScore}%
+                            {formatScore2Percent(p.trustScore)}
                           </span>
                         </div>
                       )}

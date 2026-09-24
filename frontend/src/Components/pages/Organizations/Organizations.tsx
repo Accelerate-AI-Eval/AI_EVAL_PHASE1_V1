@@ -32,6 +32,7 @@ import Breadcrumbs from "../../UI/Breadcrumbs";
 import ScoreTracePanel from "./ScoreTracePanel";
 import "./score_trace_panel.css";
 import { resolveStoredLlmModelId } from "../../UI/AdminLlmModelInfo";
+import { formatScore2 } from "../../../utils/scoreFormat";
 
 /** Helpers for org assessment cards (same logic as Assessments page). */
 function isOrgAssessmentExpired(row) {
@@ -535,7 +536,7 @@ const Organizations = () => {
                 </div>
 
                 {activeTab === TAB_ONBOARDING && (
-                  <div className="vendor_preview_sections org_preview_tab_content">
+                  <div className="vendor_preview_sections org_preview_tab_content org_preview_onboarding_tab">
                     <section className="vendor_preview_card">
                       <h3 className="vendor_preview_card_title">Buyer Onboarding</h3>
                       {isOnboardingData?.buyer ? (
@@ -739,10 +740,12 @@ const Organizations = () => {
                                 const title = a.product_name?.trim() || "Vendor Self-Attestation";
                                 const completedBy = a.completedBy?.name?.trim() || a.completedBy?.email?.trim() || "—";
                                 const isDraft = !isCompleted && !isExpired;
-                                const trustScore =
+                                const trustScoreRaw =
                                   a.trust_score != null && Number.isFinite(Number(a.trust_score))
-                                    ? Math.round(Number(a.trust_score))
+                                    ? Number(a.trust_score)
                                     : null;
+                                const trustScore =
+                                  trustScoreRaw != null ? formatScore2(trustScoreRaw) : null;
                                 const profileReportId =
                                   typeof a.profile_report_id === "string" && a.profile_report_id.trim()
                                     ? a.profile_report_id.trim()
@@ -793,7 +796,7 @@ const Organizations = () => {
                                                 title,
                                                 reportId: profileReportId,
                                                 traceType: "vts",
-                                                cardScore: trustScore,
+                                                cardScore: trustScoreRaw,
                                                 llmModelName: resolveStoredLlmModelId({
                                                   llmModelId:
                                                     (typeof a.llm_model_id === "string" &&
@@ -988,20 +991,20 @@ const Organizations = () => {
                                     Number.isFinite(Number(row.reportRiskScore))
                                       ? Number(row.reportRiskScore)
                                       : null;
-                                  const reportScore =
+                                  const reportScoreExact =
                                     rawScore == null
                                       ? null
-                                      : Math.round(
-                                          Math.max(
-                                            0,
-                                            Math.min(
-                                              100,
-                                              // Type 2 stores sales risk; readiness = 100 − SRS.
-                                              // Type 3 stores IRS as implementation readiness; show as stored.
-                                              isBuyerCots ? rawScore : 100 - rawScore,
-                                            ),
+                                      : Math.max(
+                                          0,
+                                          Math.min(
+                                            100,
+                                            // Type 2 stores sales risk; readiness = 100 − SRS.
+                                            // Type 3 stores IRS as implementation readiness; show as stored.
+                                            isBuyerCots ? rawScore : 100 - rawScore,
                                           ),
                                         );
+                                  const reportScore =
+                                    reportScoreExact == null ? null : formatScore2(reportScoreExact);
                                   const scoreRationale =
                                     typeof row.scoreRationale === "string" &&
                                     row.scoreRationale.trim()
@@ -1075,7 +1078,7 @@ const Organizations = () => {
                                                   id: String(row.assessmentId ?? ""),
                                                   title,
                                                   traceType: isBuyerCots ? "irs" : "scs",
-                                                  cardScore: reportScore,
+                                                  cardScore: reportScoreExact,
                                                   llmModelName: resolveStoredLlmModelId({
                                                     llmModelId:
                                                       (typeof row.llmModelId === "string" &&

@@ -6,6 +6,12 @@
 export type CompleteReportLetterGrade = "A" | "B" | "C" | "D" | "F";
 export type CompleteReportGradingProfile = "vendor" | "buyer";
 
+function formatScore2Local(value: unknown): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return (Math.round((n + Number.EPSILON) * 100) / 100).toFixed(2);
+}
+
 /** Legacy stored values may use "E" for the lowest band; UI and new logic use "F" (A–D, then F). */
 export function normalizeDisplayLetterGrade(g: string | null | undefined): string {
   const s = String(g ?? "").trim();
@@ -489,12 +495,7 @@ function buildSrsRationaleFallback(report: Record<string, unknown>): string | nu
   if (!Number.isFinite(srs) && breakdown == null) return null;
 
   const scoreNum = Number.isFinite(srs) ? Math.max(0, Math.min(100, Number(srs))) : null;
-  const scoreLabel =
-    scoreNum != null
-      ? Number.isInteger(scoreNum)
-        ? String(scoreNum)
-        : scoreNum.toFixed(2)
-      : null;
+  const scoreLabel = scoreNum != null ? formatScore2Local(scoreNum) : null;
   const cfr = breakdown != null ? Number(breakdown.customer_friction_risk) : NaN;
   const ir = breakdown != null ? Number(breakdown.implementation_risk) : NaN;
   const cr = breakdown != null ? Number(breakdown.competitive_risk) : NaN;
@@ -706,7 +707,7 @@ function buildIrsRationaleFallback(
     "========================================================================",
     "",
     "RESULT",
-    `  Readiness:   ${Math.round(readiness)} / 100   (higher = more ready to implement)`,
+    `  Readiness:   ${formatScore2Local(readiness)} / 100   (higher = more ready to implement)`,
   ];
   if (grade) lines.push(`  Grade:       ${grade}`);
   if (decision) lines.push(`  Decision:    ${decision}`);
@@ -731,7 +732,7 @@ function buildIrsRationaleFallback(
 
   if (Number.isFinite(vts)) {
     lines.push(
-      `  Vendor trust used: ${Math.round(vts)}/100  (${usedAttestation ? "from selected product attestation" : "default / limited attestation"})`,
+      `  Vendor trust used: ${formatScore2Local(vts)}/100  (${usedAttestation ? "from selected product attestation" : "default / limited attestation"})`,
     );
   }
 

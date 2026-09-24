@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import "../Assessments/BuyerAssessment/buyer_vendor_risk_report.css";
 import { ensureSpaceAfterColon } from "../../../utils/summarizeRiskPoints";
+import { formatScore2 } from "../../../utils/scoreFormat";
 
 export type VcmPayload = {
   version?: number;
@@ -161,7 +162,7 @@ export default function VendorComparisonMatrixReportBody({ data }: { data: VcmPa
                   </h3>
                   {v.overallScore != null ? (
                     <p className="bvr_reco_time">
-                      <strong>Score:</strong> {v.overallScore}/100
+                      <strong>Score:</strong> {formatScore2(v.overallScore)}/100
                     </p>
                   ) : null}
                   {v.notes ? <p className="bvr_reco_desc">{v.notes}</p> : null}
