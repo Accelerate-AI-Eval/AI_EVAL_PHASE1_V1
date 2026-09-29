@@ -26,6 +26,8 @@ type DirectoryProduct = {
   production_model_monitoring?: unknown;
   audit_logs?: unknown;
   training_data_document?: unknown;
+  pain_points?: unknown;
+  unique_solution?: unknown;
   data_subject_rights?: unknown;
   hosting_deployment?: unknown;
   solution_hosted?: unknown;
@@ -197,6 +199,8 @@ export default function BuyerVendorProductFields({
             production_model_monitoring: p.production_model_monitoring,
             audit_logs: p.audit_logs,
             training_data_document: p.training_data_document,
+            pain_points: p.pain_points,
+            unique_solution: p.unique_solution,
             data_subject_rights: p.data_subject_rights,
             hosting_deployment: p.hosting_deployment ?? p.solution_hosted,
             solution_hosted: p.solution_hosted ?? p.hosting_deployment,

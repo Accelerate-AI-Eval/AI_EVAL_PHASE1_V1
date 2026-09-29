@@ -10,6 +10,15 @@ def _leaf(result, pillar, name):
     return next(c for c in parts if c["name"] == name)
 
 
+def _decision_for_score(score):
+    s = max(0, min(100, round(float(score))))
+    if s >= 76:
+        return "PROCEED"
+    if s >= 26:
+        return "PROCEED WITH CAUTION"
+    return "DO NOT PROCEED"
+
+
 def test_t3_03_no_attestation_base_is_50_times_rtm():
     result = calculate_buyer_implementation_risk_score(
         {"riskAppetite": "Moderate - Balanced innovation and risk management"},
@@ -104,12 +113,15 @@ def test_t3_09_budget_excluded_without_vendor_acv():
     assert budget["included"] is False
 
 
-def test_t3_10_no_airi_record_scores_zero_with_note():
+def test_t3_10_no_airi_record_is_excluded_not_a_clean_score():
     result = calculate_buyer_implementation_risk_score({}, None, "V", "P")
     track = _leaf(result, "vendor_risk", "track_record")
-    assert track["included"] is True
-    assert track["value"] == 0.0
-    assert "no public record" in (track.get("note") or track.get("reason") or "")
+    assert track["included"] is False
+    assert track["value"] is None
+    assert track["reason"] == "no_input"
+    assert "not a clean record" in (track.get("note") or "")
+    excluded = result["detail"]["vendor_risk"]["excluded"]
+    assert any(row["name"] == "track_record" for row in excluded)
 
 
 def test_t3_11_autonomous_use_case_advisory_vendor():
@@ -135,7 +147,7 @@ def test_t3_12_blocker_does_not_change_score():
     }
     flagged = calculate_buyer_implementation_risk_score(payload, None, "V", "P")
     assert any(b["id"] == "deployment_model_impossible" for b in flagged["detail"]["blockers"])
-    assert flagged["decision"] == "Flagged as a high risk"
+    assert flagged["decision"] == _decision_for_score(flagged["implementationRiskScore"])
 
 
 def test_t3_residency_blocker_does_not_use_airi():
@@ -147,7 +159,8 @@ def test_t3_residency_blocker_does_not_use_airi():
     }
     result = calculate_buyer_implementation_risk_score(payload, None, "V", "P")
     assert any(b["id"] == "data_residency_impossible" for b in result["detail"]["blockers"])
-    assert result["decision"] == "Flagged as a high risk"
+    assert result["decision"] == _decision_for_score(result["implementationRiskScore"])
     assert 0 <= result["implementationRiskScore"] <= 100
     track = _leaf(result, "vendor_risk", "track_record")
-    assert track["value"] == 0.0
+    assert track["included"] is False
+    assert track["value"] is None

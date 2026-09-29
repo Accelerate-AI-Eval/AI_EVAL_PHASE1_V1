@@ -1229,29 +1229,70 @@ function applyEvidenceTrustFromAttestation(
   return next;
 }
 
+function parseJsonIfSerialized(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed || (trimmed[0] !== "[" && trimmed[0] !== "{")) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
+function scalarText(value: unknown): string {
+  const parsed = parseJsonIfSerialized(value);
+  if (parsed == null || parsed === "") return "";
+  if (Array.isArray(parsed)) {
+    return parsed.map((item) => scalarText(item)).filter(Boolean).join(", ");
+  }
+  if (typeof parsed === "object") {
+    const row = parsed as Record<string, unknown>;
+    if ("summary" in row || "date" in row || "severity" in row) {
+      return formatIncidentRow(row);
+    }
+    return Object.entries(row)
+      .map(([key, item]) => {
+        const text = scalarText(item);
+        return text ? `${key}: ${text}` : "";
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+  const text = String(parsed).trim();
+  return text === "[object Object]" ? "" : text;
+}
+
+function formatIncidentRow(row: Record<string, unknown>): string {
+  const date = scalarText(row.date) || "Date not provided";
+  const severity = scalarText(row.severity) || "unspecified severity";
+  const resolved = row.resolved;
+  const status =
+    resolved === true ||
+    String(resolved ?? "").toLowerCase() === "true" ||
+    String(resolved ?? "").toLowerCase() === "resolved"
+      ? "resolved"
+      : "open";
+  const summary = scalarText(row.summary) || "No summary";
+  const source = scalarText(row.sourceUrl ?? row.source_url);
+  return `${date} — ${severity} — ${status}: ${summary}${source ? ` (${source})` : ""}`;
+}
+
 /** Overlay attested privacy/security facts so LLM sections stay aligned with form answers. */
 /** Attestation-only: the vendor's own incident disclosure, never inferred by the LLM. */
 function securityIncidentsText(answer: unknown, incidents: unknown): string {
-  const rows = Array.isArray(incidents)
-    ? (incidents as Record<string, unknown>[]).filter(
-        (item) => String(item?.summary ?? "").trim() || String(item?.date ?? "").trim(),
-      )
+  const parsed = parseJsonIfSerialized(incidents);
+  const rows = Array.isArray(parsed)
+    ? parsed
+        .map((item) => parseJsonIfSerialized(item))
+        .filter((item): item is Record<string, unknown> => item != null && typeof item === "object" && !Array.isArray(item))
+        .filter((item) => scalarText(item.summary) || scalarText(item.date))
     : [];
   if (rows.length === 0) {
-    const said = String(answer ?? "").trim().toLowerCase();
+    const said = scalarText(answer).toLowerCase();
     return said === "no" ? "No" : said === "yes" ? "Yes" : "Not specified";
   }
-  const detail = rows
-    .map((item) => {
-      const date = String(item.date ?? "").trim() || "Date not provided";
-      const severity = String(item.severity ?? "").trim() || "unspecified severity";
-      const status = item.resolved ? "resolved" : "open";
-      const summary = String(item.summary ?? "").trim() || "No summary";
-      const source = String(item.sourceUrl ?? item.source_url ?? "").trim();
-      return `${date} — ${severity} — ${status}: ${summary}${source ? ` (${source})` : ""}`;
-    })
-    .join("; ");
-  return `Yes · ${detail}`;
+  return `Yes · ${rows.map((item) => formatIncidentRow(item)).join("; ")}`;
 }
 
 function overlayAttestationPrivacySecurityFields(
@@ -1291,6 +1332,11 @@ function overlayAttestationPrivacySecurityFields(
       for (const key of spec.keys) {
         delete existing.items[key];
       }
+      if (spec.id === 5) {
+        for (const key of Object.keys(existing.items)) {
+          if (/security incident/i.test(key)) delete existing.items[key];
+        }
+      }
       existing.items = { ...existing.items, ...patch };
       existing.title = spec.title;
     } else {
@@ -1309,10 +1355,8 @@ function buildSectionsFromPayload(payload: Record<string, unknown>): ReportSecti
   const get = (k: string) => payload[k] ?? cp[k];
   const text = (v: unknown) => (v == null || String(v).trim() === "" ? "Not specified" : String(v));
   const json = (v: unknown) => {
-    if (v == null) return "Not specified";
-    if (Array.isArray(v)) return v.length ? v.map((x) => String(x)).join(", ") : "Not specified";
-    if (typeof v === "object") return JSON.stringify(v);
-    return String(v);
+    const text = scalarText(v);
+    return text || "Not specified";
   };
   const titleCase = (s: string) =>
     s

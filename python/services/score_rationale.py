@@ -877,7 +877,7 @@ def _irs_formula_console_lines(
         "  No attestation:      Base = 50 x RTM (disclosed)",
         "  RTM applied:         here only, not on VTS",
         "  Dispute:             +5 per disputed prefill, cap +20, added to VR",
-        "  Track record:        0 and 'no public record found' when AIRI has no match",
+        "  Track record:        excluded (no_input) when AIRI has no records; absence is not a clean record",
         "  Grade bands (IRS):   A>=76, B>=51, C>=26, else D",
         "  Blockers:            override recommendation; score unchanged",
         "",

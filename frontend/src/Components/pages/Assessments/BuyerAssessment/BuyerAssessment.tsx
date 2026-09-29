@@ -48,6 +48,41 @@ const BASE_URL =
 // After Evidence go to Review; Auto-Generated step commented out
 const TOTAL_STEPS = 9;
 
+const REPORT_POLL_INTERVAL_MS = 4_000;
+const REPORT_POLL_TIMEOUT_MS = 360_000;
+
+const SUBMIT_TIMEOUT_MESSAGE =
+  "Submit timed out. Check Assessments — it may already be saved. Refresh Reports in a minute if the report is not listed yet.";
+
+async function waitForBuyerVendorRiskReport(
+  token: string,
+  assessmentId: string,
+): Promise<boolean> {
+  const startedAt = Date.now();
+  const url = `${BASE_URL.replace(/\/$/, "")}/buyerCotsAssessment/${encodeURIComponent(assessmentId)}/vendor-risk-report`;
+  while (Date.now() - startedAt < REPORT_POLL_TIMEOUT_MS) {
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const text = await res.text();
+      let body: { success?: boolean; pending?: boolean; report?: unknown } = {};
+      try {
+        body = text ? (JSON.parse(text) as typeof body) : {};
+      } catch {
+        body = {};
+      }
+      if (body.success && body.pending === false && body.report != null) {
+        return true;
+      }
+    } catch {
+      // keep waiting; report is written after scoring finishes
+    }
+    await new Promise((resolve) => setTimeout(resolve, REPORT_POLL_INTERVAL_MS));
+  }
+  return false;
+}
+
 const BUYER_COTS_SECTION_KEYS = [
   "context",
   "purchase",
@@ -598,12 +633,35 @@ const BuyerAssessment = () => {
     }
   };
 
+  const finishSubmittedAssessment = async (
+    token: string,
+    submittedId: string,
+  ) => {
+    const ready = await waitForBuyerVendorRiskReport(token, submittedId);
+    if (ready) {
+      toast.success("Assessment submitted. Your report is ready.");
+    } else {
+      toast.info(
+        "Assessment saved. The report is still generating — it will appear under Reports shortly.",
+      );
+    }
+    navigate(
+      `/buyer-vendor-risk-report/${encodeURIComponent(submittedId)}`,
+      { replace: true },
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");
     setSubmitting(true);
     const token = sessionStorage.getItem("bearerToken");
     const organizationId = sessionStorage.getItem("organizationId");
+    if (!token) {
+      setSubmitError("Please log in to submit.");
+      setSubmitting(false);
+      return;
+    }
     if (!organizationId) {
       setSubmitError(
         "Organization context missing. Please complete onboarding or log in again.",
@@ -625,8 +683,28 @@ const BuyerAssessment = () => {
         },
         body: JSON.stringify(payload),
       });
-      const result = await response.json();
+      const text = await response.text();
+      let result: { message?: string; code?: string; assessmentId?: string | number } = {};
+      try {
+        result = text ? JSON.parse(text) : {};
+      } catch {
+        if (response.status === 504 || response.status === 502 || response.status === 503) {
+          if (assessmentId) {
+            await finishSubmittedAssessment(token, assessmentId);
+            return;
+          }
+          throw new Error(SUBMIT_TIMEOUT_MESSAGE);
+        }
+        throw new Error(
+          `Failed to submit assessment (${response.status || "unexpected response"}).`,
+        );
+      }
       if (!response.ok) {
+        if (response.status === 403 && result.code !== "TOKEN_QUOTA_EXCEEDED") {
+          toast.info("This assessment is completed and cannot be modified.");
+          navigate("/assessments", { replace: true });
+          return;
+        }
         throw new Error(apiErrorMessage(result, "Failed to submit assessment"));
       }
       const submittedId =
@@ -635,14 +713,12 @@ const BuyerAssessment = () => {
           : assessmentId != null
             ? String(assessmentId)
             : "";
-      if (submittedId) {
-        navigate(
-          `/buyer-vendor-risk-report/${encodeURIComponent(submittedId)}`,
-          { replace: true },
-        );
-      } else {
+      if (!submittedId) {
+        toast.success("Assessment submitted. Open Reports to view it.");
         navigate("/reports", { replace: true });
+        return;
       }
+      await finishSubmittedAssessment(token, submittedId);
     } catch (err) {
       setSubmitError(errorToUserMessage(err, "Failed to submit assessment"));
     } finally {
@@ -752,7 +828,11 @@ const BuyerAssessment = () => {
       {submitting && (
         <SubmitProgressOverlay
           variant="assessment"
-          headline="Building an assessment that can explain itself"
+          tagline="Generating your analysis report"
+          headline="Building a plan that can explain itself"
+          description="The assessment is saved. Scoring fit, mapping risks, and composing the report — this usually takes about a minute. Keep this page open."
+          footerNote="waiting for the full report"
+          ariaLabel="Submitting assessment and generating report"
         />
       )}
       <div className="form_card_centered">

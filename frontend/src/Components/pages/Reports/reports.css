@@ -2389,9 +2389,27 @@ html[data-theme="dark"] .report_assessment_back svg {
   border-radius: 0;
 }
 
+/* ROI Analysis commented out: Deployment Overview is 3 cards per row */
+.report_deployment_roi_row_deployment_only .report_deployment_roi_titles {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.report_deployment_cards_3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.report_deployment_cards_3 > .report_deployment_item {
+  height: 100%;
+  box-sizing: border-box;
+}
+
 @media (max-width: 960px) {
   .report_deployment_roi_titles,
-  .report_deployment_roi_pair {
+  .report_deployment_roi_pair,
+  .report_deployment_cards_3 {
     grid-template-columns: 1fr;
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { Fragment, useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "react-toastify"
 import {
@@ -1558,15 +1558,18 @@ function ReportDetail() {
         </div>
       </section>
 
-      <div className="report_deployment_roi_row">
+      <div className="report_deployment_roi_row report_deployment_roi_row_deployment_only">
         <div className="report_deployment_roi_titles">
           <h2 className="report_section_heading">
             <Building2 size={20} aria-hidden /> Deployment Overview
           </h2>
+          {/* ROI Analysis — commented out for assessment type 2 (cots_vendor)
           <h2 className="report_section_heading">
             <TrendingUp size={20} aria-hidden /> ROI Analysis
           </h2>
+          */}
         </div>
+        <div className="report_deployment_cards_3">
         {(
           [
             {
@@ -1743,11 +1746,9 @@ function ReportDetail() {
             },
           ] as const
         ).map((pair) => (
-          <div key={pair.key} className="report_deployment_roi_pair">
-            {pair.deployment}
-            {pair.roi}
-          </div>
+          <Fragment key={pair.key}>{pair.deployment}</Fragment>
         ))}
+        </div>
       </div>
 
       {/* Comparison to Alternatives — same data as ROI appendix, own section (not inside ROI Analysis) */}

@@ -15,6 +15,10 @@ import {
 } from "../../services/admin/featureTokenQuota.service.js";
 import { buildPayloadCots } from "../../services/cotsBuyerPayload.js";
 import { enrichBuyerCotsScoringPayload } from "../../services/enrichBuyerCotsScoringPayload.js";
+import {
+  getRequestActor,
+  runWithRequestActor,
+} from "../../utils/requestActorContext.js";
 
 function readBuyerAttestationIdFromBody(body: Record<string, unknown>): string | null {
   const keys = [
@@ -157,6 +161,33 @@ async function persistVendorRiskReport(
   }
 }
 
+/**
+ * LLM report generation often exceeds the gateway idle timeout (~60s).
+ * Save the assessment, send JSON to the browser, THEN generate the report.
+ * Do not await this from the HTTP handler.
+ */
+function queueVendorRiskReport(
+  assessmentId: string,
+  body: Record<string, unknown>,
+  vendorName: string,
+  productName: string,
+): void {
+  const actor = getRequestActor();
+  setImmediate(() => {
+    void runWithRequestActor(actor, async () => {
+      try {
+        await persistVendorRiskReport(assessmentId, body, vendorName, productName);
+      } catch (err) {
+        console.error(
+          "Background buyer COTS report generation failed:",
+          assessmentId,
+          err instanceof Error ? err.message : err,
+        );
+      }
+    });
+  });
+}
+
 /** POST /buyerCotsAssessment - create or update (from draft) and set status submitted. Organization ID is taken from the authenticated user (DB). */
 const submitBuyerCotsAssessment = async (req: Request, res: Response) => {
   try {
@@ -202,17 +233,19 @@ const submitBuyerCotsAssessment = async (req: Request, res: Response) => {
           .set({ ...payloadCots, updated_at: new Date() })
           .where(eq(cotsBuyerAssessments.assessment_id, assessmentId));
       });
-      const vendorRiskReportAvailable = await persistVendorRiskReport(
+      const reportBody = { ...(body as Record<string, unknown>), organizationId };
+      res.status(200).json({
+        message: "Buyer COTS assessment submitted successfully",
         assessmentId,
-        { ...(body as Record<string, unknown>), organizationId },
+        reportGenerating: true,
+      });
+      queueVendorRiskReport(
+        assessmentId,
+        reportBody,
         String(payloadCots.vendor_name ?? ""),
         String(payloadCots.specific_product ?? ""),
       );
-      return res.status(200).json({
-        message: "Buyer COTS assessment submitted successfully",
-        assessmentId,
-        vendorRiskReportAvailable,
-      });
+      return;
     }
 
     const [assessment] = await db.transaction(async (tx) => {
@@ -228,17 +261,19 @@ const submitBuyerCotsAssessment = async (req: Request, res: Response) => {
       await tx.insert(cotsBuyerAssessments).values({ assessment_id: a.id, ...payloadCots });
       return [a];
     });
-    const vendorRiskReportAvailable = await persistVendorRiskReport(
+    const reportBody = { ...(body as Record<string, unknown>), organizationId };
+    res.status(201).json({
+      message: "Buyer COTS assessment submitted successfully",
+      assessmentId: assessment.id,
+      reportGenerating: true,
+    });
+    queueVendorRiskReport(
       assessment.id,
-      { ...(body as Record<string, unknown>), organizationId },
+      reportBody,
       String(payloadCots.vendor_name ?? ""),
       String(payloadCots.specific_product ?? ""),
     );
-    return res.status(201).json({
-      message: "Buyer COTS assessment submitted successfully",
-      assessmentId: assessment.id,
-      vendorRiskReportAvailable,
-    });
+    return;
   } catch (error) {
     if (sendIfTokenQuotaExceeded(res, error)) return;
     const message = error instanceof Error ? error.message : String(error);

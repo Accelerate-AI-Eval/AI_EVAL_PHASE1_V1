@@ -534,11 +534,15 @@ export default function BuyerCotsDynamicStep({
                 placeholder={field.placeholder}
                 required={field.required ? "true" : "false"}
                 options={
-                  isBuyerCotsAttestationLockedField(formData, field.key) || field.readOnly
-                    ? undefined
-                    : options.length
+                  field.inputType === "multiselect"
+                    ? options.length
                       ? options
                       : undefined
+                    : isBuyerCotsAttestationLockedField(formData, field.key) || field.readOnly
+                      ? undefined
+                      : options.length
+                        ? options
+                        : undefined
                 }
                 multiselect={field.inputType === "multiselect"}
                 textarea={field.inputType === "textarea"}

@@ -1290,6 +1290,30 @@ html[data-theme="dark"] .governance_table .user_table_action_btn:hover {
   /* styled via .dash_view_all_btn */
 }
 
+.governance_control_id_list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  max-width: 22rem;
+}
+
+.governance_control_id_chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid #93c5fd;
+  background: #ffffff;
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
 .governance_mit_chip_list {
   display: flex;
   flex-wrap: wrap;

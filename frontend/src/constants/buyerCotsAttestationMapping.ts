@@ -90,6 +90,89 @@ const EXPORT_YES = "Yes - full export in standard formats";
 const EXPORT_NO = "No - data cannot be exported";
 const EXPORT_UNKNOWN = "Not yet established";
 
+const TRAINING_USE_NO_DEFAULT = "No - default setting only";
+const TRAINING_USE_NO_CONTRACT = "No - contractually excluded";
+const TRAINING_USE_YES_CONSENT = "Yes - with our consent";
+
+/** Vendor answers to "Can you document your training data sources?" — a different question. */
+const TRAINING_DOCUMENTATION_VALUES = new Set([
+  "Full documentation with lineage",
+  "Partial documentation available",
+  "Summary only (no detailed lineage)",
+  "Using third-party models (data unknown)",
+  "No documentation available",
+]);
+
+export function isTrainingDocumentationAnswer(value: string): boolean {
+  return TRAINING_DOCUMENTATION_VALUES.has(value.trim());
+}
+
+function collectTrainingPolicyText(attestation: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const push = (raw: unknown) => {
+    const text = asText(raw);
+    if (text) parts.push(text);
+  };
+  push(pick(attestation, "pain_points_solved", "pain_points"));
+  push(pick(attestation, "unique_value_proposition", "unique_solution"));
+  let report = attestation.generated_profile_report;
+  if (typeof report === "string" && report.trim()) {
+    try {
+      report = JSON.parse(report) as unknown;
+    } catch {
+      report = null;
+    }
+  }
+  if (report && typeof report === "object") {
+    const row = report as Record<string, unknown>;
+    push(row.summary);
+    const trust = row.trustScore;
+    if (trust && typeof trust === "object") push((trust as Record<string, unknown>).summary);
+    const sections = row.sections;
+    if (Array.isArray(sections)) {
+      for (const section of sections) {
+        if (!section || typeof section !== "object") continue;
+        const items = (section as Record<string, unknown>).items;
+        if (!items || typeof items !== "object") continue;
+        for (const value of Object.values(items as Record<string, unknown>)) {
+          const text = asText(value);
+          if (/train|customer data|business data/i.test(text)) push(text);
+        }
+      }
+    }
+  }
+  return parts.join("\n");
+}
+
+/**
+ * "Will our data train the vendor's models?" is not the training-data documentation question.
+ * Read whether the attestation says customer/business data is used to train models.
+ */
+function mapTrainingUseOfData(attestation: Record<string, unknown>): string {
+  const text = collectTrainingPolicyText(attestation).toLowerCase();
+  if (!text.trim()) return "";
+
+  const notUsed =
+    /no training on (customer|business) data/.test(text) ||
+    /(customer|business) data (is |are )?(not|never) (used|use[sd]) (to|for) train/.test(text) ||
+    /not used to train/.test(text) ||
+    /do(?:es)? not (use|train).{0,60}(customer|business) data/.test(text);
+
+  const contractuallyExcluded =
+    /contractually excluded/.test(text) ||
+    /contract (prohibits|forbids|excludes).{0,40}train/.test(text) ||
+    /not permitted to train/.test(text);
+
+  const usedWithConsent =
+    /(train|training).{0,80}(with (our |customer )?consent|opt-?in)/.test(text) ||
+    /(with (our |customer )?consent|opt-?in).{0,80}(train|training)/.test(text);
+
+  if (contractuallyExcluded && /train/.test(text)) return TRAINING_USE_NO_CONTRACT;
+  if (notUsed) return TRAINING_USE_NO_DEFAULT;
+  if (usedWithConsent) return TRAINING_USE_YES_CONSENT;
+  return "";
+}
+
 function mapDataExport(rightsRaw: unknown): string {
   if (rightsRaw == null || rightsRaw === "") return "";
   const tokens = asList(rightsRaw).map((t) => t.toLowerCase());
@@ -124,7 +207,7 @@ export function mapAttestationToBuyerCotsPrefill(
   );
   const monitoring = matchAlias(asText(monitoringRaw), MONITORING_ALIASES);
   const audit = matchAlias(asText(pick(attestation, "audit_logs_available", "audit_logs")), AUDIT_ALIASES);
-  const training = asText(pick(attestation, "training_data_documentation", "training_data_document"));
+  const training = mapTrainingUseOfData(attestation);
   const dataExport = mapDataExport(pick(attestation, "data_subject_rights"));
 
   const out: Record<string, string> = {};
@@ -158,6 +241,16 @@ export function mergeAttestationPrefill(
     if (overwrite || !String(prev[key] ?? "").trim() || String(prev[`${key}Attested`] ?? "").trim()) {
       patch[key] = mapped[key];
     }
+  }
+  if (
+    overwrite &&
+    !mapped.trainingUseOfData &&
+    isTrainingDocumentationAnswer(String(prev.trainingUseOfData ?? ""))
+  ) {
+    patch.trainingUseOfData = "";
+    patch.trainingUseOfDataAttested = "";
+    patch.trainingUseOfDataStance = "";
+    patch.trainingUseOfDataDisputeNote = "";
   }
   if (overwrite) {
     patch.trainingUseOfDataStance = "";

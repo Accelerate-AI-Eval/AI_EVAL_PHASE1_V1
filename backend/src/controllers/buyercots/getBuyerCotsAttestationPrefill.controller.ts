@@ -36,6 +36,69 @@ function asList(raw: unknown): string[] {
   return s.split(",").map((x) => x.trim()).filter(Boolean);
 }
 
+const TRAINING_USE_NO_DEFAULT = "No - default setting only";
+const TRAINING_USE_NO_CONTRACT = "No - contractually excluded";
+const TRAINING_USE_YES_CONSENT = "Yes - with our consent";
+
+function collectTrainingPolicyText(row: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const push = (raw: unknown) => {
+    const text = asText(raw);
+    if (text) parts.push(text);
+  };
+  push(row.pain_points);
+  push(row.unique_solution);
+  let report = row.generated_profile_report;
+  if (typeof report === "string" && report.trim()) {
+    try {
+      report = JSON.parse(report) as unknown;
+    } catch {
+      report = null;
+    }
+  }
+  if (report && typeof report === "object") {
+    const rec = report as Record<string, unknown>;
+    push(rec.summary);
+    const trust = rec.trustScore;
+    if (trust && typeof trust === "object") push((trust as Record<string, unknown>).summary);
+    const sections = rec.sections;
+    if (Array.isArray(sections)) {
+      for (const section of sections) {
+        if (!section || typeof section !== "object") continue;
+        const items = (section as Record<string, unknown>).items;
+        if (!items || typeof items !== "object") continue;
+        for (const value of Object.values(items as Record<string, unknown>)) {
+          const text = asText(value);
+          if (/train|customer data|business data/i.test(text)) push(text);
+        }
+      }
+    }
+  }
+  return parts.join("\n");
+}
+
+/** Whether customer/business data trains models — not training-data documentation. */
+function mapTrainingUseOfData(row: Record<string, unknown>): string {
+  const text = collectTrainingPolicyText(row).toLowerCase();
+  if (!text.trim()) return "";
+  const notUsed =
+    /no training on (customer|business) data/.test(text) ||
+    /(customer|business) data (is |are )?(not|never) (used|use[sd]) (to|for) train/.test(text) ||
+    /not used to train/.test(text) ||
+    /do(?:es)? not (use|train).{0,60}(customer|business) data/.test(text);
+  const contractuallyExcluded =
+    /contractually excluded/.test(text) ||
+    /contract (prohibits|forbids|excludes).{0,40}train/.test(text) ||
+    /not permitted to train/.test(text);
+  const usedWithConsent =
+    /(train|training).{0,80}(with (our |customer )?consent|opt-?in)/.test(text) ||
+    /(with (our |customer )?consent|opt-?in).{0,80}(train|training)/.test(text);
+  if (contractuallyExcluded && /train/.test(text)) return TRAINING_USE_NO_CONTRACT;
+  if (notUsed) return TRAINING_USE_NO_DEFAULT;
+  if (usedWithConsent) return TRAINING_USE_YES_CONSENT;
+  return "";
+}
+
 function mapDataExport(rightsRaw: unknown): string {
   if (rightsRaw == null || rightsRaw === "") return "";
   const tokens = asList(rightsRaw).map((t) => t.toLowerCase());
@@ -90,7 +153,7 @@ function mapAttestationRow(row: Record<string, unknown>): Record<string, string>
     MONITORING_ALIASES,
   );
   const audit = matchAlias(asText(row.audit_logs), AUDIT_ALIASES);
-  const training = asText(row.training_data_document);
+  const training = mapTrainingUseOfData(row);
   const dataExport = mapDataExport(row.data_subject_rights);
 
   const out: Record<string, string> = {};
@@ -114,7 +177,9 @@ const getBuyerCotsAttestationPrefill = async (req: Request, res: Response) => {
         available_usage_data: vendorSelfAttestations.available_usage_data,
         production_model_monitoring: vendorSelfAttestations.production_model_monitoring,
         audit_logs: vendorSelfAttestations.audit_logs,
-        training_data_document: vendorSelfAttestations.training_data_document,
+        pain_points: vendorSelfAttestations.pain_points,
+        unique_solution: vendorSelfAttestations.unique_solution,
+        generated_profile_report: vendorSelfAttestations.generated_profile_report,
         data_subject_rights: vendorSelfAttestations.data_subject_rights,
       })
       .from(vendorSelfAttestations)

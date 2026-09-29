@@ -5,22 +5,34 @@ import FieldError from "../../../UI/FieldError";
 
 const defaultOption = "Select";
 
+function unwrapLabels(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.flatMap(unwrapLabels);
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed === "[object Object]") return [];
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        return unwrapLabels(JSON.parse(trimmed));
+      } catch {
+        /* plain text */
+      }
+    }
+    return [trimmed];
+  }
+  if (typeof raw === "object") return [];
+  const text = String(raw).trim();
+  return text && text !== "[object Object]" ? [text] : [];
+}
+
 /** Parse multiselect form value: JSON array, plain array, or comma-separated string (draft DB format). */
 function parseMultiselectValue(raw: unknown): string[] {
   if (raw == null) return [];
-  if (Array.isArray(raw)) {
-    return raw.map((x) => String(x).trim()).filter(Boolean);
+  if (Array.isArray(raw) || (typeof raw === "string" && raw.trim().startsWith("["))) {
+    return unwrapLabels(raw);
   }
   const s = String(raw).trim();
   if (!s) return [];
-  try {
-    const parsed = JSON.parse(s);
-    if (Array.isArray(parsed)) {
-      return parsed.map((x) => String(x).trim()).filter(Boolean);
-    }
-  } catch {
-    /* comma-separated draft storage */
-  }
   return s
     .split(",")
     .map((part) => part.trim())
@@ -57,14 +69,19 @@ const BuyerCotsField = ({
   exclusiveValue,
   textarea = false,
 }: BuyerCotsFieldProps) => {
+  const parsedMulti = parseMultiselectValue(value);
+  const looksSerialized =
+    typeof value === "string" && /^\s*[\[{]/.test(value) && parsedMulti.length > 0;
   const safeValue =
     value == null
       ? ""
       : Array.isArray(value)
-        ? value.map(String).join(", ")
-        : typeof value === "string"
-          ? value
-          : String(value);
+        ? parsedMulti.join(", ")
+        : looksSerialized
+          ? parsedMulti.join(", ")
+          : typeof value === "string"
+            ? value
+            : parsedMulti.join(", ");
   const isRequired = required === true || required === "true";
 
   if (readOnly) {

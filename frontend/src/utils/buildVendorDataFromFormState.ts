@@ -5,8 +5,36 @@ import type { VendorSelfAttestationFormState } from "../types/vendorSelfAttestat
 
 function formatVal(val: unknown): string {
   if (val == null || val === "") return "";
-  if (Array.isArray(val)) return val.filter(Boolean).join(", ");
-  if (typeof val === "object") return JSON.stringify(val);
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        return formatVal(JSON.parse(trimmed));
+      } catch {
+        return trimmed;
+      }
+    }
+    return trimmed === "[object Object]" ? "" : trimmed;
+  }
+  if (Array.isArray(val)) return val.map((item) => formatVal(item)).filter(Boolean).join(", ");
+  if (typeof val === "object") {
+    const row = val as Record<string, unknown>;
+    if ("summary" in row || "date" in row || "severity" in row) {
+      const date = formatVal(row.date) || "Date not provided";
+      const severity = formatVal(row.severity) || "unspecified severity";
+      const status = row.resolved ? "resolved" : "open";
+      const summary = formatVal(row.summary) || "No summary";
+      const source = formatVal(row.sourceUrl ?? row.source_url);
+      return `${date} — ${severity} — ${status}: ${summary}${source ? ` (${source})` : ""}`;
+    }
+    return Object.entries(row)
+      .map(([key, item]) => {
+        const text = formatVal(item);
+        return text ? `${key}: ${text}` : "";
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
   return String(val).trim();
 }
 

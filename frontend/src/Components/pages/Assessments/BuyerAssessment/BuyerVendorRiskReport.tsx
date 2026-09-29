@@ -25,6 +25,7 @@ import {
 } from "../../../../utils/frameworkMappingControlsDisplay";
 import {
   completeReportRiskMeterColor,
+  implementationRiskDecisionFromIrs,
   type CompleteReportRiskMeterGrading,
 } from "../../../../utils/completeReportGrade";
 import { sanitizeFrameworkMappingNotesForDisplay } from "../../../../utils/frameworkMappingNotesDisplay";
@@ -405,7 +406,9 @@ export default function BuyerVendorRiskReport() {
   const irsClassification = String(
     report.implementationRiskClassification ?? "",
   ).trim();
-  const irsDecision = String(report.implementationRiskDecision ?? "").trim();
+  const irsDecision = hasImplementationScore
+    ? implementationRiskDecisionFromIrs(implementationRiskScore)
+    : String(report.implementationRiskDecision ?? "").trim();
   const recommendationHeading = hasImplementationScore
     ? irsClassification || irsDecision || "Implementation readiness"
     : report.recommendationLabel;

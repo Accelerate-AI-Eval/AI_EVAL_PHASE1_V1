@@ -253,7 +253,7 @@ export function organizationalPortalImplementationDecisionFromReport(
   );
 }
 
-/** Mirrors backend `buyerImplementationRiskScore` interpret().decision for IRS (0–100, higher = worse). */
+/** IRS readiness 0–100 (higher = more ready) → decision band. */
 export function implementationRiskDecisionFromIrs(irs: number): string {
   const s = Math.max(0, Math.min(100, Math.round(Number(irs))));
   if (s >= 76) return "PROCEED";
@@ -378,6 +378,9 @@ export function resolveScoreSubtitleForCompleteReport(
 ): string | null {
   const irs = implementationRiskScoreFromReportPayload(row);
   if (grading === "vendor_cots_irs") {
+    if (row.source === "buyer_vendor_risk" && irs != null) {
+      return implementationRiskDecisionFromIrs(irs);
+    }
     return firstNonEmptyString(
       row.implementationRiskDecision,
       organizationalPortalImplementationDecisionFromReport(row.report),
@@ -626,12 +629,7 @@ function buildIrsRationaleFallback(
     gradeLetter && classification
       ? `${gradeLetter} - ${classification}`
       : gradeLetter ?? classification ?? null;
-  const decision = firstNonEmptyString(
-    row.implementationRiskDecision,
-    report.implementationRiskDecision,
-    g?.implementationRiskDecision,
-    implementationRiskDecisionFromIrs(readiness),
-  );
+  const decision = implementationRiskDecisionFromIrs(readiness);
   const profile = firstNonEmptyString(
     report.readinessProfile,
     report.readiness_profile,

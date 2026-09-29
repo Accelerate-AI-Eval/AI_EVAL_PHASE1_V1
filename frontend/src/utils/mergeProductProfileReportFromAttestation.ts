@@ -1,12 +1,74 @@
 import type { GeneratedProductProfileReport, ReportSection } from "../types/generatedProductProfile";
 import { sortReportSectionsForDisplay } from "./productProfileSectionDisplayOrder";
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function parseJsonIfSerialized(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed || (trimmed[0] !== "[" && trimmed[0] !== "{")) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
+function scalarText(value: unknown): string {
+  const parsed = parseJsonIfSerialized(value);
+  if (parsed == null || parsed === "") return "";
+  if (Array.isArray(parsed)) {
+    return parsed.map((item) => scalarText(item)).filter(Boolean).join(", ");
+  }
+  const row = asRecord(parsed);
+  if (row) {
+    if ("summary" in row || "date" in row || "severity" in row) {
+      return formatIncidentRow(row);
+    }
+    return Object.entries(row)
+      .map(([key, item]) => {
+        const text = scalarText(item);
+        return text ? `${key}: ${text}` : "";
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+  const text = String(parsed).trim();
+  return text === "[object Object]" ? "" : text;
+}
+
+function formatIncidentRow(row: Record<string, unknown>): string {
+  const date = scalarText(row.date) || "Date not provided";
+  const severity = scalarText(row.severity) || "unspecified severity";
+  const status = row.resolved === true || String(row.resolved ?? "").toLowerCase() === "true" || String(row.resolved ?? "").toLowerCase() === "resolved"
+    ? "resolved"
+    : "open";
+  const summary = scalarText(row.summary) || "No summary";
+  const source = scalarText(row.sourceUrl ?? row.source_url);
+  return `${date} — ${severity} — ${status}: ${summary}${source ? ` (${source})` : ""}`;
+}
+
+function securityIncidentsText(answer: unknown, incidents: unknown): string {
+  const parsed = parseJsonIfSerialized(incidents);
+  const rows = Array.isArray(parsed)
+    ? parsed
+        .map((item) => asRecord(parseJsonIfSerialized(item)))
+        .filter((item): item is Record<string, unknown> => item != null)
+        .filter((item) => scalarText(item.summary) || scalarText(item.date))
+    : [];
+  if (rows.length === 0) {
+    const said = scalarText(answer).toLowerCase();
+    return said === "no" ? "No" : said === "yes" ? "Yes" : "Not specified";
+  }
+  return `Yes · ${rows.map(formatIncidentRow).join("; ")}`;
+}
+
 function itemText(v: unknown): string {
-  if (v == null) return "Not specified";
-  if (Array.isArray(v)) return v.length ? v.map((x) => String(x)).join(", ") : "Not specified";
-  if (typeof v === "object") return JSON.stringify(v);
-  const s = String(v).trim();
-  return s || "Not specified";
+  const text = scalarText(v);
+  return text || "Not specified";
 }
 
 /** Legacy reports used a single section id 2 titled "Company Overview". Split into identity + reach. */
@@ -181,6 +243,21 @@ export function mergeMissingProfileSectionsFromAttestation(
       },
     });
   }
+
+  const incidentLabel = "Publicly Disclosed Security Incidents (24 months)";
+  const incidentText = securityIncidentsText(
+    attestation.has_public_security_incident ?? attestation.hasPublicSecurityIncident,
+    attestation.security_incidents ?? attestation.securityIncidents,
+  );
+  const security = next.find((section) => section.id === 5);
+  if (security) {
+    for (const key of Object.keys(security.items)) {
+      if (/security incident/i.test(key)) delete security.items[key];
+    }
+  }
+  mergeItemsIntoSection(next, 5, "Security Posture", {
+    [incidentLabel]: incidentText,
+  });
 
   const privacySecurity = privacySecurityItemsFromAttestation(attestation);
   mergeItemsIntoSection(next, 6, "Data Practices", privacySecurity[6]);

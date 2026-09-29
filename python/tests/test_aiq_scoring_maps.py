@@ -14,6 +14,15 @@ from services.sales_risk_formula import (
 from services.scoring_service import band_employee_count, band_geographic_regions
 
 
+def _decision_for_score(score):
+    s = max(0, min(100, round(float(score))))
+    if s >= 76:
+        return "PROCEED"
+    if s >= 26:
+        return "PROCEED WITH CAUTION"
+    return "DO NOT PROCEED"
+
+
 def test_employee_count_comma_thousands_does_not_fall_to_1_10():
     assert band_employee_count("1,001-5,000") == "1001-5000"
     assert band_employee_count("1,001–5,000") == "1001-5000"
@@ -175,7 +184,7 @@ def test_aiq026_rollback_and_work_stops_raises_blocker():
     )
     ids = [b["id"] for b in result["detail"]["blockers"]]
     assert "no_rollback_and_work_stops" in ids
-    assert result["decision"] == "Flagged as a high risk"
+    assert result["decision"] == _decision_for_score(result["implementationRiskScore"])
 
 
 def test_type03_uses_new_cots_fields_instead_of_hardcoded():

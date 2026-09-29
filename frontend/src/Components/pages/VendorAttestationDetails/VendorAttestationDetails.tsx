@@ -17,8 +17,6 @@ import {
   User,
   Calendar,
   Globe,
-  RefreshCw,
-  ShieldCheck,
 } from "lucide-react";
 import Button from "../../UI/Button";
 import LoadingMessage from "../../UI/LoadingMessage";
@@ -1102,20 +1100,6 @@ const VendorAttestationDetails = () => {
             title="Public Directory"
             description="Complete your attestation and achieve a passing trust score to appear in the vendor directory visible to buyers."
             icon={<Globe size={14} strokeWidth={2.25} />}
-          />
-          <DashboardFeatureCard
-            variant="pa"
-            accent="amber"
-            title="Keep It Updated"
-            description="You can edit your attestation at any time to reflect changes in your product, certifications, or practices."
-            icon={<RefreshCw size={14} strokeWidth={2.25} />}
-          />
-          <DashboardFeatureCard
-            variant="pa"
-            accent="violet"
-            title="Continuous Trust"
-            description="Regular updates to your attestation help maintain your trust score and directory standing."
-            icon={<ShieldCheck size={14} strokeWidth={2.25} />}
           />
         </div>
       </section>

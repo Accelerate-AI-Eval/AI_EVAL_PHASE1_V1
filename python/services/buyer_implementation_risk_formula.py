@@ -1150,17 +1150,16 @@ def _calc_cert_gap(resolved: dict[str, Any]) -> dict[str, Any]:
 
 
 def _calc_track_record(resolved: dict[str, Any]) -> dict[str, Any]:
-    # Document 0 §7 is not implemented. With no supplied records this leaf
-    # scores 0 and states "no public record found" (Document 3 T3-10).
+    # An empty AIRI register is missing data, not a clean record.
+    # Exclude the leaf so its weight is redistributed (same as financial no_input).
     records = resolved.get("airiRecords")
     if _is_empty(records):
         return _comp(
             "track_record",
             VR_WEIGHTS["track_record"],
-            included=True,
-            value=0.0,
-            reason="no public record found",
-            extra={"note": "no public record found"},
+            included=False,
+            reason="no_input",
+            extra={"note": "no AIRI records; absence is not a clean record"},
         )
     total = 0.0
     sev = {"critical": 25.0, "high": 12.0, "medium": 5.0, "low": 2.0}
@@ -1814,10 +1813,7 @@ def _interpret(score: float, blockers: list[dict[str, str]]) -> dict[str, str]:
             "recommendedAction": "Do not proceed until critical gaps are resolved; reassess after remediation.",
         }
     if blockers:
-        out["decision"] = "Flagged as a high risk"
-        out["recommendedAction"] = "Flagged as a high risk — " + "; ".join(
-            b["condition"] for b in blockers
-        )
+        # Decision stays on the score band. Blockers are recorded separately.
         out["blocker_override"] = "true"
     return out
 

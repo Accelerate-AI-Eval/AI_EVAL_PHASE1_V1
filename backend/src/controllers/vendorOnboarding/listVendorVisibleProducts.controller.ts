@@ -112,6 +112,7 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               production_model_monitoring: vendorSelfAttestations.production_model_monitoring,
               audit_logs: vendorSelfAttestations.audit_logs,
               training_data_document: vendorSelfAttestations.training_data_document,
+              pain_points: vendorSelfAttestations.pain_points,
               data_subject_rights: vendorSelfAttestations.data_subject_rights,
               solution_hosted: vendorSelfAttestations.solution_hosted,
             })
@@ -138,6 +139,7 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               production_model_monitoring: vendorSelfAttestations.production_model_monitoring,
               audit_logs: vendorSelfAttestations.audit_logs,
               training_data_document: vendorSelfAttestations.training_data_document,
+              pain_points: vendorSelfAttestations.pain_points,
               data_subject_rights: vendorSelfAttestations.data_subject_rights,
               solution_hosted: vendorSelfAttestations.solution_hosted,
             })
@@ -235,6 +237,8 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
         production_model_monitoring: r.production_model_monitoring ?? null,
         audit_logs: r.audit_logs ?? null,
         training_data_document: r.training_data_document ?? null,
+        pain_points: r.pain_points ?? null,
+        unique_solution: r.unique_solution ?? null,
         data_subject_rights: r.data_subject_rights ?? null,
         hosting_deployment: r.solution_hosted ?? null,
         solution_hosted: r.solution_hosted ?? null,
