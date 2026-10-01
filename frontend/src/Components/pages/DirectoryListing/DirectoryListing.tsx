@@ -6,6 +6,7 @@ import { buildVendorDataFromFormState } from "../../../utils/buildVendorDataFrom
 import type { VendorSelfAttestationFormState } from "../../../types/vendorSelfAttestation";
 import type { GeneratedProductProfileReport } from "../../../types/generatedProductProfile";
 import { apiErrorMessage } from "../../../utils/tokenQuotaError";
+import { clampScore2 } from "../../../utils/scoreFormat";
 import "../ProductProfile/product_profile.css";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:5003/api/v1";
@@ -219,7 +220,7 @@ export const DirectoryListing = () => {
                 (ts as Record<string, unknown>).overallScore ??
                 (ts as Record<string, unknown>).overall_score;
               const n = Number(overall);
-              if (Number.isFinite(n) && n > 0) latestTrust = Math.round(n);
+              if (Number.isFinite(n) && n > 0) latestTrust = clampScore2(n);
             }
           }
           return {
@@ -506,7 +507,7 @@ export const DirectoryListing = () => {
                   (ts as Record<string, unknown>).overallScore ??
                     (ts as Record<string, unknown>).overall_score,
                 );
-                return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+                return Number.isFinite(n) && n > 0 ? clampScore2(n) : null;
               }
               return null;
             })()
@@ -522,7 +523,7 @@ export const DirectoryListing = () => {
       if (Number.isFinite(storedScore) && storedScore > 0) {
         return {
           ...p,
-          latest_trust_score: Math.round(storedScore),
+          latest_trust_score: clampScore2(storedScore),
           generated_profile_report:
             p.generated_profile_report ??
             (stored.report as ProductProfileProduct["generated_profile_report"]),

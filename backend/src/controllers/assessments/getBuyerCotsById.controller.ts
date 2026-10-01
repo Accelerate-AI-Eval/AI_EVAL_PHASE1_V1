@@ -19,7 +19,7 @@ function extractImplementationReadinessFromVendorReport(report: unknown): {
   const rawScore = r.implementationRiskScore;
   const n = typeof rawScore === "number" ? rawScore : Number(rawScore);
   const implementationRiskScore = Number.isFinite(n)
-    ? Math.min(100, Math.max(0, Math.round(n)))
+    ? Math.min(100, Math.max(0, Math.round((n + Number.EPSILON) * 100) / 100))
     : null;
   const rawLetter = r.implementationReadinessGrade;
   let implementationReadinessGrade: string | null =

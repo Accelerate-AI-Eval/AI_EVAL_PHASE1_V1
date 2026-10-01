@@ -21,7 +21,7 @@ import {
   frameworkControlsDisplayLines,
   parseFrameworkMappingControlsDetail,
 } from "../../../utils/frameworkMappingControlsDisplay";
-import { formatScore2 } from "../../../utils/scoreFormat";
+import { clampScore2, formatScore2 } from "../../../utils/scoreFormat";
 import DashboardTypewriterGreeting from "../../UI/DashboardTypewriterGreeting";
 import "./dashboard.css";
 import "../UserManagement/user_management.css";
@@ -220,14 +220,14 @@ function extractOverallRiskScoreFromCompleteReport(report: unknown): number | nu
   const raw = generated?.overallRiskScore ?? r.overallRiskScore;
   const n = Number(raw);
   if (!Number.isFinite(n)) return null;
-  return Math.max(0, Math.min(100, Math.round(n)));
+  return clampScore2(n);
 }
 
 function extractOverallRiskScoreFromReportItem(item: unknown): number | null {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
   const r = item as Record<string, unknown>;
   const direct = Number(r.overallRiskScore ?? r.overall_risk_score ?? r.score);
-  if (Number.isFinite(direct)) return Math.max(0, Math.min(100, Math.round(direct)));
+  if (Number.isFinite(direct)) return clampScore2(direct);
   return extractOverallRiskScoreFromCompleteReport(r.report);
 }
 
@@ -241,14 +241,14 @@ function extractImplementationRiskScoreFromCompleteReport(report: unknown): numb
   const raw = generated?.implementationRiskScore ?? r.implementationRiskScore;
   const n = Number(raw);
   if (!Number.isFinite(n)) return null;
-  return Math.max(0, Math.min(100, Math.round(n)));
+  return clampScore2(n);
 }
 
 function extractImplementationRiskScoreFromReportItem(item: unknown): number | null {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
   const r = item as Record<string, unknown>;
   const direct = Number(r.implementationRiskScore ?? r.implementation_risk_score);
-  if (Number.isFinite(direct)) return Math.max(0, Math.min(100, Math.round(direct)));
+  if (Number.isFinite(direct)) return clampScore2(direct);
   return extractImplementationRiskScoreFromCompleteReport(r.report);
 }
 
@@ -556,7 +556,7 @@ const BuyerOverview = () => {
         reportsByAssessment[bvrAid] = {
           reportId: String(row?.id ?? "").trim(),
           score: extractOverallRiskScoreFromReportItem(row),
-          implementationRiskScore: Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null,
+          implementationRiskScore: clampScore2(n),
           summary: extractExecutiveSummaryFromCompleteReport(row?.report),
           risks: buyerRegisterRisksFromReport(row?.report),
           frameworkRows: frameworkRowsFromStoredReport(row?.report),
@@ -636,10 +636,8 @@ const BuyerOverview = () => {
               ...prev,
               [aid]: {
                 reportId: prev[aid]?.reportId ?? "",
-                score: Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : prev[aid]?.score ?? null,
-                implementationRiskScore: Number.isFinite(irsN)
-                  ? Math.max(0, Math.min(100, Math.round(irsN)))
-                  : prev[aid]?.implementationRiskScore ?? null,
+                score: clampScore2(n) ?? prev[aid]?.score ?? null,
+                implementationRiskScore: clampScore2(irsN) ?? prev[aid]?.implementationRiskScore ?? null,
                 summary: String(rep.executiveSummary ?? "").trim() || prev[aid]?.summary || null,
                 risks: registerRisks.length > 0 ? registerRisks : prev[aid]?.risks ?? [],
                 frameworkRows:
@@ -651,10 +649,8 @@ const BuyerOverview = () => {
               },
             }));
             setSelectedAssessmentSnapshot({
-              implementationRiskScore: Number.isFinite(irsN)
-                ? Math.max(0, Math.min(100, Math.round(irsN)))
-                : null,
-              overallRiskScore: Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null,
+              implementationRiskScore: clampScore2(irsN),
+              overallRiskScore: clampScore2(n),
               executiveSummary: String(rep.executiveSummary ?? "").trim() || null,
             });
           } else {

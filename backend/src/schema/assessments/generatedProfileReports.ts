@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, integer, timestamp, jsonb, text, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, timestamp, jsonb, text, doublePrecision, numeric } from "drizzle-orm/pg-core";
 
 /**
  * Stored generated product profile reports (trust score + sections).
@@ -10,7 +10,7 @@ export const generatedProfileReports = pgTable("generated_profile_reports", {
   user_id: integer("user_id").notNull(),
   organization_id: varchar("organization_id", { length: 255 }),
   attestation_id: uuid("attestation_id"),
-  trust_score: integer("trust_score").notNull(),
+  trust_score: numeric("trust_score", { precision: 5, scale: 2, mode: "number" }).notNull(),
   summary: text("summary"),
   report: jsonb("report").notNull(),
   product_risk: doublePrecision("product_risk"),

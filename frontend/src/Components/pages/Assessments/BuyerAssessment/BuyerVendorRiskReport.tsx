@@ -432,7 +432,7 @@ export default function BuyerVendorRiskReport() {
     : "default";
   const recommendationAccentColor = completeReportRiskMeterColor(
     { source: hasImplementationScore ? "buyer_vendor_risk" : "customer" },
-    Math.round(hasImplementationScore ? implementationRiskScore : storedScore),
+    hasImplementationScore ? implementationRiskScore : storedScore,
     recommendationGrading,
   );
   const recommendationAccentStyle = {

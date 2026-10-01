@@ -3,6 +3,7 @@ import { db } from "../../database/db.js";
 import { createOrganization, vendors, vendorSelfAttestations, usersTable, generatedProfileReports } from "../../schema/schema.js";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { mergeSummaryIntoReport } from "../../utils/mergeProfileReportSummary.js";
+import { clampScore2 } from "../../utils/roundScore.js";
 import { attestationExtendedColumnSelect } from "../../utils/attestationExtendedFields.js";
 import {
   mapAttestationRow,
@@ -348,7 +349,7 @@ const fetchVendorSelfAttestation = async (req: Request, res: Response): Promise<
             !Number.isFinite(Number((attestation as Record<string, unknown>).latest_trust_score)) ||
             Number((attestation as Record<string, unknown>).latest_trust_score) <= 0)
         ) {
-          (attestation as Record<string, unknown>).latest_trust_score = Math.round(
+          (attestation as Record<string, unknown>).latest_trust_score = clampScore2(
             Number(reportRow.trust_score),
           );
         }
@@ -506,7 +507,7 @@ const fetchVendorSelfAttestation = async (req: Request, res: Response): Promise<
         if (ts != null && typeof ts === "object") {
           const n = Number((ts as Record<string, unknown>).overallScore);
           if (Number.isFinite(n) && n > 0) {
-            (att as Record<string, unknown>).latest_trust_score = Math.round(n);
+            (att as Record<string, unknown>).latest_trust_score = clampScore2(n);
           }
         }
       }

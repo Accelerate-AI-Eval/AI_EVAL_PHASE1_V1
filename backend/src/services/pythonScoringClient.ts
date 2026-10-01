@@ -279,7 +279,10 @@ export async function scoreCotsBuyerWithPython(options: {
     options.timeoutMs,
   );
 
-  const implementationRiskScore = Math.round(Number(r.implementationRiskScore));
+  const implementationRiskScoreRaw = Number(r.implementationRiskScore);
+  const implementationRiskScore = Number.isFinite(implementationRiskScoreRaw)
+    ? Math.min(100, Math.max(0, Math.round((implementationRiskScoreRaw + Number.EPSILON) * 100) / 100))
+    : Number.NaN;
   if (!Number.isFinite(implementationRiskScore)) {
     throw new Error("Python cots-buyer scoring response missing implementationRiskScore");
   }

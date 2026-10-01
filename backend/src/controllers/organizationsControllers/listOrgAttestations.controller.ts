@@ -9,6 +9,7 @@ import {
   buildVtsRationaleFromReport,
   isExplainedVtsRationale,
 } from "../../utils/buildVtsRationaleFromReport.js";
+import { clampScore2 } from "../../utils/roundScore.js";
 
 function userDisplayName(u: { user_name?: string | null; user_first_name?: string | null; user_last_name?: string | null; email?: string | null }): string {
   const name = (u.user_name ?? "").trim();
@@ -26,19 +27,19 @@ function resolveTrustScore(
   report: unknown,
 ): number | null {
   if (latest != null && Number.isFinite(Number(latest))) {
-    return Math.round(Number(latest));
+    return clampScore2(Number(latest));
   }
   if (report == null || typeof report !== "object") return null;
   const ts = (report as Record<string, unknown>).trustScore;
   if (ts != null && typeof ts === "object") {
     const overall = (ts as Record<string, unknown>).overallScore;
     if (overall != null && Number.isFinite(Number(overall))) {
-      return Math.round(Number(overall));
+      return clampScore2(Number(overall));
     }
   }
   const flat = (report as Record<string, unknown>).trust_score;
   if (flat != null && Number.isFinite(Number(flat))) {
-    return Math.round(Number(flat));
+    return clampScore2(Number(flat));
   }
   return null;
 }
@@ -199,7 +200,7 @@ const listOrgAttestations = async (req: Request, res: Response) => {
         const trustScore =
           resolveTrustScore(a.latest_trust_score, a.generated_profile_report) ??
           (a.report_trust_score != null && Number.isFinite(Number(a.report_trust_score))
-            ? Math.round(Number(a.report_trust_score))
+            ? clampScore2(Number(a.report_trust_score))
             : null);
         const grade =
           (a.latest_trust_grade != null && String(a.latest_trust_grade).trim()) ||

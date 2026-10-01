@@ -231,7 +231,7 @@ async def score_assessment(body: ScoreRequest) -> ScoreResponse:
         label = str(trust_block.get("label") or "").strip()
         if not label or label == "Not specified":
             trust_block["label"] = interpretation["classification"]
-        trust_block["overallScore"] = round(final_score)
+        trust_block["overallScore"] = round(max(0.0, min(100.0, float(final_score))), 2)
         trust_block["grade"] = interpretation["grade"]
         # Always expose formula category scores (higher = better) for Score Trace UI
         trust_block["scoreByCategory"] = {
@@ -241,7 +241,7 @@ async def score_assessment(body: ScoreRequest) -> ScoreResponse:
         }
         if not str(trust_block.get("summary") or "").strip():
             trust_block["summary"] = (
-                f"Vendor trust score {round(final_score)}/100 "
+                f"Vendor trust score {round(max(0.0, min(100.0, float(final_score))), 2):.2f}/100 "
                 f"({interpretation['classification']}, grade {interpretation['grade']}). "
                 f"Recommended action: {interpretation['recommended_action']}."
             )

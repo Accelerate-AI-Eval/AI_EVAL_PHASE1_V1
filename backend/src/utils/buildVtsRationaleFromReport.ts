@@ -32,7 +32,7 @@ function trustScoreFromReport(report: unknown): number | null {
   const ts = r.trustScore;
   if (ts != null && typeof ts === "object" && !Array.isArray(ts)) {
     const overall = tryNum((ts as Record<string, unknown>).overallScore);
-    if (overall != null) return Math.max(0, Math.min(100, Math.round(overall)));
+    if (overall != null) return Math.min(100, Math.max(0, Math.round((overall + Number.EPSILON) * 100) / 100));
   }
   return tryNum(r.trust_score);
 }
@@ -206,7 +206,7 @@ export function buildVtsRationaleFromReport(source: VtsRationaleSource): string 
     "=".repeat(72),
     "",
     "RESULT",
-    `  Trust score:   ${Math.round(trustScore)} / 100   (higher = more trustworthy)`,
+    `  Trust score:   ${(Math.round((trustScore + Number.EPSILON) * 100) / 100).toFixed(2)} / 100   (higher = more trustworthy)`,
     `  Grade:         ${grade} - ${classification}`,
     `  Next step:     ${recommendedAction}`,
     `  Source:        ${scoringSource}`,

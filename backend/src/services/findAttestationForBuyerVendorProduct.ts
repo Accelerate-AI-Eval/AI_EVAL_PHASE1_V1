@@ -41,7 +41,8 @@ export async function enrichAttestationWithProductProfileVts(
       Number.isFinite(Number(reportRow.trust_score)) &&
       Number(reportRow.trust_score) > 0
     ) {
-      out.latest_trust_score = Math.round(Number(reportRow.trust_score));
+      out.latest_trust_score =
+        Math.min(100, Math.max(0, Math.round((Number(reportRow.trust_score) + Number.EPSILON) * 100) / 100));
     }
   } else if (out.latest_trust_score != null && Number.isFinite(Number(out.latest_trust_score))) {
     out.generated_profile_report = mergeSummaryIntoReport(

@@ -27,6 +27,7 @@ import type {
   StoredGeneratedReport,
 } from "../DirectoryListing/DirectoryListing";
 import { ReportsPagination } from "../Reports/ReportsPagination";
+import { clampScore2 } from "../../../utils/scoreFormat";
 import "../UserManagement/user_management.css";
 import "../MyVendors/MyVendors.css";
 import "../Assessments/assessments.css";
@@ -101,11 +102,9 @@ function parseScoreFromText(text: string): number | null {
 }
 
 function coerceScore(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.min(100, Math.max(0, Math.round(value)));
-  }
+  if (typeof value === "number" && Number.isFinite(value)) return clampScore2(value);
   if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) {
-    return Math.min(100, Math.max(0, Math.round(Number(value))));
+    return clampScore2(value);
   }
   return null;
 }
@@ -168,7 +167,7 @@ function resolveProductTrustScore(
     (typeof fromParsed === "number" && fromParsed > 0 ? fromParsed : null);
 
   if (fromReport != null) {
-    return Math.min(100, Math.max(0, Math.round(fromReport)));
+    return clampScore2(fromReport);
   }
 
   const fromLatest = coerceScore(product.latest_trust_score);

@@ -62,6 +62,7 @@ const sqlFiles = [
   "20260903_dpa_url.sql",
   "20260904_cots_vendor_desk_research_fields.sql",
   "20260907_cots_buyer_field_spec_v2.sql",
+  "20261001_trust_score_two_decimals.sql",
 ];
 
 const pool = new pg.Pool({ connectionString });

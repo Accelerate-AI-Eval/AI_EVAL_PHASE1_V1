@@ -10,6 +10,7 @@ import {
 import type { FrameworkMappingTableRow } from "../../services/frameworkMappingFromCompliance.js";
 import { invokePythonLlmWithVector } from "../../services/pythonAssessmentLlmClient.js";
 import { isTokenQuotaExceededError } from "../../services/admin/featureTokenQuota.service.js";
+import { clampScore2 } from "../../utils/roundScore.js";
 import {
   scoreCotsVendorWithPython,
   type PythonCotsVendorScoreResult,
@@ -2069,9 +2070,7 @@ export async function generateVendorCotsReport(
             Math.max(0, Number((local.sales_risk_score * intent).toFixed(2))),
           );
           const deal = Math.max(0, Number((100 - srs).toFixed(2)));
-          const interpretation = interpretSalesRiskScore(
-            Math.max(0, Math.min(100, Math.round(deal))),
-          );
+          const interpretation = interpretSalesRiskScore(deal);
           const formulaResult: PythonCotsVendorScoreResult = {
             sales_risk_score: srs,
             deal_probability_pct: deal,
@@ -2150,10 +2149,7 @@ export async function generateVendorCotsReport(
 
     if (!formulaResult) return { ...parsed, raw: rawReply };
 
-    const score = Math.min(
-      100,
-      Math.max(0, Math.round(formulaResult.sales_risk_score)),
-    );
+    const score = clampScore2(formulaResult.sales_risk_score);
     const riskLevel = riskLevelFromFormulaScore(score);
     const appendix =
       parsed.fullReport?.appendix &&

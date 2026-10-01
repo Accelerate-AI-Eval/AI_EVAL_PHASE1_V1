@@ -1,3 +1,5 @@
+import { clampScore2 } from "./roundScore.js";
+
 /**
  * Merge the stored summary (from generated_profile_reports.summary) into the report JSON
  * when report.trustScore.summary is missing or empty. Also inject trust_score column into
@@ -12,7 +14,7 @@ export function mergeSummaryIntoReport(
     typeof summaryFromDb === "string" && summaryFromDb.trim() ? summaryFromDb.trim() : null;
   const colScore =
     trustScoreFromDb != null && Number.isFinite(Number(trustScoreFromDb))
-      ? Math.min(100, Math.max(0, Math.round(Number(trustScoreFromDb))))
+      ? clampScore2(Number(trustScoreFromDb))
       : null;
 
   let r: Record<string, unknown> | null =
@@ -59,7 +61,7 @@ export function mergeSummaryIntoReport(
     overall = colScore;
   }
   if (overall != null) {
-    ts = { ...ts, overallScore: Math.min(100, Math.max(0, Math.round(overall))) };
+    ts = { ...ts, overallScore: clampScore2(overall) };
   }
 
   if (ts.label == null || String(ts.label).trim() === "") {

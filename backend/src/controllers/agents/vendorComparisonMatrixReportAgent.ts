@@ -7,6 +7,7 @@ import type {
 } from "./buyerVendorRiskReportAgent.js";
 import { invokeBedrockAnthropicText } from "../../utils/invokeBedrockWithUsage.js";
 import { isTokenQuotaExceededError } from "../../services/admin/featureTokenQuota.service.js";
+import { clampScore2 } from "../../utils/roundScore.js";
 
 export type VendorComparisonMatrixPayload = {
   buyerPrioritiesAndWeights: BuyerPriorityWeight[];
@@ -90,7 +91,7 @@ function asRankedArray(raw: unknown): RankedEligibleVendor[] {
       vendorName: vendorName.slice(0, 200),
       productName: productName.slice(0, 200),
       eligible: true,
-      overallScore: Number.isFinite(overallScore) ? Math.min(100, Math.max(0, Math.round(overallScore))) : undefined,
+      overallScore: Number.isFinite(overallScore) ? clampScore2(overallScore) : undefined,
       notes: o.notes != null ? String(o.notes).slice(0, 500) : undefined,
     });
   }

@@ -1094,7 +1094,8 @@ function buildIrsScoreTraceFromPythonDetail(input: IrsTraceInput): ScoreTrace | 
   const warnings: string[] = [];
   const missingEvidence: string[] = [];
   const storedBreakdown = input.storedBreakdown;
-  const storedScore = Math.round(Math.max(0, Math.min(100, input.storedScore)));
+  const storedScore =
+    Math.round((Math.max(0, Math.min(100, input.storedScore)) + Number.EPSILON) * 100) / 100;
 
   if (!input.usedAttestation) {
     warnings.push(
@@ -1104,9 +1105,9 @@ function buildIrsScoreTraceFromPythonDetail(input: IrsTraceInput): ScoreTrace | 
   }
 
   const computedScore = finiteNumber(finalFormula.score);
-  if (computedScore != null && Math.abs(Math.round(computedScore) - storedScore) >= 1) {
+  if (computedScore != null && Math.abs(computedScore - storedScore) >= 0.01) {
     warnings.push(
-      `Stored readiness score is ${storedScore}; Python irs-2.x detail computes ${Math.round(computedScore)} from the current scoring detail. The headline uses the stored score so it matches the assessment card.`,
+      `Stored readiness score is ${storedScore.toFixed(2)}; Python irs-2.x detail computes ${computedScore.toFixed(2)} from the current scoring detail. The headline uses the stored score so it matches the assessment card.`,
     );
   }
 
@@ -1286,9 +1287,9 @@ export function buildIrsScoreTrace(input: IrsTraceInput): ScoreTrace {
     storedInt,
     intentMultiplier,
   );
-  if (Math.abs(canonicalIrs - storedScore) >= 1) {
+  if (Math.abs(canonicalIrs - storedScore) >= 0.01) {
     warnings.push(
-      `Stored score is ${storedScore}; canonical formula from breakdown is ${canonicalIrs}. ` +
+      `Stored score is ${Number(storedScore).toFixed(2)}; canonical formula from breakdown is ${canonicalIrs.toFixed(2)}. ` +
         `Explainability headline uses the stored score so it matches the assessment card.`,
     );
   }
@@ -1301,7 +1302,7 @@ export function buildIrsScoreTrace(input: IrsTraceInput): ScoreTrace {
 
   return {
     scoreType: "buyer_implementation_risk",
-    finalScore: Math.round(Math.max(0, Math.min(100, storedScore))),
+    finalScore: Math.round((Math.max(0, Math.min(100, storedScore)) + Number.EPSILON) * 100) / 100,
     formula: "",
     scoringVersion: SCORING_VERSION,
     rawSubScores: {

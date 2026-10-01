@@ -413,9 +413,9 @@ function directoryStatusForProduct(
   if (!revealTrustScore || trustNumeric == null) {
     return { label: "Under review", tone: "review", icon: "eye" };
   }
-  const rounded = Math.round(trustNumeric);
-  if (rounded >= 90) return { label: "Verified", tone: "verified", icon: "check" };
-  if (rounded >= 80) return { label: "Listed", tone: "listed", icon: "eye" };
+  const score = Math.max(0, Math.min(100, trustNumeric));
+  if (score >= 90) return { label: "Verified", tone: "verified", icon: "check" };
+  if (score >= 80) return { label: "Listed", tone: "listed", icon: "eye" };
   return { label: "Needs info", tone: "closed", icon: "x" };
 }
 
@@ -492,18 +492,18 @@ function trustGradeFromScore(score: number | undefined): {
   if (score == null || Number.isNaN(score)) {
     return { letter: "—", scoreText: "—", gradeClass: "vd_premium_grade_na", letterColor: null };
   }
-  const rounded = Math.round(score);
+  const band = Math.max(0, Math.min(100, score));
   const letterColor = withVisibleDirectoryColor(
-    vendorTrustGradeColorFromTrustScore(rounded),
+    vendorTrustGradeColorFromTrustScore(band),
   );
-  if (rounded >= 90)
+  if (band >= 90)
     return {
       letter: "A",
       scoreText: formatScore2Percent(score),
       gradeClass: "vd_premium_grade_a",
       letterColor,
     };
-  if (rounded >= 80)
+  if (band >= 80)
     return {
       letter: "B",
       scoreText: formatScore2Percent(score),

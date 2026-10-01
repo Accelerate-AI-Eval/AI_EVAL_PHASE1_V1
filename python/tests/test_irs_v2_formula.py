@@ -11,7 +11,7 @@ def _leaf(result, pillar, name):
 
 
 def _decision_for_score(score):
-    s = max(0, min(100, round(float(score))))
+    s = max(0.0, min(100.0, float(score)))
     if s >= 76:
         return "PROCEED"
     if s >= 26:

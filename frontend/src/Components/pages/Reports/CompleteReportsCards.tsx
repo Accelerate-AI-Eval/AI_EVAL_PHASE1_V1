@@ -12,7 +12,7 @@ import {
   resolveScoreSubtitleForCompleteReport,
   type CompleteReportRiskMeterGrading,
 } from "../../../utils/completeReportGrade";
-import { formatScore2 } from "../../../utils/scoreFormat";
+import { clampScore2, formatScore2 } from "../../../utils/scoreFormat";
 import {
   isReportTimeExpired,
   reportArchivedStatusText,
@@ -122,7 +122,7 @@ function CompleteReportsCards({
             ? Number(row.overallRiskScore)
             : null;
         const srs = listSrs ?? overallRiskScoreFromReportJson(row.report);
-        return srs != null ? Math.round(srs) : null;
+        return srs != null ? clampScore2(srs) : null;
       }
       if (report.source === "buyer_vendor_risk") {
         const irs = reportContextScoreFromListPayload(row);
@@ -171,7 +171,7 @@ function CompleteReportsCards({
             const srs = listSrs ?? overallRiskScoreFromReportJson(rep);
             const report_context_score =
               riskMeterGrading === "buyer_cots_irs"
-                ? (irs ?? (srs != null ? Math.round(srs) : null))
+                ? (irs ?? (srs != null ? clampScore2(srs) : null))
                 : isVendorPortalSession() && irs != null
                   ? irs
                   : reportContextScoreFromListPayload(payload);

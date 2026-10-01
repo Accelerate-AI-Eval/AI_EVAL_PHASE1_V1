@@ -138,14 +138,14 @@ export function extractVendorTrustScore(
 
   const fromOverall = Number(trustBlock?.overallScore ?? trustBlock?.overall_score);
   if (Number.isFinite(fromOverall) && fromOverall > 0) {
-    return clamp01(Math.round(fromOverall));
+    return clamp01(Math.round((fromOverall + Number.EPSILON) * 100) / 100);
   }
 
   const fromLatest = Number(
     attestationRow.latest_trust_score ?? attestationRow.latestTrustScore,
   );
   if (Number.isFinite(fromLatest) && fromLatest > 0) {
-    return clamp01(Math.round(fromLatest));
+    return clamp01(Math.round((fromLatest + Number.EPSILON) * 100) / 100);
   }
 
   const formula =
@@ -158,7 +158,7 @@ export function extractVendorTrustScore(
       report?.vendor_trust_score,
   );
   if (Number.isFinite(fromFormula) && fromFormula > 0) {
-    return clamp01(Math.round(fromFormula));
+    return clamp01(Math.round((fromFormula + Number.EPSILON) * 100) / 100);
   }
 
   // Explicit 0 only if that is truly all we have
@@ -477,7 +477,7 @@ function interpret(
   BuyerImplementationRiskScore,
   "grade" | "classification" | "decision" | "recommendedAction" | "readiness_profile"
 > {
-  const s = Math.max(0, Math.min(100, Math.round(Number(score))));
+  const s = Math.max(0, Math.min(100, Number(score)));
   if (s >= 76) {
     return {
       grade: "A",
@@ -515,12 +515,18 @@ function interpret(
   };
 }
 
-/** Letter grade for a stored IRS (0–100); uses integer rounding (e.g. 45.5 → 46). */
+/** Letter grade for a stored IRS (0–100). Bands use the two-decimal score as stored. */
 export function buyerImplementationReadinessGradeFromScore(rawScore: number): "A" | "B" | "C" | "D" {
   return interpret(rawScore).grade;
 }
 
-/** Canonical IRS from breakdown parts — matches Python `_irs_final_from_parts` / JS Math.round.
+function roundDigits(n: number, digits: number): number {
+  const factor = 10 ** digits;
+  return Math.round((n + Number.EPSILON) * factor) / factor;
+}
+
+/** Canonical IRS from breakdown parts.
+ * Pillar values stay at calculation precision. Only the headline score is rounded to 2 decimals.
  * Optional intentMultiplier (default 1.0) scales the composite risk term when RI intent is present.
  */
 export function irsFinalScoreFromParts(
@@ -529,16 +535,21 @@ export function irsFinalScoreFromParts(
   integrationRisk: number,
   intentMultiplier = 1.0,
 ): { score: number; vendorRisk: number; orgGap: number; integrationRisk: number } {
-  const vr = Math.round(clamp01(vendorRisk) * 100) / 100;
-  const org = Math.round(clamp01(orgGap) * 100) / 100;
-  const integ = Math.round(clamp01(integrationRisk) * 100) / 100;
+  const vr = clamp01(vendorRisk);
+  const org = clamp01(orgGap);
+  const integ = clamp01(integrationRisk);
   const intent =
     Number.isFinite(intentMultiplier) && intentMultiplier > 0
       ? Math.min(1.5, Math.max(0.5, intentMultiplier))
       : 1.0;
   const weighted = 100 - (vr * 0.35 + org * 0.35 + integ * 0.3) * intent;
-  const score = Math.round(clamp01(weighted));
-  return { score, vendorRisk: vr, orgGap: org, integrationRisk: integ };
+  const score = roundDigits(clamp01(weighted), 2);
+  return {
+    score,
+    vendorRisk: roundDigits(vr, 4),
+    orgGap: roundDigits(org, 4),
+    integrationRisk: roundDigits(integ, 4),
+  };
 }
 
 export function calculateBuyerImplementationRiskScore(

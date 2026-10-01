@@ -98,7 +98,9 @@ const generateProductProfile = async (req: Request, res: Response): Promise<void
 
     const summaryForDb = summaryToStore && summaryToStore.length > 0 ? summaryToStore : null;
 
-    const trustScoreForDb = Number.isFinite(trustScoreNum) ? Math.round(trustScoreNum) : 0;
+    const trustScoreForDb = Number.isFinite(trustScoreNum)
+      ? Math.min(100, Math.max(0, Math.round((trustScoreNum + Number.EPSILON) * 100) / 100))
+      : 0;
     const scoring = report.scoringResult;
     const gradeForDb = scoring?.grade?.trim() || String(report.trustScore?.grade ?? "").trim() || null;
     const scoreRationaleForDb =

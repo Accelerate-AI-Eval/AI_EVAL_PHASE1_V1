@@ -367,13 +367,13 @@ def print_vts_rationale(
                 weak_cats.append((str(name), n))
         weak_cats.sort(key=lambda x: (999 if isinstance(x[1], str) else float(x[1])))
 
-    trust_rounded = round(final_score)
+    trust_rounded = max(0.0, min(100.0, float(final_score)))
     lines: list[str] = [
         "VENDOR TRUST SCORE (Type 1) - EXPLAINED",
         _bar(),
         "",
         "RESULT",
-        f"  Trust score:   {trust_rounded} / 100   (higher = more trustworthy)",
+        f"  Trust score:   {trust_rounded:.2f} / 100   (higher = more trustworthy)",
         f"  Grade:         {grade} - {_safe(classification, 80)}",
         f"  Next step:     {_safe(action, 160)}",
         f"  Source:        {scoring_source}",

@@ -190,12 +190,15 @@ function ensureExecutiveSummaryHasTrustScore(
   if (vendorTrustScore == null || !Number.isFinite(Number(vendorTrustScore))) {
     return cleanSummary;
   }
-  const score = Math.min(100, Math.max(0, Math.round(Number(vendorTrustScore))));
-  const scoreText = `Vendor trust score: ${score}/100.`;
+  const score = Math.min(
+    100,
+    Math.max(0, Math.round((Number(vendorTrustScore) + Number.EPSILON) * 100) / 100),
+  );
+  const scoreText = `Vendor trust score: ${score.toFixed(2)}/100.`;
   if (!cleanSummary) return scoreText;
   if (/vendor\s+trust\s+score\s*:/i.test(cleanSummary)) {
     return cleanSummary
-      .replace(/vendor\s+trust\s+score\s*:\s*\d{1,3}(?:\s*\/\s*100)?\.?/gi, scoreText)
+      .replace(/vendor\s+trust\s+score\s*:\s*\d{1,3}(?:\.\d+)?(?:\s*\/\s*100)?\.?/gi, scoreText)
       .replace(/\.\s*\./g, ".")
       .replace(/\s{2,}/g, " ")
       .trim()
@@ -210,13 +213,16 @@ function resolveVendorTrustScoreForSummary(
   breakdown: Record<string, unknown> | undefined,
 ): number | undefined {
   if (vendorTrustScore != null && Number.isFinite(vendorTrustScore)) {
-    return Math.min(100, Math.max(0, Math.round(Number(vendorTrustScore))));
+    return Math.min(
+      100,
+      Math.max(0, Math.round((Number(vendorTrustScore) + Number.EPSILON) * 100) / 100),
+    );
   }
   const fromBreakdown = Number(
     breakdown?.vendorTrustScore ?? breakdown?.vendor_trust_score,
   );
   if (Number.isFinite(fromBreakdown)) {
-    return Math.min(100, Math.max(0, Math.round(fromBreakdown)));
+    return Math.min(100, Math.max(0, Math.round((fromBreakdown + Number.EPSILON) * 100) / 100));
   }
   return undefined;
 }
@@ -381,7 +387,7 @@ function buildFallbackReport(
 ): BuyerVendorRiskReport {
   const now = new Date().toISOString();
   const overallRiskScore = hasAttestation ? 75 : 55;
-  const vts = Math.min(100, Math.max(0, Math.round(vendorTrustScore)));
+  const vts = Math.min(100, Math.max(0, Math.round((vendorTrustScore + Number.EPSILON) * 100) / 100));
   const executiveSummaryBase = `This assessment evaluates ${vendorName}'s ${productName} against your stated requirements. ${
     hasAttestation
       ? "Vendor self-attestation data was available and informs this summary."
@@ -584,7 +590,9 @@ function parseRankedVendors(raw: unknown): RankedEligibleVendor[] | null {
       vendorName: vendorName.slice(0, 200),
       productName: productName.slice(0, 200),
       eligible: true,
-      overallScore: Number.isFinite(overallScore) ? Math.min(100, Math.max(0, Math.round(overallScore))) : undefined,
+      overallScore: Number.isFinite(overallScore)
+        ? Math.min(100, Math.max(0, Math.round((overallScore + Number.EPSILON) * 100) / 100))
+        : undefined,
       notes: o.notes != null ? String(o.notes).slice(0, 500) : undefined,
     });
   }
@@ -689,7 +697,9 @@ function normalizeReport(
       })
     : fb.riskAnalysis;
 
-  const overallRiskScore = Number.isFinite(score) ? Math.min(100, Math.max(0, Math.round(score))) : fb.overallRiskScore;
+  const overallRiskScore = Number.isFinite(score)
+    ? Math.min(100, Math.max(0, Math.round((score + Number.EPSILON) * 100) / 100))
+    : fb.overallRiskScore;
   const keyStrengths = Array.isArray(raw.keyStrengths)
     ? (raw.keyStrengths as unknown[]).map((s) => String(s).slice(0, 400)).filter(Boolean)
     : fb.keyStrengths;
@@ -978,7 +988,7 @@ export async function generateBuyerVendorRiskReport(
       }
     : {};
 
-  const canonicalVendorTrustScore = Math.round(extractVendorTrustScore(attestationRow));
+  const canonicalVendorTrustScore = Math.round((extractVendorTrustScore(attestationRow) + Number.EPSILON) * 100) / 100;
 
   const userPrompt = [
     SYSTEM_PROMPT,
@@ -1113,7 +1123,7 @@ export function enrichStoredBuyerVendorReport(
       : undefined;
   const vendorTrustScore =
     vendorTrustScoreOverride != null && Number.isFinite(Number(vendorTrustScoreOverride))
-      ? Math.min(100, Math.max(0, Math.round(Number(vendorTrustScoreOverride))))
+      ? Math.min(100, Math.max(0, Math.round((Number(vendorTrustScoreOverride) + Number.EPSILON) * 100) / 100))
       : resolveVendorTrustScoreForSummary(undefined, breakdown);
   const normalized = normalizeReport(
     report,

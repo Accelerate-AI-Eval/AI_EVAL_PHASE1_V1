@@ -4,6 +4,13 @@ export function roundScore2(value: unknown): number | null {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+/** Clamp a headline score to 0–100 and round to 2 decimal places. */
+export function clampScore2(value: unknown): number | null {
+  const rounded = roundScore2(value);
+  if (rounded == null) return null;
+  return Math.min(100, Math.max(0, rounded));
+}
+
 export function formatScore2(value: unknown, fallback = "—"): string {
   const rounded = roundScore2(value);
   return rounded == null ? fallback : rounded.toFixed(2);

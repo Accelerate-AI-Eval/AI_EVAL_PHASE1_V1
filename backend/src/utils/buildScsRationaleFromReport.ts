@@ -37,9 +37,9 @@ export function buildScsRationaleFromReport(report: unknown): string | null {
     breakdown != null ? Number(breakdown.competitive_risk ?? breakdown.competitiveRisk) : NaN;
   const deal =
     breakdown != null && Number.isFinite(Number(breakdown.deal_probability_pct ?? breakdown.dealProbabilityPct))
-      ? Math.round(Number(breakdown.deal_probability_pct ?? breakdown.dealProbabilityPct))
+      ? Math.round((Number(breakdown.deal_probability_pct ?? breakdown.dealProbabilityPct) + Number.EPSILON) * 100) / 100
       : scoreNum != null
-        ? Math.max(0, Math.min(100, Math.round(100 - scoreNum)))
+        ? Math.round((Math.max(0, Math.min(100, 100 - scoreNum)) + Number.EPSILON) * 100) / 100
         : null;
   const grade = breakdown != null ? String(breakdown.grade ?? "").trim() : "";
   const classification = breakdown != null ? String(breakdown.classification ?? "").trim() : "";

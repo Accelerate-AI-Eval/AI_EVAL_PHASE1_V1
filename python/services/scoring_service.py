@@ -1808,7 +1808,7 @@ def calculate_operational_risk(p: LooseInput) -> dict[str, Any]:
 
 
 def interpret_trust_score(vts: float) -> dict[str, str]:
-    s = max(0, min(100, round(float(vts))))
+    s = max(0.0, min(100.0, float(vts)))
     if s >= 90:
         return {
             "grade": "A",

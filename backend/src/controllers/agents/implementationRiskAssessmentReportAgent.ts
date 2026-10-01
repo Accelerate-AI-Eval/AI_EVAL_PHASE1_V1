@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { invokeBedrockAnthropicText } from "../../utils/invokeBedrockWithUsage.js";
 import { isTokenQuotaExceededError } from "../../services/admin/featureTokenQuota.service.js";
+import { clampScore2 } from "../../utils/roundScore.js";
 
 export type ImplementationRecommendation = "Proceed" | "Proceed with conditions" | "Defer";
 
@@ -81,7 +82,7 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
 
 function clampScore(n: number, fb: number): number {
   if (!Number.isFinite(n)) return fb;
-  return Math.min(100, Math.max(0, Math.round(n)));
+  return clampScore2(n);
 }
 
 function parseRecommendation(v: unknown): ImplementationRecommendation {

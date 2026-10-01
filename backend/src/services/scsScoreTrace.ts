@@ -105,7 +105,7 @@ export function buildScsScoreTrace(input: ScsTraceInput): ScoreTrace {
     ? Math.max(0, Math.min(100, competitiveRisk))
     : null;
 
-  const salesConfidence = Math.round(
+  const salesConfidence = round2(
     Math.max(
       0,
       Math.min(

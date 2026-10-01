@@ -746,7 +746,8 @@ export async function generateVendorAttestationReport(
     Number.isFinite(Number(formula.formula_vendor_trust_score))
       ? Number(formula.formula_vendor_trust_score)
       : Number(formula.vendor_trust_score ?? 0);
-  const overallRounded = Math.round(Math.max(0, Math.min(100, formulaVts)));
+  const overallClamped = Math.max(0, Math.min(100, formulaVts));
+  const overallRounded = Math.round((overallClamped + Number.EPSILON) * 100) / 100;
 
   const scoreByCategory = {
     Product: Number(

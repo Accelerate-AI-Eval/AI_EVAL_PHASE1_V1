@@ -28,7 +28,7 @@ import Modal from "../../UI/Modal";
 import LoadingMessage from "../../UI/LoadingMessage";
 import ClickTooltip from "../../UI/ClickTooltip";
 import { formatDateDDMMMYYYY } from "../../../utils/formatDate.js";
-import { formatScore2 } from "../../../utils/scoreFormat";
+import { clampScore2, formatScore2 } from "../../../utils/scoreFormat";
 import "../../../styles/page_tabs.css";
 import "../../../styles/popovers.css";
 import "../Organizations/organization.css";
@@ -274,7 +274,7 @@ function getReportRiskScoreFromRow(row) {
   if (raw == null || raw === "") return null;
   const n = typeof raw === "number" ? raw : Number(String(raw).trim());
   if (!Number.isFinite(n)) return null;
-  return Math.min(100, Math.max(0, Math.round(n)));
+  return clampScore2(n);
 }
 
 /** Map API assessment row to ledger row view model */

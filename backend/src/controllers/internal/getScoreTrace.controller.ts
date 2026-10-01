@@ -146,7 +146,7 @@ async function refreshStaleIrsOnReport(opts: {
       intentMultiplier: Number.isFinite(intentMultiplier) ? intentMultiplier : 1,
     };
     const freshScore = parts.score;
-    const scoreDrift = Math.abs(freshScore - storedScore) >= 1;
+    const scoreDrift = Math.abs(freshScore - storedScore) >= 0.01;
     if (!breakdownDrift(storedBreakdown, freshBreakdown) && !scoreDrift) {
       const riskSource =
         (report.implementationRiskSource as Record<string, unknown> | undefined) ??

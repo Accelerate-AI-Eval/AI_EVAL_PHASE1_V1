@@ -1230,8 +1230,7 @@ def calculate_sales_risk_score(user_input: dict[str, Any]) -> dict[str, Any]:
     weighted_risk = cfr_val * cfr_w + ir_val * ir_w + cr_val * cr_w
     srs = _pf(min(100.0, max(0.0, weighted_risk)), 2)
     scs = _pf(max(0.0, min(100.0, 100.0 - srs)), 2)
-    scs_rounded = max(0, min(100, round(scs)))
-    interpretation = interpret_sales_risk_score(scs_rounded)
+    interpretation = interpret_sales_risk_score(scs)
     gates = evaluate_blocker_gates(user_input)
     if gates:
         interpretation = {

@@ -597,10 +597,11 @@ def _pf(value: float, digits: int = 4) -> float:
     return float(f"{value:.{digits}f}")
 
 
-def _round_half_up(x: float) -> int:
+def _round2_half_up(x: float) -> float:
+    """Half-up to 2 decimal places. Used only for the headline score."""
     if not math.isfinite(x):
-        return 0
-    return int(math.floor(float(x) + 0.5))
+        return 0.0
+    return math.floor(float(x) * 100 + 0.5) / 100.0
 
 
 def _comp(
@@ -1779,7 +1780,7 @@ def _blocker_gates(resolved: dict[str, Any], vr_parts: dict[str, Any]) -> list[d
 
 
 def _interpret(score: float, blockers: list[dict[str, str]]) -> dict[str, str]:
-    s = max(0, min(100, round(float(score))))
+    s = max(0.0, min(100.0, float(score)))
     if s >= 76:
         out = {
             "grade": "A",
@@ -1873,7 +1874,7 @@ def calculate_buyer_implementation_risk_score(
     integ = float(int_parts["value"]) if int_parts["value"] is not None else 0.0
     risk_term = vr * weights["vendor_risk"] + org * weights["organizational_readiness"] + integ * weights["integration_risk"]
     weighted = 100.0 - risk_term
-    score = _round_half_up(_clamp01(weighted))
+    score = _round2_half_up(_clamp01(weighted))
 
     blockers = _blocker_gates(resolved, vr_parts)
     interpreted = _interpret(score, blockers)
