@@ -134,6 +134,10 @@ interface VendorProduct {
   productDescription?: string;
   /** Product target sectors/industries (same format as vendor sector for formatSector). */
   sector?: string | Record<string, unknown> | null;
+  /** Attested security certifications (security_compliance_certificates). */
+  securityCertifications?: unknown;
+  /** HIPAA / GDPR / CCPA selection stored on hipaa_baa. */
+  hipaaBaa?: unknown;
 }
 
 /** One product in the directory grid (product + vendor info for display). */
@@ -153,6 +157,10 @@ interface DirectoryProduct {
   trustScore?: number;
   /** Product target sectors/industries (optional; falls back to vendor sector when missing). */
   sector?: string | Record<string, unknown> | null;
+  /** Attested security certifications (security_compliance_certificates). */
+  securityCertifications?: unknown;
+  /** HIPAA / GDPR / CCPA selection stored on hipaa_baa. */
+  hipaaBaa?: unknown;
 }
 
 function formatVal(val: unknown): string {
@@ -344,6 +352,35 @@ function sectorStackColor(index: number): string {
   return SECTOR_STACK_COLORS[index % SECTOR_STACK_COLORS.length];
 }
 
+/** Warm gold / forest / plum set so compliance dots do not repeat sector colors. */
+const COMPLIANCE_STACK_COLORS = [
+  "#ca8a04",
+  "#166534",
+  "#a21caf",
+  "#4d7c0f",
+  "#b45309",
+  "#7c2d12",
+  "#86198f",
+] as const;
+
+const COMPLIANCE_PILL_TONES = [
+  "gold",
+  "forest",
+  "plum",
+  "lime",
+  "bronze",
+  "brown",
+  "magenta",
+] as const;
+
+function complianceStackColor(index: number): string {
+  return COMPLIANCE_STACK_COLORS[index % COMPLIANCE_STACK_COLORS.length];
+}
+
+function compliancePillTone(index: number): (typeof COMPLIANCE_PILL_TONES)[number] {
+  return COMPLIANCE_PILL_TONES[index % COMPLIANCE_PILL_TONES.length];
+}
+
 /** Card line: at most the first {@link MAX_SECTORS_ON_CARD} individual sectors, with "+N more" when truncated. */
 function formatSectorCard(
   sector: string | Record<string, unknown> | null | undefined,
@@ -375,7 +412,18 @@ type IndustryFilterId =
   | "finance"
   | "cybersecurity";
 
-type CertificationFilterId = "all" | "soc2" | "hipaa" | "iso27001";
+type CertificationFilterId =
+  | "all"
+  | "soc2_type1"
+  | "soc2"
+  | "iso27001"
+  | "iso42001"
+  | "hitrust"
+  | "fedramp"
+  | "pci"
+  | "hipaa"
+  | "gdpr"
+  | "ccpa";
 
 type BadgeFilterId = "all" | "verified" | "listed" | "under_review";
 
@@ -392,9 +440,16 @@ const INDUSTRY_FILTERS: { id: IndustryFilterId; label: string }[] = [
 
 const CERTIFICATION_FILTERS: { id: CertificationFilterId; label: string }[] = [
   { id: "all", label: "All certifications" },
-  { id: "soc2", label: "SOC2 Type II" },
-  { id: "hipaa", label: "HIPAA Compliant" },
+  { id: "soc2_type1", label: "SOC 2 Type 1" },
+  { id: "soc2", label: "SOC 2 Type II" },
   { id: "iso27001", label: "ISO 27001" },
+  { id: "iso42001", label: "ISO 42001" },
+  { id: "hitrust", label: "HITRUST" },
+  { id: "fedramp", label: "FedRAMP" },
+  { id: "pci", label: "PCI DSS" },
+  { id: "hipaa", label: "HIPAA Compliant" },
+  { id: "gdpr", label: "GDPR Compliant" },
+  { id: "ccpa", label: "CCPA Compliant" },
 ];
 
 const BADGE_FILTERS: { id: BadgeFilterId; label: string }[] = [
@@ -420,15 +475,11 @@ function directoryStatusForProduct(
 }
 
 function matchesCertificationFilter(
-  productId: string,
+  dp: Pick<DirectoryProduct, "securityCertifications" | "hipaaBaa">,
   id: CertificationFilterId,
 ): boolean {
   if (id === "all") return true;
-  const badge = complianceBadgeForProduct(productId).toLowerCase();
-  if (id === "soc2") return badge.includes("soc2");
-  if (id === "hipaa") return badge.includes("hipaa");
-  if (id === "iso27001") return badge.includes("iso");
-  return true;
+  return attestedDirectoryCerts(dp).includes(id);
 }
 
 function matchesBadgeFilter(
@@ -519,11 +570,84 @@ function trustGradeFromScore(score: number | undefined): {
   };
 }
 
-function complianceBadgeForProduct(productId: string): string {
-  const options = ["SOC2 TYPE II", "HIPAA COMPLIANT", "ISO 27001"];
-  let h = 0;
-  for (let i = 0; i < productId.length; i++) h += productId.charCodeAt(i);
-  return options[h % options.length];
+const DIRECTORY_CERT_LABEL: Record<Exclude<CertificationFilterId, "all">, string> =
+  Object.fromEntries(
+    CERTIFICATION_FILTERS.filter(
+      (item): item is { id: Exclude<CertificationFilterId, "all">; label: string } =>
+        item.id !== "all",
+    ).map((item) => [item.id, item.label]),
+  ) as Record<Exclude<CertificationFilterId, "all">, string>;
+
+function attestationTokens(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.flatMap((item) => attestationTokens(item));
+  }
+  if (typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    const nested = o.values ?? o.selected ?? o.certifications ?? o.items;
+    if (nested != null) return attestationTokens(nested);
+    return [];
+  }
+  const text = String(raw).trim();
+  if (!text) return [];
+  if (text.startsWith("[") || text.startsWith("{")) {
+    try {
+      return attestationTokens(JSON.parse(text) as unknown);
+    } catch {
+      // Stored as plain text.
+    }
+  }
+  return text
+    .split(/[,;|]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function compactCertToken(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function isSoc2TypeII(token: string): boolean {
+  return (
+    token.includes("soc2") &&
+    (token.includes("type2") || token.includes("typeii"))
+  );
+}
+
+function isSoc2TypeI(token: string): boolean {
+  if (!token.includes("soc2") || isSoc2TypeII(token)) return false;
+  return token.includes("type1") || token.includes("typei");
+}
+
+/** Directory certs the vendor actually attested. "None" selections do not count. */
+function attestedDirectoryCerts(
+  dp: Pick<DirectoryProduct, "securityCertifications" | "hipaaBaa">,
+): Array<Exclude<CertificationFilterId, "all">> {
+  const certs = attestationTokens(dp.securityCertifications).map(compactCertToken);
+  const regulatory = attestationTokens(dp.hipaaBaa).map(compactCertToken);
+  const all = [...certs, ...regulatory];
+  const hipaaYes = new Set(["hipaabaa", "yes", "yesstandard", "yesonrequest"]);
+  const checks: Array<[Exclude<CertificationFilterId, "all">, boolean]> = [
+    ["soc2_type1", certs.some(isSoc2TypeI)],
+    ["soc2", certs.some(isSoc2TypeII)],
+    ["iso27001", certs.some((token) => token.includes("iso27001"))],
+    ["iso42001", certs.some((token) => token.includes("iso42001"))],
+    ["hitrust", certs.some((token) => token.includes("hitrust"))],
+    ["fedramp", certs.some((token) => token.includes("fedramp"))],
+    ["pci", certs.some((token) => token.includes("pcidss") || token === "pci")],
+    [
+      "hipaa",
+      all.some(
+        (token) =>
+          hipaaYes.has(token) ||
+          (token.includes("hipaa") && !token.includes("notapplicable")),
+      ),
+    ],
+    ["gdpr", all.some((token) => token.includes("gdpr"))],
+    ["ccpa", all.some((token) => token.includes("ccpa"))],
+  ];
+  return checks.filter(([, hit]) => hit).map(([id]) => id);
 }
 
 function categoryTagForCard(dp: DirectoryProduct): string {
@@ -824,6 +948,8 @@ const VendorDirectory = () => {
           trustScore:
             typeof o.trustScore === "number" ? o.trustScore : undefined,
           sector: (o.sector as DirectoryProduct["sector"]) ?? undefined,
+          securityCertifications: o.securityCertifications ?? o.security_certifications,
+          hipaaBaa: o.hipaaBaa ?? o.hipaa_baa,
         };
       });
       const list = mapped.filter((dp) => dp.productId && dp.vendorId);
@@ -960,6 +1086,8 @@ const VendorDirectory = () => {
               ),
               trustScore: p.trustScore,
               sector: p.sector,
+              securityCertifications: p.securityCertifications,
+              hipaaBaa: p.hipaaBaa,
             }));
           }),
         );
@@ -1169,7 +1297,7 @@ const VendorDirectory = () => {
     return directoryProducts
       .filter((dp) => matchesIndustryFilter(dp, industryFilter))
       .filter((dp) =>
-        matchesCertificationFilter(dp.productId, certificationFilter),
+        matchesCertificationFilter(dp, certificationFilter),
       )
       .filter((dp) => {
         const canShowBuyerFields = dp.visibleToBuyer === true;
@@ -1324,7 +1452,10 @@ const VendorDirectory = () => {
             (dp.vendor.headquartersLocation || "").trim() || "HQ not listed";
           const sectorLabels = listSectorLabels(dp.sector ?? dp.vendor.sector);
           const sectorCount = sectorLabels.length;
-          const compliance = complianceBadgeForProduct(dp.productId);
+          const complianceLabels = attestedDirectoryCerts(dp).map(
+            (id) => DIRECTORY_CERT_LABEL[id],
+          );
+          const complianceCount = complianceLabels.length;
 
           return (
             <li key={`${dp.vendorId}-${dp.productId}`}>
@@ -1429,9 +1560,51 @@ const VendorDirectory = () => {
                 </span>
 
                 <span className="vd_list_cell vd_list_cell--compliance">
-                  <span className="vd_list_row_compliance" title={compliance}>
-                    <ShieldCheck size={13} aria-hidden />
-                    {compliance}
+                  <span
+                    className={`vd_list_row_labels${complianceCount > 0 ? " vd_list_row_labels--has_popover" : ""}`}
+                  >
+                    {complianceCount > 0 ? (
+                      <span
+                        className="vd_list_row_label_dots"
+                        aria-hidden
+                        title={complianceLabels.join(", ")}
+                      >
+                        {complianceLabels
+                          .slice(0, MAX_SECTOR_STACK_DOTS)
+                          .map((label, i) => (
+                            <i
+                              key={`${label}-dot-${i}`}
+                              className="vd_list_dot"
+                              style={{
+                                backgroundColor: complianceStackColor(i),
+                                zIndex: i + 1,
+                              }}
+                            />
+                          ))}
+                      </span>
+                    ) : null}
+                    <span className="vd_list_row_labels_text">
+                      {complianceCount > 0
+                        ? `${complianceCount} certification${complianceCount === 1 ? "" : "s"}`
+                        : "No certifications"}
+                    </span>
+                    {complianceCount > 0 ? (
+                      <span className="vd_list_labels_popover" role="tooltip">
+                        <span className="vd_list_labels_popover_title">
+                          Compliance
+                        </span>
+                        <span className="vd_list_labels_popover_pills">
+                          {complianceLabels.map((label, i) => (
+                            <span
+                              key={`${label}-${i}`}
+                              className={`vd_list_sector_pill vd_list_compliance_pill--${compliancePillTone(i)}`}
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </span>
+                      </span>
+                    ) : null}
                   </span>
                 </span>
               </button>
@@ -1662,7 +1835,7 @@ const VendorDirectory = () => {
                   <ChevronDown size={14} aria-hidden />
                 </button>
                 {openToolbarMenu === "certification" && (
-                  <ul className="vd_list_filter_menu" role="listbox">
+                  <ul className="vd_list_filter_menu vd_list_filter_menu--certs" role="listbox">
                     {CERTIFICATION_FILTERS.map(({ id, label }) => (
                       <li
                         key={id}

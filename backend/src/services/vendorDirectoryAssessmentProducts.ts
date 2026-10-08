@@ -38,6 +38,8 @@ type ResolvedRow = {
   headquartersLocation: string | null;
   vendorMaturity: string | null;
   sector: unknown;
+  security_compliance_certificates: unknown;
+  hipaa_baa: string | null;
 };
 
 async function trustScoresAndSummariesForAttestations(
@@ -133,6 +135,8 @@ function mapRowToApiProduct(
     productDescription: productDescription ?? undefined,
     updated_at: row.updated_at ?? null,
     sector: sector ?? undefined,
+    securityCertifications: row.security_compliance_certificates ?? null,
+    hipaaBaa: row.hipaa_baa ?? null,
   };
 }
 
@@ -163,6 +167,8 @@ export async function resolveProductByOrgAndProductName(
       headquartersLocation: vendors.headquartersLocation,
       vendorMaturity: vendors.vendorMaturity,
       sector: vendors.sector,
+      security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+      hipaa_baa: vendorSelfAttestations.hipaa_baa,
     })
     .from(vendors)
     .innerJoin(createOrganization, joinOrg)
@@ -207,6 +213,8 @@ export async function resolveProductByAttestationForVendorUser(
       headquartersLocation: vendors.headquartersLocation,
       vendorMaturity: vendors.vendorMaturity,
       sector: vendors.sector,
+      security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+      hipaa_baa: vendorSelfAttestations.hipaa_baa,
     })
     .from(vendorSelfAttestations)
     .innerJoin(vendors, eq(vendors.userId, vendorSelfAttestations.user_id))

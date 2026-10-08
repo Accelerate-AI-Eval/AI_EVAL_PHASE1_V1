@@ -1,7 +1,7 @@
 {
   "region": "us-east-1",
-  "fetchedAt": "2026-09-29T10:37:56.302Z",
-  "count": 90,
+  "fetchedAt": "2026-10-06T05:13:02.104Z",
+  "count": 93,
   "profiles": [
     {
       "inferenceProfileName": "GLOBAL Amazon Nova 2 Lite",
@@ -529,6 +529,27 @@
       "foundationModelId": "openai.gpt-6-sol"
     },
     {
+      "inferenceProfileName": "Global OpenAI GPT-6.1 Sol",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.openai.gpt-6.1-sol",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/openai.gpt-6.1-sol"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-east-1::foundation-model/openai.gpt-6.1-sol"
+        }
+      ],
+      "inferenceProfileId": "global.openai.gpt-6.1-sol",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED",
+      "description": "Routes requests to GPT-6.1 Sol globally across all supported AWS Regions.",
+      "createdAt": "2026-09-29T01:51:12.066Z",
+      "updatedAt": "2026-09-29T01:51:12.066Z",
+      "profileType": "SYSTEM_DEFINED",
+      "modelId": "global.openai.gpt-6.1-sol",
+      "foundationModelId": "openai.gpt-6.1-sol"
+    },
+    {
       "inferenceProfileName": "GLOBAL TwelveLabs Pegasus v1.2",
       "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.twelvelabs.pegasus-1-2-v1:0",
       "models": [
@@ -946,6 +967,30 @@
       "foundationModelId": "anthropic.claude-sonnet-5"
     },
     {
+      "inferenceProfileName": "US Anthropic Claude Sonnet 5.5",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/us.anthropic.claude-sonnet-5-5",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5-5"
+        }
+      ],
+      "inferenceProfileId": "us.anthropic.claude-sonnet-5-5",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED",
+      "description": "Routes requests to Claude Sonnet 5.5 in us-east-1, us-east-2, us-west-2.",
+      "createdAt": "2026-10-01T01:59:42.512Z",
+      "updatedAt": "2026-10-01T01:59:42.512Z",
+      "profileType": "SYSTEM_DEFINED",
+      "modelId": "us.anthropic.claude-sonnet-5-5",
+      "foundationModelId": "anthropic.claude-sonnet-5-5"
+    },
+    {
       "inferenceProfileName": "US Claude Opus 4.1",
       "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/us.anthropic.claude-opus-4-1-20250805-v1:0",
       "models": [
@@ -1312,7 +1357,7 @@
       "type": "SYSTEM_DEFINED",
       "description": "Routes requests to Nova Lite in us-east-1, us-west-2 and us-east-2.",
       "createdAt": "2024-11-29T13:23:00.000Z",
-      "updatedAt": "2026-05-19T14:56:51.315Z",
+      "updatedAt": "2026-09-29T22:45:25.435Z",
       "profileType": "SYSTEM_DEFINED",
       "modelId": "us.amazon.nova-lite-v1:0",
       "foundationModelId": "amazon.nova-lite-v1:0"
@@ -1382,9 +1427,9 @@
       "inferenceProfileId": "us.amazon.nova-pro-v1:0",
       "status": "ACTIVE",
       "type": "SYSTEM_DEFINED",
-      "description": "Routes requests to Nova Pro in us-east-1, us-west-2 and us-east-2.",
+      "description": "Routes requests to Nova Pro in us-west-2, us-east-2 and us-east-1.",
       "createdAt": "2024-11-29T13:23:00.000Z",
-      "updatedAt": "2026-07-13T18:38:04.578Z",
+      "updatedAt": "2026-09-30T18:46:03.789Z",
       "profileType": "SYSTEM_DEFINED",
       "modelId": "us.amazon.nova-pro-v1:0",
       "foundationModelId": "amazon.nova-pro-v1:0"
@@ -1580,6 +1625,30 @@
       "profileType": "SYSTEM_DEFINED",
       "modelId": "us.openai.gpt-6-sol",
       "foundationModelId": "openai.gpt-6-sol"
+    },
+    {
+      "inferenceProfileName": "US OpenAI GPT-6.1 Sol",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/us.openai.gpt-6.1-sol",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:us-east-1::foundation-model/openai.gpt-6.1-sol"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-east-2::foundation-model/openai.gpt-6.1-sol"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:us-west-2::foundation-model/openai.gpt-6.1-sol"
+        }
+      ],
+      "inferenceProfileId": "us.openai.gpt-6.1-sol",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED",
+      "description": "Routes requests to GPT-6.1 Sol in us-east-1, us-east-2, us-west-2.",
+      "createdAt": "2026-09-29T19:44:47.161Z",
+      "updatedAt": "2026-09-29T19:44:47.161Z",
+      "profileType": "SYSTEM_DEFINED",
+      "modelId": "us.openai.gpt-6.1-sol",
+      "foundationModelId": "openai.gpt-6.1-sol"
     },
     {
       "inferenceProfileName": "US Pegasus v1.2",

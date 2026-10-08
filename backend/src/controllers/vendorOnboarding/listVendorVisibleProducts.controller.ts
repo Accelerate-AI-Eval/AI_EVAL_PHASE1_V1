@@ -115,6 +115,8 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               pain_points: vendorSelfAttestations.pain_points,
               data_subject_rights: vendorSelfAttestations.data_subject_rights,
               solution_hosted: vendorSelfAttestations.solution_hosted,
+              security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+              hipaa_baa: vendorSelfAttestations.hipaa_baa,
             })
             .from(vendorSelfAttestations)
             .where(
@@ -142,6 +144,8 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
               pain_points: vendorSelfAttestations.pain_points,
               data_subject_rights: vendorSelfAttestations.data_subject_rights,
               solution_hosted: vendorSelfAttestations.solution_hosted,
+              security_compliance_certificates: vendorSelfAttestations.security_compliance_certificates,
+              hipaa_baa: vendorSelfAttestations.hipaa_baa,
             })
             .from(vendorSelfAttestations)
             .where(
@@ -242,6 +246,9 @@ const listVendorVisibleProducts = async (req: Request, res: Response): Promise<v
         data_subject_rights: r.data_subject_rights ?? null,
         hosting_deployment: r.solution_hosted ?? null,
         solution_hosted: r.solution_hosted ?? null,
+        /** Attested security certifications and HIPAA/regulatory selection for directory badges. */
+        securityCertifications: r.security_compliance_certificates ?? null,
+        hipaaBaa: r.hipaa_baa ?? null,
       };
     });
 

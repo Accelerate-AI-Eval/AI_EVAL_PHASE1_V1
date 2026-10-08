@@ -1,6 +1,6 @@
 {
   "region": "us-east-1",
-  "updatedAt": "2026-09-03T13:25:48.842Z",
+  "updatedAt": "2026-10-06T05:13:03.920Z",
   "count": 5,
   "results": [
     {
@@ -64,66 +64,6 @@
       }
     },
     {
-      "profileName": "Global Anthropic Claude Opus 4.6",
-      "profileType": "SYSTEM_DEFINED",
-      "inferenceProfileId": "global.anthropic.claude-opus-4-6-v1",
-      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.anthropic.claude-opus-4-6-v1",
-      "foundationModelId": "anthropic.claude-opus-4-6-v1",
-      "prompt": "Hi",
-      "testedAt": "2026-08-13T06:49:27.685Z",
-      "tests": [
-        {
-          "status": "working",
-          "identifierType": "inferenceProfileId",
-          "value": "global.anthropic.claude-opus-4-6-v1",
-          "prompt": "Hi",
-          "reply": "Hi there! How are you doing today? Is there something I can help you with?",
-          "latencyMs": 2939,
-          "stopReason": "end_turn"
-        }
-      ],
-      "overallStatus": "working",
-      "workingTarget": {
-        "identifierType": "inferenceProfileId",
-        "value": "global.anthropic.claude-opus-4-6-v1"
-      },
-      "workingReply": "Hi there! How are you doing today? Is there something I can help you with?",
-      "summary": {
-        "working": 1,
-        "notWorking": 0
-      }
-    },
-    {
-      "profileName": "Global Anthropic Claude Haiku 4.5",
-      "profileType": "SYSTEM_DEFINED",
-      "inferenceProfileId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0",
-      "foundationModelId": "anthropic.claude-haiku-4-5-20251001-v1:0",
-      "prompt": "Hi",
-      "testedAt": "2026-08-20T12:14:04.388Z",
-      "tests": [
-        {
-          "status": "working",
-          "identifierType": "inferenceProfileId",
-          "value": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-          "prompt": "Hi",
-          "reply": "# Hello! 👋\n\nHow can I help you today?",
-          "latencyMs": 3008,
-          "stopReason": "end_turn"
-        }
-      ],
-      "overallStatus": "working",
-      "workingTarget": {
-        "identifierType": "inferenceProfileId",
-        "value": "global.anthropic.claude-haiku-4-5-20251001-v1:0"
-      },
-      "workingReply": "# Hello! 👋\n\nHow can I help you today?",
-      "summary": {
-        "working": 1,
-        "notWorking": 0
-      }
-    },
-    {
       "profileName": "Global Anthropic Claude Opus 4.8",
       "profileType": "SYSTEM_DEFINED",
       "inferenceProfileId": "global.anthropic.claude-opus-4-8",
@@ -164,6 +104,79 @@
       "summary": {
         "working": 0,
         "notWorking": 3
+      }
+    },
+    {
+      "profileName": "Global Anthropic Claude Opus 4.6",
+      "profileType": "SYSTEM_DEFINED",
+      "inferenceProfileId": "global.anthropic.claude-opus-4-6-v1",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.anthropic.claude-opus-4-6-v1",
+      "foundationModelId": "anthropic.claude-opus-4-6-v1",
+      "prompt": "Hi",
+      "testedAt": "2026-10-06T05:10:57.897Z",
+      "tests": [
+        {
+          "status": "not working",
+          "identifierType": "inferenceProfileId",
+          "value": "global.anthropic.claude-opus-4-6-v1",
+          "prompt": "Hi",
+          "latencyMs": 1090,
+          "error": "Model is not enabled in your AWS account.",
+          "errorName": "AccessDeniedException"
+        },
+        {
+          "status": "not working",
+          "identifierType": "inferenceProfileArn",
+          "value": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.anthropic.claude-opus-4-6-v1",
+          "prompt": "Hi",
+          "latencyMs": 1078,
+          "error": "Model is not enabled in your AWS account.",
+          "errorName": "AccessDeniedException"
+        },
+        {
+          "status": "not working",
+          "identifierType": "model",
+          "value": "anthropic.claude-opus-4-6-v1",
+          "prompt": "Hi",
+          "latencyMs": 2795,
+          "error": "Model is not enabled in your AWS account.",
+          "errorName": "AccessDeniedException"
+        }
+      ],
+      "overallStatus": "not working",
+      "summary": {
+        "working": 0,
+        "notWorking": 3
+      }
+    },
+    {
+      "profileName": "Global Anthropic Claude Haiku 4.5",
+      "profileType": "SYSTEM_DEFINED",
+      "inferenceProfileId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:983911888509:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "foundationModelId": "anthropic.claude-haiku-4-5-20251001-v1:0",
+      "prompt": "Hi",
+      "testedAt": "2026-10-06T05:13:03.914Z",
+      "tests": [
+        {
+          "status": "working",
+          "identifierType": "inferenceProfileId",
+          "value": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "prompt": "Hi",
+          "reply": "# Hello! 👋\n\nHow can I help you today?",
+          "latencyMs": 1800,
+          "stopReason": "end_turn"
+        }
+      ],
+      "overallStatus": "working",
+      "workingTarget": {
+        "identifierType": "inferenceProfileId",
+        "value": "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+      },
+      "workingReply": "# Hello! 👋\n\nHow can I help you today?",
+      "summary": {
+        "working": 1,
+        "notWorking": 0
       }
     }
   ]
